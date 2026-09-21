@@ -1,0 +1,58 @@
+{
+    "name": "Strata",
+    "tree": {
+        "$className": "DataModel",
+        "ServerScriptService": {
+            "$className": "ServerScriptService",
+            "Scripts": {
+                "$path": "src/server"
+            }
+        },
+        "StarterPlayer": {
+            "$className": "StarterPlayer",
+            "StarterPlayerScripts": {
+                "$className": "StarterPlayerScripts",
+                "$path": "src/client"
+            }
+        },
+        "ReplicatedStorage": {
+            "$className": "ReplicatedStorage",
+            "StrataConfig": {
+                "$path": "src/shared/StrataConfig.lua"
+            },
+            "NodeGrid": {
+                "$path": "src/shared/NodeGrid.lua"
+            },
+            "GearConfig": {
+                "$path": "src/shared/GearConfig.lua"
+            },
+            "OreModelBuilder": {
+                "$path": "src/shared/OreModelBuilder.lua"
+            },
+            "UIKit": {
+                "$path": "src/shared/UIKit.lua"
+            },
+            "DigSite": {
+                "$path": "src/shared/DigSite.lua"
+            },
+            "Caverns": {
+                "$path": "src/shared/Caverns.lua"
+            },
+            "ItemModels": {
+                "$path": "src/shared/ItemModels.lua"
+            }
+        },
+        "Workspace": {
+            "$className": "Workspace",
+            "$properties": {
+                "StreamingEnabled": false
+            }
+        },
+        "Lighting": {
+            "$className": "Lighting",
+            "$properties": {
+                "Technology": "Future"
+            }
+        }
+    }
+}
