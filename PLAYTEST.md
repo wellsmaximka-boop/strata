@@ -125,10 +125,19 @@ Panels, HUD, fonts, colours, the shop and depot, the player card, buttons.
 ## 5. Contracts and objectives
 
 - [x] Board reads well: cross-sections, HAUL / LOCKED pills, times, payouts.
-- [!] **The lift teleports you out of a live run.** Confirmed in the Output:
-  contract taken 18:43:44, at y -85 at 18:45:11, at 0 m by 18:45:25, no extract
-  logged. That skips the entire extract decision the run is built around.
-  → NEXT: this is the one I am doing now.
+- [x] **You could end up on the surface with a live run and no way back down.**
+  Contract taken 18:43:44, at y -85 at 18:45:11, at 0 m by 18:45:25, no extract
+  logged.
+  → I blamed the lift; wrong. The lift already requires you to be standing at
+  the camp pad, so it could not have been used from -85. You died or reset —
+  and **nothing in the server handled that at all**. You respawn at the camp,
+  the contract is still live, the clock still runs, the haul is still in the
+  manifest, and there is no way back down because the cage only descends when
+  you sign for a job and you are already on one. The only exit was to stand
+  there and watch the timer expire.
+  → Dying now ends the run the way the clock does: a failure, keeping the same
+  share of what you carried. And the lift refuses while a contract is live,
+  because the cage is the way in and out for the length of a job.
 
 ---
 

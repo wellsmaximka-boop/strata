@@ -233,6 +233,15 @@ liftRequest.OnServerEvent:Connect(function(player, stopIndex)
 	if not root then return end
 	if not near(root.Position, LIFT_POS, ZONE_RANGE * 1.5) then return end
 
+	-- Not while you are on a contract. The cage is the way in and the way out
+	-- for the length of a job — that is the whole shape of a run, and a lift
+	-- ride that skipped it would skip the decision the run is built around.
+	if PlayerState.Run(player) then
+		craftResult:FireClient(player, false,
+			"you are on a contract — the cage is the way back")
+		return
+	end
+
 	-- You cannot ride to somewhere you have never stood
 	if not PlayerState.Discovered(player, stop.layerId or "") and stop.y < StrataConfig.Mine.SurfaceY then
 		craftResult:FireClient(player, false, stop.name .. " has not been found yet — dig to it first")

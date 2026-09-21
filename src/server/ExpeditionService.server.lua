@@ -309,6 +309,36 @@ local function finish(player, success)
 	end
 end
 
+
+-- ── Dying, or resetting ──────────────────────────────────────────────────────
+-- Nothing used to handle this, and the result was a dead end. You respawn at
+-- the camp; the contract is still live; the clock is still running; your haul
+-- is still sitting in the manifest — and there is no way back down, because the
+-- cage only descends when you sign for a job and you are already on one. The
+-- only exit was to stand at the camp and watch the timer expire.
+--
+-- So dying ends the run the same way the clock does: a failure, and you keep
+-- the same share of what you were carrying. Losing everything for a bad fall
+-- would read as punishment; keeping it all would make dying a free ride home.
+local function watchDeath(player)
+	player.CharacterAdded:Connect(function()
+		-- Fires on the very first spawn too, when there is no run to end, and
+		-- mid-descent, when the cage is still carrying you
+		local run = PlayerState.Run(player)
+		if not run or run.extracting then return end
+		if _G.StrataDescent and _G.StrataDescent.Riding(player) then return end
+
+		task.wait(0.4)
+		if PlayerState.Run(player) then
+			craftResult:FireClient(player, false, "you did not make it out")
+			finish(player, false)
+		end
+	end)
+end
+
+Players.PlayerAdded:Connect(watchDeath)
+for _, player in ipairs(Players:GetPlayers()) do watchDeath(player) end
+
 extractRequest.OnServerEvent:Connect(function(player)
 	local run = PlayerState.Run(player)
 	if not run then return end
