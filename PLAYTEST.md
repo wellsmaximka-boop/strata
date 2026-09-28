@@ -80,14 +80,54 @@ Panels, HUD, fonts, colours, the shop and depot, the player card, buttons.
   → Partly self-solving now the picks actually appear, but the panel is still
   900px wide for a handful of tiles. Wants another look with real content in it.
 - [ ] Kit screen: "HEAT 0 / 3" is cramped right under the armour slots.
-- [ ] There is overlapping in menus of shop etc. also font color and size need readjusting 
-- [ ] Ui overlaps with the roblox top right corner UI which makes it a little tediuos, this is on mac tohugh I dont know about PC
-- [ ] When in the contracts menu, the side bar UI like shop and inventory overlap. this is unclear, also the black font color etc as mentioned above also the depth chart
+- [x] There is overlapping in menus of shop etc. also font color and size need readjusting
+- [x] Ui overlaps with the roblox top right corner UI which makes it a little tediuos, this is on mac tohugh I dont know about PC
+- [x] When in the contracts menu, the side bar UI like shop and inventory overlap. this is unclear, also the black font color etc as mentioned above also the depth chart
+  → **These three were one bug.** Nothing in the UI was responsive. The shop,
+  contracts and kit screens are 900px wide and sat dead centre; the action bar
+  (SHOP / KIT / PICKS / LIFT / RUNS / CAMP) sits at x=16 and is the *only* way to
+  switch screens. So on any viewport narrower than about 1310 the panel simply
+  covered the navigation, and the depth chart poked out from behind its other
+  edge. On a desktop monitor you never see it; in Studio on a laptop, where the
+  play viewport is a fraction of the screen, you cannot miss it. Not a Mac thing
+  — it would do the same on the PC in a small window.
+  → Screens now live in the band to the *right* of the action bar, centred in
+  that band and scaled down to fit it rather than spilling over it. Checked at
+  nine viewport sizes from 1920×1080 down to 760×520: the bar stays clear at all
+  of them. Below 760 the fit gives up and takes the full width, so the bar now
+  also draws on top — navigation you cannot click is worse than navigation that
+  overlaps.
+  → The depth chart hides while any screen is open. If a screen is up, the screen
+  is what you are reading.
+  → Roblox's player list is switched off. It draws above every ScreenGui, so no
+  amount of moving my own UI gets out from under it, and a run is yours alone.
+- [x] Font looks imported and isnt special
+  → You were right and it was the most Roblox-default choice in the file.
+  FredokaOne is the rounded bubbly face a thousand simulators use. Headings are
+  **Oswald** now — condensed industrial, reads as lettering stencilled on a
+  plate. Prose is Titillium, squared-off and slightly technical. Numbers are
+  RobotoMono so the run clock doesn't jitter as it ticks.
+  → The black outline on text dropped from 2.5px to 1.6px. It suited Fredoka's
+  fat strokes and would have swallowed Oswald's thin ones, filling in the
+  letters. That's half the answer to "hard to read".
+  → Three lines in `StrataConfig.UI`. One-line revert if it reads worse moving.
 - [ ] The Ui is choppy, you added designs like squares, unsmooth
-- [ ] Font looks imported and isnt special 
 - [ ] The picture for the map in the contracts is extremely lazy, I added an example of how it should look like in notes under the ideal UI idea.
 - [ ] overall redisign of color fonts and the overall fonts and UI, it looks like a actual square instead of like a button if oyu know what I mean, I know its not ike that type of game, but I feel like we can polish it up a little bit. its also hard to read and where the coins are and everything in menus is not really clean looks really artificial. 
-- [ ] can you get more theme from deep rock galactic UI? just that kind of vibe, not this imported and roblox vibe thing. Photo in notes 
+- [ ] can you get more theme from deep rock galactic UI? just that kind of vibe, not this imported and roblox vibe thing. Photo in notes
+  → **Waiting on the pictures.** What came through in `notes/README.md` were
+  Google image *search* links, not images — those are JavaScript pages with your
+  session encoded in them, so I can't see what you were looking at. Save the
+  actual files into `notes/` (right-click → Save Image As) and commit them.
+  → I'm holding the palette deliberately rather than guessing. You told me
+  earlier that grey "makes people know its AI", and DRG's look is desaturated
+  gunmetal carried by hard amber accents — I don't want to swing the panels grey
+  on a guess and undo the thing you already asked for. Font and readability I
+  changed because those were unambiguous.
+  → One thing I checked and it wasn't what I assumed: the coin is already a
+  circle with a rim, not a square. So "looks like a square instead of a button"
+  is about depth and press affordance somewhere else, and I need to see which
+  screen.
 
 ---
 
@@ -125,8 +165,11 @@ Panels, HUD, fonts, colours, the shop and depot, the player card, buttons.
 - [x] **The depth chart showed during a run**, behind the dig-site map.
   → It answers "where could I go", which is a camp question. Hidden below the
   surface now.
-- [ ] **Roblox's own player list sits on top of the run card.** Not my UI, but
+- [x] **Roblox's own player list sits on top of the run card.** Not my UI, but
   it is covering mine. Either move the card or hide the list.
+  → Hidden the list. You reported it again from the Mac, which settled it: the
+  list draws above every ScreenGui, so moving my own UI can never win. A run is
+  yours alone, so there is nothing for a player list to show.
 
 ---
 

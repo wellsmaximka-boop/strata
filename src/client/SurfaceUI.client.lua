@@ -474,10 +474,15 @@ local function scaler(frame)
 	return s
 end
 
+-- Both pops scale relative to whatever the screen has been fitted to, which is
+-- 1 on a wide monitor and less on a laptop. Tweening to a flat 1 would throw the
+-- fit away the moment a panel opened, which is how the panel came to cover the
+-- action bar.
 local function popIn(frame, scale)
-	scale.Scale   = 0.82
+	local target  = frame:GetAttribute("FitScale") or 1
+	scale.Scale   = target * 0.82
 	frame.Visible = true
-	TweenService:Create(scale, POP_IN, { Scale = 1 }):Play()
+	TweenService:Create(scale, POP_IN, { Scale = target }):Play()
 end
 
 -- Squish on press, spring back on release. Applied to every clickable row so
@@ -512,11 +517,12 @@ local function pressable(button, baseColour, hoverColour)
 end
 
 local function popOut(frame, scale, onDone)
-	local t = TweenService:Create(scale, POP_OUT, { Scale = 0.86 })
+	local target = frame:GetAttribute("FitScale") or 1
+	local t = TweenService:Create(scale, POP_OUT, { Scale = target * 0.86 })
 	t:Play()
 	t.Completed:Connect(function()
 		frame.Visible = false
-		scale.Scale   = 1
+		scale.Scale   = target
 		if onDone then onDone() end
 	end)
 end
@@ -538,6 +544,10 @@ bar.Name                   = "ActionBar"
 bar.Size                   = UDim2.new(0, BTN * 3 + GAP * 2, 0, BTN * 2 + GAP)
 bar.Position               = UDim2.new(0, HUD.Left, 0.5, HUD.Grid.Y)
 bar.BackgroundTransparency = 1
+-- Above the screens. They are fitted to clear the bar, but on a viewport too
+-- narrow to have room for both the fit gives up and takes the full width — and
+-- navigation you cannot click is worse than navigation that overlaps.
+bar.ZIndex                 = 8
 bar.Parent                 = gui
 
 local barLayout = Instance.new("UIGridLayout", bar)
@@ -2984,11 +2994,18 @@ corner(chart, 14)
 -- The chart answers "where could I go", which is a question you ask at the
 -- camp. Underground it is a column of question marks sitting on top of the
 -- dig-site map, which is the one thing you actually need down there.
+--
+-- It also stands down while a screen is open. It hugs the right edge, the
+-- screens are centred, and on a laptop viewport the two met — so the chart was
+-- showing through the side of the contract board. Nothing is lost by hiding it:
+-- if a screen is up, the screen is what you are reading.
 task.spawn(function()
 	while task.wait(0.4) do
 		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-		chart.Visible = root == nil
-			or root.Position.Y > StrataConfig.Mine.SurfaceY - 24
+		chart.Visible = (root == nil
+				or root.Position.Y > StrataConfig.Mine.SurfaceY - 24)
+			and not panel.Visible
+			and not kit.Visible
 	end
 end)
 
@@ -3307,5 +3324,61 @@ end)
 end)()   -- depth chart
 
 refreshChart()
+
+-- ── Fitting the screen ───────────────────────────────────────────────────────
+-- None of this was responsive, which is the single cause behind three separate
+-- playtest notes. The shop, contracts and kit screens are 900 wide and sit dead
+-- centre; the action bar sits at x=16 and is the only way to switch screens. So
+-- on any viewport narrower than about 1310 the panel simply covered the
+-- navigation, and the depth chart poked out from behind its other edge. On a
+-- desktop monitor you never see it. In Studio on a laptop, where the play
+-- viewport is a fraction of the screen, you cannot miss it.
+--
+-- The fix is a band rather than a centre: the screens live in the space to the
+-- right of the action bar, centred in that space, scaled down to fit it instead
+-- of spilling over it. The bar is never covered and never moves, because it is
+-- navigation and navigation has to stay put.
+;(function()
+
+local MARGIN    = 16
+local BAND_L    = HUD.Left + HUD.Width + MARGIN   -- first pixel clear of the bar
+local MIN_SCALE = 0.55                            -- below this, text stops being text
+
+local function fit(frame, scale, w, h)
+	local vp = gui.AbsoluteSize
+	if vp.X < 2 or vp.Y < 2 then return end        -- not laid out yet
+
+	local left, right = BAND_L, vp.X - MARGIN
+
+	-- On a viewport too narrow to have a band at all, take the whole width back
+	-- and let the scale deal with it. A readable screen that slightly overlaps
+	-- the bar beats an unreadable one that clears it.
+	if right - left < w * MIN_SCALE then left = MARGIN end
+
+	local s = math.min(1, (right - left) / w, (vp.Y - MARGIN * 2) / h)
+	s = math.max(MIN_SCALE, s)
+
+	-- popIn and popOut read this so they tween to the fitted size, not to 1
+	frame:SetAttribute("FitScale", s)
+	scale.Scale    = s
+	frame.Position = UDim2.new(0, (left + right) * 0.5, 0.5, 0)
+end
+
+local function fitAll()
+	fit(panel, panelScale, 900, 546)
+	fit(kit,   kitScale,   KIT_W, KIT_H)
+end
+
+fitAll()
+gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(fitAll)
+
+end)()
+
+-- Roblox's own player list lives in the top-right corner and draws above every
+-- ScreenGui, so no amount of moving our own UI gets out from under it. Nothing
+-- here needs a player list — a run is yours alone — so it goes.
+pcall(function()
+	game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+end)
 
 print("[SurfaceUI] ready")

@@ -103,14 +103,22 @@ StrataConfig.UI = {
 	Sky        = Color3.fromRGB(88, 162, 255),
 
 	-- ── Type ──
-	-- Fredoka is the rounded, heavy face every game this is aiming at uses for
-	-- anything short: headings, labels, buttons, quantities. Gotham keeps the
-	-- prose, because a paragraph set in a poster face is a paragraph nobody
-	-- reads, and Code keeps anything that counts — a monospaced digit is the
-	-- only way a running timer does not jitter as it ticks.
-	Head   = Enum.Font.FredokaOne,
-	Body   = Enum.Font.GothamMedium,
-	Number = Enum.Font.Code,
+	-- Fredoka was the wrong face, and wrong in the specific way that got called
+	-- out: it is the rounded bubbly poster font a thousand Roblox simulators use,
+	-- so it reads as a Roblox default no matter what is built around it.
+	--
+	-- Oswald is condensed industrial signage. Set in caps it reads as lettering
+	-- stencilled onto a plate, which is what the headings want to be. Titillium
+	-- is squared-off and slightly technical, so prose sits in the same world
+	-- instead of reverting to a UI default. RobotoMono keeps anything that
+	-- counts, because a monospaced digit is the only way a running timer does
+	-- not jitter as it ticks.
+	--
+	-- These three lines are the whole typeface of the game; changing them back
+	-- is a one-line revert if the new one reads worse in motion.
+	Head   = Enum.Font.Oswald,
+	Body   = Enum.Font.TitilliumWeb,
+	Number = Enum.Font.RobotoMono,
 
 	-- ── Chrome ──
 	-- One set of numbers so every panel in the game has the same edge, the same
@@ -119,7 +127,11 @@ StrataConfig.UI = {
 	EdgeThin  = 2.5,   -- and for the small stuff inside one
 	Corner    = 14,
 	CornerSm  = 8,
-	TextEdge  = 2.5,   -- the black outline around text
+	-- The black outline around text. Was 2.5, which suited Fredoka's fat rounded
+	-- strokes and swallows Oswald's condensed ones — at small sizes the counters
+	-- in a letter fill in and the word turns into a blob. Readability was the
+	-- complaint; this is half of the answer.
+	TextEdge  = 1.6,
 
 	-- An inventory tile. Here rather than in UIKit because the grid that lays
 	-- them out and the kit that draws them both need it, and a layout number is
