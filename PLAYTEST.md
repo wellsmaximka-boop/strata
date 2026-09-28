@@ -80,6 +80,14 @@ Panels, HUD, fonts, colours, the shop and depot, the player card, buttons.
   → Partly self-solving now the picks actually appear, but the panel is still
   900px wide for a handful of tiles. Wants another look with real content in it.
 - [ ] Kit screen: "HEAT 0 / 3" is cramped right under the armour slots.
+- [ ] There is overlapping in menus of shop etc. also font color and size need readjusting 
+- [ ] Ui overlaps with the roblox top right corner UI which makes it a little tediuos, this is on mac tohugh I dont know about PC
+- [ ] When in the contracts menu, the side bar UI like shop and inventory overlap. this is unclear, also the black font color etc as mentioned above also the depth chart
+- [ ] The Ui is choppy, you added designs like squares, unsmooth
+- [ ] Font looks imported and isnt special 
+- [ ] The picture for the map in the contracts is extremely lazy, I added an example of how it should look like in notes under the ideal UI idea.
+- [ ] overall redisign of color fonts and the overall fonts and UI, it looks like a actual square instead of like a button if oyu know what I mean, I know its not ike that type of game, but I feel like we can polish it up a little bit. its also hard to read and where the coins are and everything in menus is not really clean looks really artificial. 
+- [ ] can you get more theme from deep rock galactic UI? just that kind of vibe, not this imported and roblox vibe thing. Photo in notes 
 
 ---
 
