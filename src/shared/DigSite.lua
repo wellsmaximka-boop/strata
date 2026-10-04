@@ -525,6 +525,9 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 				blobs       = {},
 				pillars     = {},
 				shelves     = {},
+				-- Stairs down into the pits, so no hole in this game is a hole
+				-- you cannot leave
+				ramps       = {},
 				rough       = {},
 			}
 
@@ -587,9 +590,23 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 			for _ = 1, alcoves do
 				local a   = rand() * math.pi * 2
 				local dir = Vector3.new(math.cos(a), rand(-0.45, 0.4), math.sin(a)).Unit
-				table.insert(chamber.blobs, hangOff(dir,
+				local pocket = hangOff(dir,
 					radius * rand(CFG.AlcoveSize.min, CFG.AlcoveSize.max),
-					rand(0.72, 0.92)))
+					rand(0.72, 0.92))
+
+				-- Held near the floor. An alcove is a pocket in the wall, but it
+				-- is placed by the same hangOff the pits use and that scales its
+				-- drop by the sphere it hangs from — so in the master cavern an
+				-- alcove pointed downwards was a hundred-stud hole in the ground
+				-- with no stair in it and no reason for the player to expect
+				-- one. Pits at least announce themselves.
+				local lowest = -v - CFG.Alcove.MaxDrop + pocket.radius
+				if pocket.offset.Y < lowest then
+					pocket.offset = Vector3.new(pocket.offset.X, lowest, pocket.offset.Z)
+				end
+
+				pocket.kind = "alcove"
+				table.insert(chamber.blobs, pocket)
 			end
 
 			-- Pits: holes in the floor deep enough that you cannot see the
@@ -597,18 +614,48 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 			-- hollowed by the same two passes as everything else, and so the
 			-- ore grid knows they are open air.
 			local pits = math.floor(rand(CFG.Pits.min, CFG.Pits.max + 0.999))
-			for _ = 1, pits do
-				local size = radius * rand(CFG.PitSize.min, CFG.PitSize.max)
+			for pitIndex = 1, pits do
+				local size = math.min(radius * rand(CFG.PitSize.min, CFG.PitSize.max),
+					CFG.Pit.MaxRadius)
 				local deep = hangOff(Vector3.new(0, -1, 0), size,
 					rand(CFG.PitDepth.min, CFG.PitDepth.max))
+
+				-- Bounded. hangOff drops a blob by a share of the sphere it
+				-- hangs from, and in the master cavern that sphere is 240 studs
+				-- across, so the hole ended up two hundred deep with sheer
+				-- walls. The second blob that used to go underneath this one is
+				-- gone with it: "genuinely dark at the bottom" is only a feature
+				-- if there is a way back up from the bottom.
+				local floorOf = -v - CFG.Pit.MaxDrop + size
+				if deep.offset.Y < floorOf then
+					deep.offset = Vector3.new(deep.offset.X, floorOf, deep.offset.Z)
+				end
+				deep.kind = "pit"
 				table.insert(chamber.blobs, deep)
 
-				-- And a smaller one under that half the time, so the deepest
-				-- are more than one sphere down and genuinely dark at the bottom
-				if rand() < 0.5 then
-					table.insert(chamber.blobs, {
-						offset = deep.offset - Vector3.new(0, size * 1.2, 0),
-						radius = size * rand(0.62, 0.86),
+				-- The way out. A stair spiralling down the pit wall from the rim
+				-- to the floor, each step a short hop, so the same geometry that
+				-- takes you down brings you back up. Cut as solid rock after the
+				-- air, exactly like a terrace.
+				local top    = deep.offset.Y + size * 0.55
+				local bottom = deep.offset.Y - size * 0.72
+				local steps  = math.max(math.ceil((top - bottom) / CFG.Pit.Rise), 3)
+				local turn   = rand() * math.pi * 2
+				local out    = size * CFG.Pit.Inset
+				local run    = math.max(out * CFG.Pit.Turn * 2.1, CFG.Pit.Width)
+
+				for s = 0, steps do
+					local a = turn + s * CFG.Pit.Turn
+					table.insert(chamber.ramps, {
+						offset = Vector3.new(
+							deep.offset.X + math.cos(a) * out,
+							top - s * CFG.Pit.Rise,
+							deep.offset.Z + math.sin(a) * out),
+						size = Vector3.new(run, CFG.Pit.Thick, CFG.Pit.Width),
+						-- Laid along the tangent, so consecutive steps join into
+						-- a stair rather than sitting across it
+						spin = -(a + math.pi * 0.5),
+						stair = pitIndex,
 					})
 				end
 			end

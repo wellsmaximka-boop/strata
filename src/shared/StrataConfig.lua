@@ -1473,8 +1473,40 @@ StrataConfig.Site = {
 	Alcoves    = { min = 2, max = 4 },
 	AlcoveSize = { min = 0.3, max = 0.5 },     -- as a share of hall radius
 
+	-- How far below the hall's floor an alcove may reach. A pocket in a wall is
+	-- a bay; the same pocket twenty studs into the ground is an unmarked hole,
+	-- and unlike a pit it gets no stair because nobody intended it to be one.
+	-- Seven, not eight, and the number is not arbitrary: JumpHeight is 7.2, so
+	-- this is the deepest a dip can be and still be one you can hop out of
+	-- without thinking about it.
+	Alcove = { MaxDrop = 7 },
+
 	-- And one hole in the floor at most, wide enough to be a feature of the
 	-- room rather than a thing you fall in by accident
+	-- ── Pits ──
+	-- A pit is somewhere you climb down into and back out of. It was neither.
+	-- hangOff sizes the drop off the sphere it hangs from, and in the master
+	-- cavern that sphere is 240 studs, so a pit came out as a two-hundred-stud
+	-- shaft with sheer walls — fall in and the run is over, with nothing to do
+	-- but watch the clock. A hole you cannot leave is not a feature.
+	--
+	-- Bounded now, and given a way out: a stair spiralling down the wall from
+	-- the rim to the floor, each step a short enough hop that it climbs as
+	-- easily as it descends. That is the "path with obstacles" rather than the
+	-- drop.
+	Pit = {
+		MaxRadius = 42,   -- a crater 230 studs across is not a pit
+		MaxDrop   = 46,   -- how far the floor of one may sit below the hall's
+
+		-- The stair. Rise must stay under the player's jump height or the way
+		-- out is not a way out.
+		Rise  = 4.2,
+		Width = 11,
+		Thick = 3.4,
+		Inset = 0.8,      -- how far out the stair sits, as a share of the pit
+		Turn  = 0.5,      -- radians per step
+	},
+
 	Pits     = { min = 0, max = 2 },
 	PitSize  = { min = 0.3, max = 0.48 },
 	-- How far a pit is pushed below the sphere it hangs off, as a share of the

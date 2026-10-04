@@ -180,6 +180,14 @@ local function carve(site, stratum)
 				shelf.size, stratum.material)
 		end
 
+		-- Stairs down into the pits. Put back after the air for the same reason
+		-- a terrace is: they are rock that was never cut away.
+		for _, step in ipairs(chamber.ramps or {}) do
+			terrain:FillBlock(
+				CFrame.new(chamber.centre + step.offset) * CFrame.Angles(0, step.spin, 0),
+				step.size, stratum.material)
+		end
+
 		for _, pillar in ipairs(chamber.pillars) do
 			if pillar.segments then
 				-- Stacked drums: wider at the foot, pinched above it, leaning.
