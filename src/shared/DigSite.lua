@@ -285,16 +285,32 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 
 		local parent, from, angle, distance
 
-		if index <= primaries or #site.chambers == 0 then
-			parent   = 0
-			from     = Vector3.new(0, driftY, 0)
-			angle    = turn + (index - 1) / primaries * math.pi * 2
+		-- The first chamber is the master cavern and it is cut around the
+		-- station itself, so you arrive already standing in the biggest space
+		-- the layer can hold rather than in a 34-stud hole with three pipes
+		-- leaving it.
+		local isMaster = #site.chambers == 0
+
+		if isMaster then
+			parent, from, angle, distance = 0, Vector3.new(0, driftY, 0), 0, 0
+
+		elseif index <= primaries + 1 then
+			-- Hung off the master's rim rather than off the station, and at less
+			-- than its radius, so the hall bites into it and opens straight in.
+			local m  = site.chambers[1]
+			parent   = 1
+			from     = m.centre - Vector3.new(0,
+				verticalOf(m.radius, m.flatten) - m.driftRadius, 0)
+			angle    = turn + (index - 2) / primaries * math.pi * 2
 				+ rand(-1, 1) * CFG.BearingJitter
-			distance = rand(CFG.NearRing.min, CFG.NearRing.max)
+			distance = m.radius * rand(CFG.Master.Ring.min, CFG.Master.Ring.max)
+
 		else
 			-- Hung off one of the chambers already placed, which is what turns
 			-- a star into a map
-			parent   = math.floor(rand(1, #site.chambers + 0.999))
+			-- From 2: branches hang off the halls, not off the master, or the
+			-- far ring collapses back onto the middle of the map
+			parent   = math.floor(rand(2, #site.chambers + 0.999))
 			local p  = site.chambers[parent]
 			-- Drifts leave a hall at its own floor, not through its middle
 			from     = p.centre - Vector3.new(0,
@@ -323,7 +339,24 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 			and rand(0, 1) < CFG.Void.Chance
 
 		local radius, flatten
-		if isVoid then
+		if isMaster then
+			flatten = CFG.Master.Flatten
+
+			-- Sized by headroom, not by the layer's middle. The master's floor
+			-- *is* the station deck — step off the cage and you are standing on
+			-- it — so the room grows upward from hubY and the only question is
+			-- how much space there is between the deck and the layer ceiling.
+			-- Half of that is the half-height, and radius is half-height times
+			-- flatten.
+			--
+			-- Sized any other way the floor lands wherever the band put it,
+			-- which was seventy studs below the deck: you would walk out of the
+			-- cage into open air.
+			local head = math.max(ceiling - hubY, 24)
+			radius = math.min(rMax * CFG.Master.Scale, CFG.Master.Cap,
+				head * 0.5 * flatten, StrataConfig.Mine.Radius - 60)
+
+		elseif isVoid then
 			flatten = CFG.Void.Flatten
 			-- Capped to what the layer will physically hold. A void is the one
 			-- room that sets its own proportions instead of deriving them, so it
@@ -376,6 +409,11 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 		centre = Vector3.new(centre.X,
 			math.clamp(centre.Y, floor + v, ceiling - v), centre.Z)
 
+		-- The master does not get placed in the band like a hall. Its floor is
+		-- the station deck, so its centre is one half-height above it, and that
+		-- holds however the shrink below changes the size.
+		if isMaster then centre = Vector3.new(0, hubY + v, 0) end
+
 		-- Two constraints that fight each other: halls must not swallow one
 		-- another, and none of them may reach the boundary wall. Pushing apart
 		-- moves a chamber outward, pulling it off the wall moves it back in, so
@@ -384,15 +422,21 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 		-- than by moving it somewhere it does not belong.
 		local function crowding()
 			local worst, push = 0, Vector3.new()
-			for _, other in ipairs(site.chambers) do
-				local apart = Vector3.new(centre.X - other.centre.X, 0,
-					centre.Z - other.centre.Z)
-				local want = (radius + other.radius) * CFG.Separation
-				local have = apart.Magnitude
-				if have < want then
-					local away = have > 0.01 and apart.Unit or Vector3.new(1, 0, 0)
-					push  = push + away * (want - have)
-					worst = math.max(worst, want - have)
+			for i, other in ipairs(site.chambers) do
+				-- The master is the one thing every hall is *meant* to overlap.
+				-- Holding halls off it the way they are held off each other
+				-- would push them all back outside its rim and quietly rebuild
+				-- the ring of rooms-down-corridors this replaced.
+				if i > 1 then
+					local apart = Vector3.new(centre.X - other.centre.X, 0,
+						centre.Z - other.centre.Z)
+					local want = (radius + other.radius) * CFG.Separation
+					local have = apart.Magnitude
+					if have < want then
+						local away = have > 0.01 and apart.Unit or Vector3.new(1, 0, 0)
+						push  = push + away * (want - have)
+						worst = math.max(worst, want - have)
+					end
 				end
 			end
 			return worst, push
@@ -423,10 +467,12 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 			-- The void keeps its proportions as it shrinks. Re-deriving flatten
 			-- here would widen it on the first retry and the tall room would
 			-- quietly become another wide one.
-			if not isVoid then flatten = flattenFor(radius, stratum) end
+			if not isVoid and not isMaster then flatten = flattenFor(radius, stratum) end
 			v       = verticalOf(radius, flatten)
-			centre  = Vector3.new(centre.X,
-				math.clamp(centre.Y, floor + v, ceiling - v), centre.Z)
+			centre  = isMaster
+				and Vector3.new(0, hubY + v, 0)
+				or Vector3.new(centre.X,
+					math.clamp(centre.Y, floor + v, ceiling - v), centre.Z)
 		end
 
 		-- Shrunk past being a room: drop it and take another bearing. The

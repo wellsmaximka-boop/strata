@@ -508,7 +508,12 @@ StrataConfig.Archetypes = {
 	FungalHollow = {
 		name    = "Fungal Hollow",
 		blurb   = "Something down here is alive, and it glows.",
-		lining  = Enum.Material.LeafyGrass,
+		-- Sandstone, not LeafyGrass. Every archetype needs its own material
+		-- because SetMaterialColor is global per material, which is why the
+		-- list reaches for exotic ones — but LeafyGrass keeps its clumpy lawn
+		-- texture whatever colour you tint it, and a hall lined with it reads
+		-- as a field, not a cave. The moss is the job of the mushrooms.
+		lining  = Enum.Material.Sandstone,
 		tint    = Color3.fromRGB(74, 92, 74),
 		light   = Color3.fromRGB(120, 255, 180),
 		fog     = Color3.fromRGB(26, 54, 42),
@@ -1231,7 +1236,13 @@ StrataConfig.Descent = {
 	-- than a constant: twenty-four studs into a five-hundred-stud layer puts the
 	-- station in the ceiling, and every hall in the site then sits a hundred and
 	-- fifty studs below the place you arrive at.
-	LandingDrop   = { Share = 0.35, Min = 30, Max = 150 },
+	-- How far into a layer the cage stops. Was 0.35, which put the deck roughly
+	-- a third of the way down — fine when a site was a small station with
+	-- tunnels leaving it, and wrong now that the station is cut inside the
+	-- master cavern. The cavern's floor has to be the deck's floor, and a cavern
+	-- grows upward from there, so a deck high in the layer leaves no headroom
+	-- and a tiny master. Landing deeper buys the room its height back.
+	LandingDrop   = { Share = 0.7, Min = 30, Max = 260 },
 	LandingRadius = 34,
 	LandingHalf   = 16,  -- half the height of the station chamber
 	Overrun       = 30,  -- how far the bore runs past the deepest station
@@ -1307,8 +1318,42 @@ end
 -- clear. Walking the near ring and one far chamber is about what a steady
 -- clock allows, so which far chamber is the decision the run is made of.
 StrataConfig.Site = {
-	Chambers  = { Base = 5, Max = 8 },
-	Primaries = 3,     -- how many galleries leave the station itself
+	-- One more than before, because the master cavern now takes the first slot
+	-- and these counts are chambers rather than halls
+	Chambers  = { Base = 6, Max = 9 },
+	Primaries = 3,     -- how many halls open off the master's rim
+
+	-- ── The master cavern ──
+	-- The site used to be a star: a 34-stud station, three 18-stud tunnels, and
+	-- the first real hall a hundred and twenty studs away. So the first thirty
+	-- seconds of every run — the part that decides whether the place feels big —
+	-- was spent in the two smallest spaces in the game.
+	--
+	-- Now the station is cut inside one enormous cavern, and the halls open off
+	-- its rim rather than hanging off the end of corridors. You arrive already
+	-- inside the space, you can see most of your options from where you land,
+	-- and the tunnels are short connectors between lobes instead of the route.
+	--
+	-- Scale is a multiple of the biggest ordinary hall the layer allows, then
+	-- held to whatever the layer's height and the claim's edge will take. The
+	-- Topsoil gets roughly 320 studs across and 146 tall; the Magma Vents get
+	-- 520 across and close to 390 tall.
+	Master = {
+		Scale = 1.9,    -- on the layer's own largest hall
+		Cap   = 240,    -- and never past this, so one site stays affordable
+
+		-- Wider than it is tall, and more so than an ordinary hall. Height is
+		-- the void's job and the void is a separate room; what the master is for
+		-- is floor you can see across. It also halves the carve — at its natural
+		-- proportions the Magma Vents master was 394 studs tall and on its own
+		-- cost more voxels than an entire site used to.
+		Flatten = 2.4,
+
+		-- Where the halls sit, as a share of the master's radius. Under 1 so
+		-- they bite into its rim and open straight into it; a hall placed past
+		-- the rim is a room down a corridor again.
+		Ring  = { min = 0.72, max = 0.98 },
+	},
 
 	-- Distance from the hub for the first ring, and from a parent hall for the
 	-- branches hanging off it. Halls are big enough now that these are mostly

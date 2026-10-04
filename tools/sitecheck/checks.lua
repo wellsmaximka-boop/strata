@@ -170,3 +170,26 @@ print("\n-- grain --")
 stats(grains, "per site")
 print(("  biggest bulge radius: %.1f studs"):format(biggest))
 print(("  worst extra carve: %.0f voxels (vs ~450k for a site)"):format(extra))
+
+-- The master cavern: is its floor the station deck? If it sits below, you walk
+-- out of the cage into open air; if above, the cage is buried in rock.
+print("\n-- master cavern --")
+for li, stratum in ipairs(StrataConfig.Strata) do
+	local hubY = StrataConfig.LandingY(stratum)
+		- StrataConfig.Descent.LandingHalf + 1.4
+	local worst, rad, hgt = 0, 0, 0
+	for tier = 1, 4 do
+		for s = 1, 40 do
+			local site = DigSite.Build(li * 100000 + tier * 7777 + s * 131,
+				stratum, tier, hubY)
+			local m = site.chambers[1]
+			if m then
+				local v = m.radius / m.flatten
+				worst = math.max(worst, math.abs((m.centre.Y - v) - hubY))
+				rad, hgt = m.radius, v * 2
+			end
+		end
+	end
+	print(("  %-11s deck %7.1f   master r=%5.1f (%5.0f across, %5.0f tall)   floor off deck by %.2f")
+		:format(stratum.name, hubY, rad, rad * 2, hgt, worst))
+end
