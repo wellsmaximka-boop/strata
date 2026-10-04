@@ -117,3 +117,28 @@ local short = 0
 for _, c in ipairs(counts) do if c < 4 then short += 1 end end
 print(("  sites with fewer than 4 halls: %d of %d"):format(short, #counts))
 print(("  sites with a vault: %d of %d"):format(vaults, #counts))
+
+-- Lights per site. Lamps are strung down galleries every LampEvery studs, and
+-- halls got bigger, so this is the number that decides whether a dark cave is
+-- also a cheap one.
+local lamps = {}
+for li, stratum in ipairs(StrataConfig.Strata) do
+	local hubY = StrataConfig.LandingY(stratum)
+	for tier = 1, 4 do
+		for s = 1, 20 do
+			local site = DigSite.Build(li * 100000 + tier * 7777 + s * 131,
+				stratum, tier, hubY)
+			local n = 0
+			for _, d in ipairs(site.drifts) do
+				local run = 0
+				for i = 1, #d.points - 1 do
+					run += (d.points[i + 1] - d.points[i]).Magnitude
+				end
+				n += math.floor(run / CFG.LampEvery)
+			end
+			note(lamps, n)
+		end
+	end
+end
+print("\n-- gallery lamps per site --")
+stats(lamps, "lamps")
