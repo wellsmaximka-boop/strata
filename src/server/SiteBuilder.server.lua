@@ -122,9 +122,17 @@ local function fillChamber(chamber, material, grow)
 	end
 end
 
+-- A gallery's radius varies along its run now, so the ball at each point is
+-- sized from the parallel radii list the generator hands over. Older sites
+-- without one fall back to the single radius, which is the same shape.
+local function driftRadiusAt(drift, i)
+	local r = drift.radii and drift.radii[i]
+	return r or drift.radius
+end
+
 local function fillDrift(drift, material, grow)
 	for i, point in ipairs(drift.points) do
-		terrain:FillBall(point, drift.radius + grow, material)
+		terrain:FillBall(point, driftRadiusAt(drift, i) + grow, material)
 		if i % (FILLS_PER_FRAME * 3) == 0 then task.wait() end
 	end
 end
@@ -186,7 +194,7 @@ local function carve(site, stratum)
 	for _, drift in ipairs(site.drifts) do
 		local tail = math.ceil(44 / (drift.radius * CFG.DriftStep))
 		for i = math.max(#drift.points - tail, 1), #drift.points do
-			terrain:FillBall(drift.points[i], drift.radius, Enum.Material.Air)
+			terrain:FillBall(drift.points[i], driftRadiusAt(drift, i), Enum.Material.Air)
 		end
 	end
 
@@ -293,7 +301,10 @@ local function lightDrifts(site, folder)
 			while along < span do
 				local at = a + (b - a) * (along / math.max(span, 0.01))
 				lit += 1
-				lamp(at - Vector3.new(0, drift.radius - 0.4, 0), colour,
+				-- Off the *local* floor. In a throat the floor is nine studs
+				-- down, not eighteen, and a lamp hung at eighteen is a lamp
+				-- buried in rock.
+				lamp(at - Vector3.new(0, driftRadiusAt(drift, i) - 0.4, 0), colour,
 					lit % 2 == 1, folder)
 				along += CFG.LampEvery
 				run   += CFG.LampEvery
@@ -303,8 +314,9 @@ local function lightDrifts(site, folder)
 
 		-- A board at the station end saying where this one goes
 		if drift.from == 0 then
-			local out = drift.points[math.min(3, #drift.points)]
-			signpost(Vector3.new(out.X, out.Y - drift.radius + 0.4, out.Z),
+			local idx = math.min(3, #drift.points)
+			local out = drift.points[idx]
+			signpost(Vector3.new(out.X, out.Y - driftRadiusAt(drift, idx) + 0.4, out.Z),
 				math.atan2(out.X, out.Z) + math.pi, chamber, folder)
 		end
 	end

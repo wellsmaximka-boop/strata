@@ -254,3 +254,55 @@ Things we've decided not to do yet, so they stop coming back up.
 
 What's actually built and why is in `DESIGN-EXPEDITIONS.md`. Sections 6–11 cover
 the descent, dig sites, flares, signposting and the UI restyle.
+
+---
+
+## 11. Cave layout — the DRG pass
+
+Worked from the reference brief you pasted. Most of it was right and is in;
+three numbers in it were impossible here and I adapted rather than followed.
+
+- [x] **Choke points.** Galleries were 18 studs wide for their whole run, which
+  is generous plumbing, and generous plumbing is still plumbing. 54% of them now
+  pinch to a 9-stud throat partway along, eased in and out rather than stepping.
+  The path is unchanged — only the radius moves.
+  → Verified open: 70,088 segments across 720 sites, **0 sealed pockets**, with
+  10.75 studs of spare overlap at the tightest pair. This is the bug class that
+  has bitten twice, so it is measured, not assumed.
+- [x] **Hall size.** Was 36–112 studs across the three layers, under the 80–150
+  the brief asks for. Now 34–150, median 76. The Topsoil spends it on width
+  rather than height because it is only 160 studs thick.
+- [x] **The void.** 31% of sites now end in a room 150–286 studs tall and taller
+  than it is wide, where the layer has the height to hold one. Never in the
+  Topsoil, which cannot.
+- [x] **Darkness.** Caves were lit to about camp level, so every lamp in them was
+  competing with free skylight. Lighting is now depth-driven on the client:
+  the camp keeps exactly the look it had, and the caves crossfade to near-black
+  with heavy distance haze tinted off the layer's own rock.
+- [x] **A helmet lamp.** This is the piece the brief was missing and without which
+  the rest is a trap — there was no player light anywhere in the game, so going
+  dark would have left you blind between flares. Permanent spotlight on the
+  head, plus a weak bulb at the chest so your own feet exist.
+- [x] Hard shadow edges (`ShadowSoftness = 0`). A soft shadow reads as daylight
+  through cloud.
+- [x] `Lighting.Technology = Future` — the brief asks for this and it was
+  already set, so point-light shadows were working.
+
+**Where I did not follow it, and why:**
+
+- [!] **Ambient is not pure black.** At zero, every surface no lamp touches
+  renders flat #000 and Future lighting has no bounce to recover it — the cave
+  stops having a silhouette or an up. It is set to 5 units of blue-grey, which
+  is still black on screen. One number in `Look.Cave` if you want the absence.
+- A 300-tall, 250-across void does not fit. The mine is 359 studs in radius, so
+  250 cannot keep its clearance off the boundary wall, and a room whose floor
+  you can walk onto needs twice its half-height under the layer ceiling. 165
+  and ~286 is what the world takes. It matters less than it sounds: a lamp
+  reaches about 30 studs, so a 286 roof is already ten times past being lit.
+- Glowing veins embedded in the walls — not done. The props and mushrooms
+  already glow and will pop much harder now the caves are dark; I'd rather see
+  that first than add more light to a room we just finished dimming.
+
+- [ ] **Needs your eyes.** Does the throat read as a squeeze or as an
+  obstruction? Is the void awe or annoyance? Is the dark atmospheric or just
+  dark — and is the helmet lamp too weak, too strong, or about right?

@@ -166,7 +166,22 @@ end
 -- A drift is not a straight pipe. It leaves the hub level, sags, and arrives at
 -- the floor of the chamber it serves, so you walk down into a hall rather than
 -- stepping off a ledge into one.
-local function driftPath(from, to, radius, rand)
+-- `pinch`, when given as { at, span, radius }, squeezes part of the run down to
+-- a throat. Only the radius moves — the path, the sway and the sag are the path,
+-- the sway and the sag — and it eases in and out rather than stepping, so the
+-- wall closes on you instead of changing gauge like a pipe fitting.
+--
+-- Returns the points and a parallel list of radii.
+local function driftPath(from, to, radius, rand, pinch)
+	local function radiusAt(t)
+		if not pinch then return radius end
+		-- How far off the middle of the throat, in half-spans
+		local d = math.abs(t - pinch.at) / (pinch.span * 0.5)
+		if d >= 1 then return radius end
+		local k = 1 - d * d * (3 - 2 * d)   -- 1 in the throat, 0 at its edges
+		return radius + (pinch.radius - radius) * k
+	end
+
 	-- Spacing comes from the tunnel's own width, not from a constant. The
 	-- tunnel is carved as a run of overlapping balls, so points further apart
 	-- than the ball is wide do not make a tunnel — they make a row of sealed
@@ -186,30 +201,50 @@ local function driftPath(from, to, radius, rand)
 			+ Vector3.new(0, -CFG.DriftSag * bend, 0)
 	end
 
-	local points = {}
-	for i = 0, steps do table.insert(points, at(i / steps)) end
+	-- The path parameter is carried alongside each point, because once the list
+	-- has been subdivided there is no other way to know where on the run a
+	-- point sits — and that is what its radius is read from.
+	local points, ts = {}, {}
+	for i = 0, steps do
+		local t = i / steps
+		table.insert(points, at(t))
+		table.insert(ts, t)
+	end
 
 	-- The sway and the sag bow the path, so two points are further apart than
 	-- the straight line they were spaced along — most of all near the ends,
 	-- where the bend changes fastest. Anything still too far apart gets a point
 	-- put between it, measured rather than assumed.
-	for _ = 1, 4 do
+	--
+	-- Spacing is judged against the *narrower* of the two balls, so a throat is
+	-- packed tightly enough to stay open. Spacing the whole run at the throat's
+	-- width instead would double the carve for nothing, since the wide parts
+	-- are already overlapping.
+	for _ = 1, 6 do
 		local tight = true
-		local out   = { points[1] }
+		local outP  = { points[1] }
+		local outT  = { ts[1] }
 
 		for i = 1, #points - 1 do
-			if (points[i + 1] - points[i]).Magnitude > want then
-				table.insert(out, points[i]:Lerp(points[i + 1], 0.5))
+			local span = math.min(radiusAt(ts[i]), radiusAt(ts[i + 1])) * CFG.DriftStep
+			if (points[i + 1] - points[i]).Magnitude > span then
+				local mid = (ts[i] + ts[i + 1]) * 0.5
+				table.insert(outP, at(mid))
+				table.insert(outT, mid)
 				tight = false
 			end
-			table.insert(out, points[i + 1])
+			table.insert(outP, points[i + 1])
+			table.insert(outT, ts[i + 1])
 		end
 
-		points = out
+		points, ts = outP, outT
 		if tight then break end
 	end
 
-	return points
+	local radii = {}
+	for i, t in ipairs(ts) do radii[i] = radiusAt(t) end
+
+	return points, radii
 end
 
 -- Builds a whole site. `hubY` is the deck of the landing station; everything is
@@ -268,15 +303,46 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 			distance = rand(CFG.FarRing.min, CFG.FarRing.max)
 		end
 
-		-- The last chamber is the one worth the walk: bigger, rarer, further
+		-- The last chamber is the one worth the walk: bigger, rarer, further.
+		-- Where the layer has the height to hold one, it is not merely bigger —
+		-- it is the void, carved past the cap and taller than it is wide, so its
+		-- roof is hundreds of studs above a lamp that reaches thirty. The
+		-- Topsoil can never have one, and a layer ladder whose layers all feel
+		-- the same is a list.
+		--
+		-- It goes through the same fit, crowding and shrink loop as every other
+		-- hall rather than getting its own. If the layer or its neighbours will
+		-- not take it, it comes back down to a large ordinary vault instead of
+		-- failing, and the site is still a site.
 		local last   = index == count
 		local rMin, rMax = radiusBand(stratum)
-		local radius = last
-			and math.min(rMax * CFG.VaultBoost, CFG.RadiusCap)
-			or rand(rMin, rMax)
+		local _, _, budget = layerBand(stratum)
 
-		local flatten = flattenFor(radius, stratum)
-		local v       = verticalOf(radius, flatten)
+		local isVoid = last
+			and budget >= CFG.Void.MinBudget
+			and rand(0, 1) < CFG.Void.Chance
+
+		local radius, flatten
+		if isVoid then
+			flatten = CFG.Void.Flatten
+			-- Capped to what the layer will physically hold. A void is the one
+			-- room that sets its own proportions instead of deriving them, so it
+			-- is also the one that can ask for more height than the band has —
+			-- and a half-height over budget puts the floor above the ceiling,
+			-- which is a crash in the clamp below rather than an ugly room.
+			-- The Stonebed has 143 studs to give and takes a 134 radius; the
+			-- Magma Vents have 243 and are not limited by this at all.
+			radius = math.min(rand(CFG.Void.Radius.min, CFG.Void.Radius.max),
+				budget * flatten)
+		elseif last then
+			radius  = math.min(rMax * CFG.VaultBoost, CFG.RadiusCap)
+			flatten = flattenFor(radius, stratum)
+		else
+			radius  = rand(rMin, rMax)
+			flatten = flattenFor(radius, stratum)
+		end
+
+		local v = verticalOf(radius, flatten)
 
 		-- Depth is measured off the layer rather than off the drift line, so a
 		-- deep layer gets chambers at genuinely different levels and a thin one
@@ -354,13 +420,19 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 			if worst <= 0 and fits(centre, radius, flatten, stratum) then break end
 			tries  += 1
 			radius *= 0.86
-			flatten = flattenFor(radius, stratum)
+			-- The void keeps its proportions as it shrinks. Re-deriving flatten
+			-- here would widen it on the first retry and the tall room would
+			-- quietly become another wide one.
+			if not isVoid then flatten = flattenFor(radius, stratum) end
 			v       = verticalOf(radius, flatten)
 			centre  = Vector3.new(centre.X,
 				math.clamp(centre.Y, floor + v, ceiling - v), centre.Z)
 		end
 
-		if fits(centre, radius, flatten, stratum) then
+		-- Shrunk past being a room: drop it and take another bearing. The
+		-- attempt is spent either way, and a site with five real halls beats one
+		-- with six where the sixth is a pocket.
+		if fits(centre, radius, flatten, stratum) and radius >= CFG.MinRadius then
 			local archetypeId
 			if wantArchetype and index == primaries then
 				-- A survey contract names a room type. Putting it on the last
@@ -388,6 +460,15 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 				stratum     = stratum,
 				name        = chamberName(rand),
 				role        = last and "vault" or "cache",
+				-- True only while the room is still tall enough to deserve the
+				-- name: the crowding shrink runs on a void like any other hall
+				-- and can hand back something a lamp would light end to end.
+				--
+				-- Nothing has to be done to keep the roof dark. Lamps are strung
+				-- down galleries and props sit on floors, so no light in the
+				-- game is ever placed near a ceiling — the height does the work
+				-- on its own. This is here for the map and the banner to read.
+				void        = (isVoid and v * 2 >= CFG.Void.KeepAbove) or nil,
 				-- Blobs, so a hall is a lumpy open space rather than a ball.
 				-- Spread wide and kept shallow, which is what makes it read as
 				-- a cavern and not a bubble.
@@ -531,13 +612,32 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 			-- a ledge twenty studs up looks better for about one second and
 			-- then you are in a room you cannot climb out of.
 			local mouth = centre - Vector3.new(0, v - chamber.driftRadius, 0)
+
+			-- Roughly half of the galleries pinch somewhere along their run. Not
+			-- all of them, because a throat is only a throat if the gallery
+			-- before it was wide.
+			local pinch
+			if rand(0, 1) < CFG.Choke.Chance then
+				pinch = {
+					at     = rand(CFG.Choke.At.min, CFG.Choke.At.max),
+					span   = CFG.Choke.Span,
+					-- min, so a "pinch" is never wider than the gallery it is in.
+					-- A thin layer already narrows driftRadius on its own.
+					radius = math.min(chamber.driftRadius,
+						rand(CFG.Choke.Radius.min, CFG.Choke.Radius.max)),
+				}
+			end
+
+			local points, radii = driftPath(from, mouth, chamber.driftRadius, rand, pinch)
 			table.insert(site.drifts, {
 				from   = parent,
 				to     = chamber.index,
 				a      = from,
 				b      = mouth,
 				radius = chamber.driftRadius,
-				points = driftPath(from, mouth, chamber.driftRadius, rand),
+				points = points,
+				radii  = radii,
+				choke  = pinch and pinch.radius or nil,
 			})
 		end
 	end

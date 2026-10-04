@@ -258,6 +258,63 @@ StrataConfig.Look = {
 	-- the generator, and the whole surface stops looking like a building site.
 	TurfDepth  = 5,
 	TurfColour = Color3.fromRGB(96, 122, 62),
+
+	-- ── Underground ──────────────────────────────────────────────────────────
+	-- Everything above describes a timber lodge in late-afternoon daylight.
+	-- None of it is right for a basalt hall seven hundred studs down, and
+	-- Lighting is a single global object, so one set of values cannot serve
+	-- both. These are what the same properties become below the surface, and
+	-- CaveLighting crossfades between the two on the client — where a change to
+	-- Lighting is local to one player's view, so someone at the lodge and
+	-- someone at the bottom of the shaft each get the air they are standing in.
+	Cave = {
+		-- Not pure black, though the reference asks for it, and this is the one
+		-- place worth arguing. With Ambient at zero every surface no lamp
+		-- touches renders flat #000, and Future lighting has no bounce to
+		-- recover it — so a cave with no flare in it stops being a cave and
+		-- becomes an absence, with no silhouette, no edge and no sense of which
+		-- way is up. Five units of blue-grey is still black on screen and still
+		-- keeps the rock's shape. Set it to zero if you want the absence.
+		Ambient      = Color3.fromRGB(5, 5, 8),
+		Brightness   = 0.3,
+		ExposureBias = -0.2,
+		Diffuse      = 0.02,   -- skylight bounce, which underground is a lie
+		Specular     = 0.05,
+
+		-- Hard shadow edges. A soft shadow reads as daylight through cloud; a
+		-- lamp in a rock corridor throws a hard one.
+		ShadowSoftness = 0,
+
+		-- Distance haze. This is what stops you seeing across a big room: the
+		-- far wall fades into its own darkness and you have to throw a flare to
+		-- learn the shape of the space. Tinted per layer off that layer's own
+		-- rock colour, so a layer added later gets its own air for nothing.
+		Density   = 0.42,
+		Haze      = 0.7,
+		Glare     = 0,
+		TintShare = 0.17,  -- how much of the rock's colour the air keeps
+
+		-- The crossfade. Camp lighting at or above FadeFrom, cave lighting at
+		-- or below FadeTo, interpolated between — so the descent darkens as it
+		-- drops rather than switching at a line.
+		FadeFrom = -6,
+		FadeTo   = -74,
+	},
+
+	-- The lamp on your helmet, and the reason the dark above is survivable. DRG
+	-- gives every dwarf one permanently; without it, three flares on a thirty
+	-- second refresh is not atmosphere, it is a blindfold with intermissions.
+	Headlamp = {
+		Angle      = 64,
+		Range      = 76,
+		Brightness = 1.75,
+		Colour     = Color3.fromRGB(255, 243, 212),
+		Shadows    = true,
+		-- A weak bulb at the chest so your own hands and the ground under your
+		-- feet exist. Without it you cast a lamp forward and stand in a hole.
+		FillRange      = 15,
+		FillBrightness = 0.5,
+	},
 }
 
 -- ── Strata ───────────────────────────────────────────────────────────────────
@@ -1206,8 +1263,19 @@ StrataConfig.Site = {
 
 	-- Chamber size comes from the layer's own cavern band, scaled up, then cut
 	-- back if the layer is too thin to hold it even lying flat.
-	RadiusScale = { min = 1.5, max = 1.6 },
-	RadiusCap   = 112,      -- the biggest hall anywhere, so one fill stays cheap
+	-- Scaled up again. At 1.5/1.6 and a cap of 112 the halls measured 36–112
+	-- across the three layers, under the 80–150 the reference work calls for.
+	-- These land them at 41–84 in the Topsoil (which is only 160 studs thick, so
+	-- it buys width rather than height) and 68–150 in the Magma Vents.
+	RadiusScale = { min = 1.7, max = 2.0 },
+	RadiusCap   = 150,      -- the biggest ordinary hall; the void ignores this
+
+	-- The smallest hall worth placing. Crowded halls are shrunk in place rather
+	-- than moved, and with the radii above that shrink could run eight times and
+	-- leave a 12-stud "hall" — narrower than the 18-stud gallery serving it,
+	-- which reads as a dead end with a lamp in it. Below this the hall is
+	-- abandoned and the site tries another bearing, which it has attempts for.
+	MinRadius   = 34,
 	VaultBoost  = 1.2,      -- the hall at the far end of the map
 
 	Flatten    = 1.32,  -- over 1 makes a hall wider than it is tall
@@ -1258,6 +1326,64 @@ StrataConfig.Site = {
 	DriftSway   = 42,   -- how far the tunnel wanders off the straight line
 	DriftSag    = 20,
 	LampEvery   = 34,   -- lamps down a gallery, in studs
+
+	-- ── Choke points ──
+	-- The thing a gallery of one width can never do. A cave reads as a cave
+	-- because it alternates squeeze and reveal: a throat you can nearly touch
+	-- both sides of, and then a space whose far wall you cannot see. Eighteen
+	-- studs the whole way is generous plumbing, and generous plumbing is still
+	-- plumbing.
+	--
+	-- A pinch is a narrowing of part of a gallery's run, not a new tunnel. The
+	-- path, the sway and the sag are unchanged; only the radius moves. Nine
+	-- studs still clears a player four times over, so this is about what the
+	-- eye reads, not about getting stuck.
+	Choke = {
+		Chance = 0.55,                      -- share of galleries that pinch
+		Radius = { min = 9, max = 13 },
+		At     = { min = 0.32, max = 0.68 },-- where along the run, 0..1
+		Span   = 0.26,                      -- how much of the run it takes up
+	},
+
+	-- ── The void ──
+	-- One room per site, where the layer is thick enough to hold it: carved far
+	-- past the usual cap and taller than it is wide, so the ceiling sits above
+	-- anything a lamp or a flare will reach and the space reads as unmeasured.
+	--
+	-- This cannot happen everywhere and that is geometry, not a shortcut. The
+	-- Topsoil is 160 studs thick; a room 400 tall does not go in it at any
+	-- price, and punching through the seam would hand a Topsoil contract
+	-- Stonebed ore in a room the HUD names wrongly. MinBudget is the test: the
+	-- Topsoil has 73 studs of half-height and is out, the Stonebed has 143 and
+	-- the Magma Vents 243.
+	--
+	-- The reference asks for 300 tall and 250 across. Neither number is
+	-- available: the mine is only 359 studs in radius, so a 250 hall cannot keep
+	-- its 40 off the boundary wall, and a room whose floor you can walk onto
+	-- needs twice its half-height under the layer ceiling. 165 and ~350 is what
+	-- the world will actually take.
+	--
+	-- It does not matter as much as it sounds. What makes a ceiling read as
+	-- unmeasured is that no light reaches it, and a lamp reaches about 30 studs.
+	-- At 350 the roof is already ten times past that, so it is as black as 400
+	-- would be. The void is lit along its floor only.
+	Void = {
+		-- Attempted, not granted. A void is placed last, which means it is
+		-- crowded by every hall already down, and about two in five get shrunk
+		-- below KeepAbove and demoted to an ordinary vault. At 0.55 that left
+		-- voids in under a quarter of sites, which is too rare for the one room
+		-- the layer is remembered for.
+		Chance    = 0.8,
+		MinBudget = 140,  -- half-height the layer must have spare
+		Radius    = { min = 120, max = 165 },
+		Flatten   = 0.94, -- UNDER one, so this one is taller than it is wide
+
+		-- A void crowded by its neighbours goes through the same shrink as any
+		-- hall and can come out 77 studs tall, which is just a room. Under this
+		-- height it stops calling itself a void, so the builder lights it
+		-- normally instead of leaving a reachable ceiling black.
+		KeepAbove = 150,
+	},
 
 	-- The rock around a hall is worth mining. Sites are the reason to take a
 	-- contract rather than dig a hole in the Topsoil for an hour.
