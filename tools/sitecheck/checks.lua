@@ -142,3 +142,31 @@ for li, stratum in ipairs(StrataConfig.Strata) do
 end
 print("\n-- gallery lamps per site --")
 stats(lamps, "lamps")
+
+-- Grain: how much it adds, and whether a bulge is ever big enough to be an
+-- obstacle rather than a surface.
+local grains, biggest = {}, 0
+local extra = 0
+for li, stratum in ipairs(StrataConfig.Strata) do
+	local hubY = StrataConfig.LandingY(stratum)
+	for tier = 1, 4 do
+		for s = 1, 20 do
+			local site = DigSite.Build(li * 100000 + tier * 7777 + s * 131,
+				stratum, tier, hubY)
+			local n, vol = 0, 0
+			for _, c in ipairs(site.chambers) do
+				n += #c.rough
+				for _, g in ipairs(c.rough) do
+					biggest = math.max(biggest, g.radius)
+					vol += (4 / 3) * math.pi * g.radius ^ 3
+				end
+			end
+			note(grains, n)
+			extra = math.max(extra, vol / 64)
+		end
+	end
+end
+print("\n-- grain --")
+stats(grains, "per site")
+print(("  biggest bulge radius: %.1f studs"):format(biggest))
+print(("  worst extra carve: %.0f voxels (vs ~450k for a site)"):format(extra))

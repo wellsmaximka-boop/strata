@@ -1368,6 +1368,34 @@ StrataConfig.Site = {
 	-- hall and becomes a sealed pocket in the rock.
 	PitDepth = { min = 0.55, max = 0.94 },
 
+	-- ── Grain ──
+	-- Relief at the scale of a hand rather than a hall.
+	--
+	-- A hall is carved from overlapping spheres, and a sphere has no features —
+	-- which is exactly why the caves photograph as smooth brown domes however
+	-- big they get. Pillars and terraces give the room a shape; nothing gives
+	-- the rock a surface.
+	--
+	-- These are small spheres scattered over the walls: about half put rock back
+	-- and bulge out, the rest take rock away and bite in. Centred on the surface
+	-- so each one is half buried, which is what makes a bump a bump instead of a
+	-- ball stuck to a wall.
+	--
+	-- They are laid down before the gallery mouths are re-cut, so one landing
+	-- across a tunnel entrance is cleared again by that pass and cannot seal a
+	-- hall.
+	Rough = {
+		Count = { min = 34, max = 62 },      -- per hall
+		Size  = { min = 0.05, max = 0.12 },  -- as a share of the host sphere
+		Solid = 0.55,                        -- share that bulge rather than bite
+
+		-- An absolute ceiling, because a share of the host means the biggest
+		-- sphere in the biggest void threw a 15.7-stud lump — eight studs proud
+		-- of the wall, which is higher than you can jump. At nine the worst case
+		-- stands four and a half studs out: a step, not a wall.
+		Max   = 9,
+	},
+
 	-- ── Galleries ──
 	-- Wide enough that walking one does not feel like a corridor. The old ten
 	-- was a pipe; at eighteen you can see the hall you are heading for from the

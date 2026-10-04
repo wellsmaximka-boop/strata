@@ -188,6 +188,19 @@ local function carve(site, stratum)
 		task.wait()
 	end
 
+	-- Grain: the surface of the rock rather than the shape of the room. Half of
+	-- these bulge out of the wall and half bite into it, and together they are
+	-- the difference between a cavern and a smooth dome. Last, so they sit on
+	-- top of the terraces and pillars too.
+	for _, chamber in ipairs(order) do
+		for i, g in ipairs(chamber.rough) do
+			terrain:FillBall(chamber.centre + g.offset, g.radius,
+				g.solid and stratum.material or Enum.Material.Air)
+			if i % (FILLS_PER_FRAME * 3) == 0 then task.wait() end
+		end
+		task.wait()
+	end
+
 	-- A shelf can land across the mouth of the drift that serves the hall, and
 	-- a terrace you cannot get past is a chamber you cannot enter. The last few
 	-- studs of every tunnel are cut again, after everything else.
@@ -376,10 +389,13 @@ local function depositModel(chamber, index, hp, folder)
 		shard.CanQuery = true
 	end
 
+	-- Shadows off, so this range is how far it lights *through the rock*, not
+	-- how far it lights the hall. A flat 46 was wider than a small hall and the
+	-- glow leaked into whatever was next door. Held to half the room.
 	local light = Instance.new("PointLight")
 	light.Color      = colour
 	light.Brightness = 3
-	light.Range      = 46
+	light.Range      = math.min(46, chamber.radius * 0.5)
 	light.Shadows    = false
 	light.Parent     = base
 

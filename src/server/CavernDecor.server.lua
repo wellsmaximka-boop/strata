@@ -94,6 +94,20 @@ local GLOW = {
 	Reach      = 1.5,    -- multiplier on the prop's own size
 	PoolBright = 1.2,
 	PoolReach  = 3.2,
+
+	-- A PointLight with Shadows off does not stop at a wall. It ignores the
+	-- geometry entirely and keeps going, so its range is not "how far it lights
+	-- this room" but "how far it lights everything, through the rock".
+	--
+	-- The pool light's range is a multiple of the pool, and the pool is a
+	-- fraction of the hall, so it worked out at up to 1.09 x the hall's own
+	-- radius — meaning the far side of the sphere was always somewhere in the
+	-- next hall. That is the flat red wash with the hard diagonal edge: the
+	-- edge is the range sphere cutting the terrain surface.
+	--
+	-- Capped against the room it is in. Half the radius lights the floor of the
+	-- hall generously and dies before it reaches the wall, let alone past it.
+	PoolCap    = 0.5,
 }
 
 local litCount = 0
@@ -222,7 +236,7 @@ end
 
 -- A pool of molten rock: a glowing surface with a rim, and the light that
 -- makes the whole room orange.
-local function lavaPool(parent, base, radius, colour)
+local function lavaPool(parent, base, radius, colour, roomRadius)
 	local surface = block(parent, Vector3.new(radius * 2, 0.6, radius * 2),
 		CFrame.new(base + Vector3.new(0, 0.3, 0)), colour, nil, true)
 	surface.Transparency = 0.08
@@ -238,7 +252,8 @@ local function lavaPool(parent, base, radius, colour)
 	local pl = Instance.new("PointLight")
 	pl.Color      = colour
 	pl.Brightness = GLOW.PoolBright
-	pl.Range      = radius * GLOW.PoolReach
+	pl.Range      = math.min(radius * GLOW.PoolReach,
+		(roomRadius or radius * 3) * GLOW.PoolCap)
 	pl.Shadows    = false
 	pl.Parent     = surface
 end
@@ -312,7 +327,8 @@ local function furnish(room)
 					boulder(roomFolder, ground, 2 + rand() * 4, arch.tint or light)
 				elseif kind == "lava" and lights < 4 then
 					lights += 1
-					lavaPool(roomFolder, ground, room.radius * (0.18 + rand() * 0.16), light)
+					lavaPool(roomFolder, ground, room.radius * (0.18 + rand() * 0.16),
+						light, room.radius)
 				elseif kind == "water" then
 					waterPool(roomFolder, ground, room.radius * (0.22 + rand() * 0.18))
 				end

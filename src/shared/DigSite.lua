@@ -475,6 +475,7 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 				blobs       = {},
 				pillars     = {},
 				shelves     = {},
+				rough       = {},
 			}
 
 			-- Blobs are true spheres, not squashed ones, because the only tool
@@ -577,6 +578,36 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 				})
 			end
 
+
+			-- Grain. The hall is built from spheres and a sphere has no
+			-- features, which is why a two-hundred-stud cavern still photographs
+			-- as a smooth brown dome: the pillars and terraces give the room a
+			-- shape, but nothing gives the rock a surface.
+			--
+			-- Each of these is a small sphere sitting half-buried in a wall.
+			-- About half put rock back and bulge out of it; the rest take rock
+			-- away and bite into it. Half-buried is the whole trick — centred on
+			-- the surface rather than outside it, so a bump is part of the wall
+			-- instead of a ball stuck to one.
+			--
+			-- Taken off the blobs, so alcoves and pit shafts get their own grain
+			-- for free rather than staying the one smooth part of the room.
+			local grains = math.floor(rand(CFG.Rough.Count.min, CFG.Rough.Count.max + 0.999))
+			for _ = 1, grains do
+				local host = chamber.blobs[math.floor(rand(1, #chamber.blobs + 0.999))]
+				local a    = rand() * math.pi * 2
+				local lift = rand(-1, 1)
+				local flat = math.sqrt(math.max(1 - lift * lift, 0))
+				local dir  = Vector3.new(math.cos(a) * flat, lift, math.sin(a) * flat)
+
+				table.insert(chamber.rough, {
+					offset = host.offset + dir * host.radius,
+					radius = math.min(
+						host.radius * rand(CFG.Rough.Size.min, CFG.Rough.Size.max),
+						CFG.Rough.Max),
+					solid  = rand(0, 1) < CFG.Rough.Solid,
+				})
+			end
 
 			-- The furthest any blob reaches from the chamber centre, so the
 			-- depth test can reject a distant point with one comparison
