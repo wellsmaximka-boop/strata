@@ -1468,6 +1468,11 @@ StrataConfig.Site = {
 	Pillar = {
 		Drums = { min = 3, max = 5 },
 		Lean  = 0.55,   -- how far the top wanders off the foot, in base radii
+
+		-- Pillars from the rim halls that land inside the master are rebuilt as
+		-- the master's own, floor to ceiling. Nearly half of them do, so without
+		-- a ceiling the big room would end up a forest.
+		MasterCap = 16,
 	},
 
 	-- Stepped floors. Every reference for this is a terrace rather than a flat

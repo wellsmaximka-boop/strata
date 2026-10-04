@@ -163,6 +163,37 @@ local function fits(centre, radius, flatten, stratum)
 		and reach <= StrataConfig.Mine.Radius - 40
 end
 
+-- A column of stacked drums.
+--
+-- A single cylinder is architecture: perfectly round, perfectly straight, the
+-- same width top to bottom. Three to five overlapping drums, thickest at the
+-- foot and pinched about two thirds up, with a consistent lean so they stack
+-- rather than scatter, read as something that grew.
+--
+-- Out here as a function because a pillar that falls inside the master cavern is
+-- rebuilt to span the master instead of its own hall, and that needs the same
+-- shape at a different height.
+local function makePillar(offset, base, full, rand)
+	local la, lean = rand() * math.pi * 2, base * CFG.Pillar.Lean
+	local lx, lz = math.cos(la) * lean, math.sin(la) * lean
+
+	local drums = math.floor(rand(CFG.Pillar.Drums.min, CFG.Pillar.Drums.max + 0.999))
+	local segments = {}
+	for s = 1, drums do
+		local t     = (s - 0.5) / drums   -- 0 at the base, 1 at the top
+		local hs    = full / drums
+		local taper = 1 - 0.45 * math.sin(t * math.pi * 0.86)
+		table.insert(segments, {
+			y      = -full * 0.5 + full * t,
+			radius = base * taper * rand(0.88, 1.12),
+			height = hs * 1.35,   -- overlapping, so there are no seams
+			lean   = Vector3.new(lx * (t - 0.5) * 2, 0, lz * (t - 0.5) * 2),
+		})
+	end
+
+	return { offset = offset, radius = base, height = full, segments = segments }
+end
+
 -- A drift is not a straight pipe. It leaves the hub level, sags, and arrives at
 -- the floor of the chamber it serves, so you walk down into a hall rather than
 -- stepping off a ledge into one.
@@ -664,48 +695,14 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 			-- ceiling, put back after the air is carved. The single biggest
 			-- thing for scale — you cannot tell how big a space is until
 			-- something inside it blocks your view of the far side.
-			-- Built in segments rather than as one cylinder. A single cylinder is
-			-- a column: perfectly round, perfectly straight, the same width top
-			-- to bottom, and it reads as architecture in a room that is supposed
-			-- to be rock. Three to five stacked drums of varying width, each
-			-- nudged off the axis, read as something that grew — wider at the
-			-- base, pinched in the middle, leaning slightly.
 			local pillars = math.floor(rand(CFG.Pillars.min, CFG.Pillars.max + 0.999))
 			for _ = 1, pillars do
 				local a = rand() * math.pi * 2
 				local d = radius * rand(0.28, 0.82)
-				local base = radius * rand(CFG.PillarWidth.min, CFG.PillarWidth.max)
-				local full = v * 2 + 14
-
-				-- A consistent lean, so the drums stack into one leaning column
-				-- instead of scattering
-				local la, lean = rand() * math.pi * 2, base * CFG.Pillar.Lean
-				local lx, lz = math.cos(la) * lean, math.sin(la) * lean
-
-				local drums = math.floor(rand(CFG.Pillar.Drums.min,
-					CFG.Pillar.Drums.max + 0.999))
-				local segments = {}
-				for s = 1, drums do
-					-- 0 at the base, 1 at the top
-					local t  = (s - 0.5) / drums
-					local hs = full / drums
-					-- Thickest at the foot, narrowest around two thirds up,
-					-- flaring a little again at the cap
-					local taper = 1 - 0.45 * math.sin(t * math.pi * 0.86)
-					table.insert(segments, {
-						y      = -full * 0.5 + full * t,
-						radius = base * taper * rand(0.88, 1.12),
-						height = hs * 1.35,   -- overlapping, so there are no seams
-						lean   = Vector3.new(lx * (t - 0.5) * 2, 0, lz * (t - 0.5) * 2),
-					})
-				end
-
-				table.insert(chamber.pillars, {
-					offset = Vector3.new(math.cos(a) * d, 0, math.sin(a) * d),
-					radius = base,
-					height = full,
-					segments = segments,
-				})
+				table.insert(chamber.pillars, makePillar(
+					Vector3.new(math.cos(a) * d, 0, math.sin(a) * d),
+					radius * rand(CFG.PillarWidth.min, CFG.PillarWidth.max),
+					v * 2 + 14, rand))
 			end
 
 
@@ -819,6 +816,69 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 				radii  = radii,
 				choke  = pinch and pinch.radius or nil,
 			})
+		end
+	end
+
+	-- ── Relief that falls into the master cavern ─────────────────────────────
+	-- The halls bite into the master's rim on purpose, which means a good part
+	-- of every hall's "wall" is not wall at all — it is open space in the middle
+	-- of the big room. Anything a hall puts back on that wall is therefore left
+	-- hanging in mid-air, and measured over 480 sites that was 39% of the grain,
+	-- 29% of the terraces and 47% of the pillars. A run of grain lumps along a
+	-- rim overlaps into one long rounded mass, which is what got called hotdogs.
+	--
+	-- Grain and terraces are dropped. One is a wall surface and the other a step
+	-- in a floor, and in that spot there is neither.
+	--
+	-- A pillar is not dropped but rebuilt. It keeps its place on the plan and
+	-- becomes one of the master's own, running the master's floor to the
+	-- master's ceiling — which is what a column standing in that room should
+	-- have been doing in the first place, and gives the big room the vertical
+	-- things it was missing.
+	local master = site.chambers[1]
+	if master then
+		local mv = verticalOf(master.radius, master.flatten)
+
+		local function insideMaster(world)
+			for _, b in ipairs(master.blobs) do
+				if (world - (master.centre + b.offset)).Magnitude < b.radius - 2 then
+					return true
+				end
+			end
+			return false
+		end
+
+
+		for i = 2, #site.chambers do
+			local c = site.chambers[i]
+
+			local grain = {}
+			for _, g in ipairs(c.rough) do
+				if not insideMaster(c.centre + g.offset) then table.insert(grain, g) end
+			end
+			c.rough = grain
+
+			local steps = {}
+			for _, s in ipairs(c.shelves) do
+				if not insideMaster(c.centre + s.offset) then table.insert(steps, s) end
+			end
+			c.shelves = steps
+
+			local mine = {}
+			for _, p in ipairs(c.pillars) do
+				local world = c.centre + p.offset
+				if insideMaster(world) then
+					if #master.pillars < CFG.Pillar.MasterCap then
+						table.insert(master.pillars, makePillar(
+							Vector3.new(world.X - master.centre.X, 0,
+								world.Z - master.centre.Z),
+							p.radius, mv * 2 + 14, rand))
+					end
+				else
+					table.insert(mine, p)
+				end
+			end
+			c.pillars = mine
 		end
 	end
 

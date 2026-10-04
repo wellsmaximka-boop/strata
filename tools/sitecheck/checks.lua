@@ -191,3 +191,43 @@ print(("  %d cut, deepest %.0f studs below the hall floor"):format(holes, deepes
 print(("  worst rise between stair treads: %.1f studs (jump height 7.2)")
 	:format(worstRise))
 print(("  deeper than a jump with NO stair: %d"):format(trapped))
+
+-- What ends up floating inside the master cavern's open air?
+-- Relief (grain, terraces, pillars) belongs to a hall. A hall that overlaps the
+-- master has part of its "wall" inside the master's open space — and anything
+-- put back on that wall is left hanging in the middle of the big room.
+local function inBlobs(c, p)
+	for _, b in ipairs(c.blobs) do
+		local d = (p - (c.centre + b.offset)).Magnitude
+		if d < b.radius - 2 then return true end
+	end
+	return false
+end
+
+local grainIn, grainAll = 0, 0
+local shelfIn, shelfAll = 0, 0
+local pillIn,  pillAll  = 0, 0
+sweep(function(site)
+	local m = site.chambers[1]
+	if not m then return end
+	for i = 2, #site.chambers do
+		local c = site.chambers[i]
+		for _, g in ipairs(c.rough or {}) do
+			grainAll += 1
+			if inBlobs(m, c.centre + g.offset) then grainIn += 1 end
+		end
+		for _, s in ipairs(c.shelves or {}) do
+			shelfAll += 1
+			if inBlobs(m, c.centre + s.offset) then shelfIn += 1 end
+		end
+		for _, p in ipairs(c.pillars or {}) do
+			pillAll += 1
+			if inBlobs(m, c.centre + p.offset) then pillIn += 1 end
+		end
+	end
+end)
+
+print("\n-- relief left hanging inside the master cavern --")
+print(("  grain lumps : %d of %d (%.0f%%)"):format(grainIn, grainAll, grainIn / math.max(grainAll,1) * 100))
+print(("  terraces    : %d of %d (%.0f%%)"):format(shelfIn, shelfAll, shelfIn / math.max(shelfAll,1) * 100))
+print(("  pillars     : %d of %d (%.0f%%)"):format(pillIn, pillAll, pillIn / math.max(pillAll,1) * 100))
