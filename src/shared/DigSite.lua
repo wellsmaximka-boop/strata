@@ -835,44 +835,57 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 	-- master's ceiling — which is what a column standing in that room should
 	-- have been doing in the first place, and gives the big room the vertical
 	-- things it was missing.
-	local master = site.chambers[1]
-	if master then
-		local mv = verticalOf(master.radius, master.flatten)
-
-		local function insideMaster(world)
-			for _, b in ipairs(master.blobs) do
-				if (world - (master.centre + b.offset)).Magnitude < b.radius - 2 then
-					return true
+	-- Checked against every chamber, not only the master. Halls are held at 0.72
+	-- of their radii apart, so they overlap one another as well as the big room
+	-- — which means a lump of grain sitting on hall A's wall can be standing in
+	-- hall B's open air just as easily as in the master's. A run of them along a
+	-- shared rim merges into one long rounded mass, which is the shape that kept
+	-- getting called a hotdog.
+	do
+		local function hostOf(world, exceptIndex)
+			for i, c in ipairs(site.chambers) do
+				if i ~= exceptIndex then
+					for _, b in ipairs(c.blobs) do
+						if (world - (c.centre + b.offset)).Magnitude < b.radius - 2 then
+							return c
+						end
+					end
 				end
 			end
-			return false
+			return nil
 		end
 
-
-		for i = 2, #site.chambers do
-			local c = site.chambers[i]
-
+		for i, c in ipairs(site.chambers) do
+			-- Grain is a wall surface and a terrace is a step in a floor. Where
+			-- the room next door has already cut that spot to air there is
+			-- neither of those things, so they go.
 			local grain = {}
 			for _, g in ipairs(c.rough) do
-				if not insideMaster(c.centre + g.offset) then table.insert(grain, g) end
+				if not hostOf(c.centre + g.offset, i) then table.insert(grain, g) end
 			end
 			c.rough = grain
 
 			local steps = {}
 			for _, s in ipairs(c.shelves) do
-				if not insideMaster(c.centre + s.offset) then table.insert(steps, s) end
+				if not hostOf(c.centre + s.offset, i) then table.insert(steps, s) end
 			end
 			c.shelves = steps
 
+			-- A pillar is rehomed rather than dropped. It keeps its place on the
+			-- plan and becomes a column of whichever room it is actually
+			-- standing in, running that room's floor to that room's ceiling.
+			-- Spanning the space it is in is the entire point of a column.
 			local mine = {}
 			for _, p in ipairs(c.pillars) do
 				local world = c.centre + p.offset
-				if insideMaster(world) then
-					if #master.pillars < CFG.Pillar.MasterCap then
-						table.insert(master.pillars, makePillar(
-							Vector3.new(world.X - master.centre.X, 0,
-								world.Z - master.centre.Z),
-							p.radius, mv * 2 + 14, rand))
+				local host  = hostOf(world, i)
+				if host then
+					if #host.pillars < CFG.Pillar.MasterCap then
+						table.insert(host.pillars, makePillar(
+							Vector3.new(world.X - host.centre.X, 0,
+								world.Z - host.centre.Z),
+							p.radius,
+							verticalOf(host.radius, host.flatten) * 2 + 14, rand))
 					end
 				else
 					table.insert(mine, p)
