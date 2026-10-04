@@ -306,3 +306,39 @@ three numbers in it were impossible here and I adapted rather than followed.
 - [ ] **Needs your eyes.** Does the throat read as a squeeze or as an
   obstruction? Is the void awe or annoyance? Is the dark atmospheric or just
   dark — and is the helmet lamp too weak, too strong, or about right?
+
+---
+
+## 12. The grapple
+
+New, from the external brief. The brief listed grappling as an existing system —
+there was none anywhere in the project, and sections 2, 9 and 10 of it all hang
+off one, so this had to come first.
+
+**Q to fire. Crosshair lit green = reachable. Q again mid-flight releases early.**
+
+- [ ] Does the pull feel fast or slow? It is 140 studs/sec, a straight reel.
+- [ ] The kick on arrival: do you top out onto ledges, or slam into the rock
+  under them? That is `Launch` (32) and `Carry` (0.45) in `StrataConfig.Grapple`.
+- [ ] Is 5.5 seconds of cooldown too long in a 150-stud hall?
+- [ ] Is 190 studs of range enough to cross a big chamber?
+- [ ] Does the reticle tell you what you need? Lit means reachable.
+- [ ] Does it ever drag you into a wall and hold you there? There is a 4-second
+  hard stop, so the worst case is a wait, but I want to know if it happens.
+- [ ] **Frames.** The headlamp casts shadows, which in Future lighting is the
+  expensive kind of light and it moves every frame. If a big hall drops frames,
+  this is the first suspect — `Headlamp.Shadows` in the config.
+
+## 13. From the screenshot
+
+Things I could only see from the picture:
+
+- [ ] **Huge red and green washes with hard diagonal edges.** Those are single
+  PointLights with very large Range painting flat colour across the terrain.
+  This is the real shape of "too bright and lumen" — not brightness so much as
+  a few enormous lights doing the work of many small ones.
+- [ ] **The terrain is smooth rounded blobs.** No stalagmites, no shelves, no
+  small rock. §7 of the brief is right and this is the next environment job.
+- [x] Character was a pure black silhouette — confirms the headlamp.
+- [x] Player list sitting on the run card — fixed.
+- [ ] The cyan objective arrow is very large and sits mid-screen.
