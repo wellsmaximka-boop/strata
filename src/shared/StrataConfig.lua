@@ -295,11 +295,27 @@ StrataConfig.Look = {
 		-- The reference is dark and perfectly legible: you can see rock
 		-- everywhere, it is cool, and the colour comes from a handful of small
 		-- accents. That needs a floor under the darkness, and this is it.
-		Ambient      = Color3.fromRGB(54, 62, 80),
-		Brightness   = 0.9,
-		ExposureBias = -0.16,
-		Diffuse      = 0.04,   -- skylight bounce, which underground is a lie
-		Specular     = 0.08,
+		-- Raised four times without the cave getting much lighter, because
+		-- Ambient was not the only thing in the chain. Three others were pulling
+		-- the other way the whole time and none of them were being crossfaded:
+		-- a ColorCorrection contrast of +0.14, which crushes exactly the dark
+		-- mid-tones a cave is made of; an exposure bias of -0.16; and an
+		-- environment diffuse scale of 0.04, which is a deliberate 96% cut to
+		-- the fill light. Turning one dial up while three hold it down is why
+		-- each raise did so little.
+		Ambient      = Color3.fromRGB(96, 106, 128),
+		Brightness   = 1.5,
+		ExposureBias = 0.08,
+		-- Underground there is no sky to bounce, but this is also the only knob
+		-- that spreads ambient onto surfaces rather than just adding a flat
+		-- floor to them. At 0.04 the rock had no fill at all.
+		Diffuse      = 0.32,
+		Specular     = 0.18,
+
+		-- The grade, crossfaded like everything else. Positive contrast is right
+		-- for a lit camp and wrong for a cave: it takes the dim middle of the
+		-- range, which is all the rock between lamps, and pushes it to black.
+		Grade = { Contrast = -0.06, Saturation = 0.04, Brightness = 0.05 },
 
 		-- Bloom is what turned every neon prop into a smear. At the surface
 		-- value a cave full of glowing props is a cave full of halos, and halos

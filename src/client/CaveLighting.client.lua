@@ -45,11 +45,15 @@ end
 local air = atmosphere()
 
 local bloom = Lighting:FindFirstChildOfClass("BloomEffect")
+local grade = Lighting:FindFirstChildOfClass("ColorCorrectionEffect")
 
 local SURFACE = {
 	bloomI     = bloom and bloom.Intensity or 0,
 	bloomS     = bloom and bloom.Size or 0,
 	bloomT     = bloom and bloom.Threshold or 1,
+	contrast   = grade and grade.Contrast or 0,
+	saturation = grade and grade.Saturation or 0,
+	gradeB     = grade and grade.Brightness or 0,
 	ambient    = Lighting.Ambient,
 	outdoor    = Lighting.OutdoorAmbient,
 	brightness = Lighting.Brightness,
@@ -143,6 +147,16 @@ local function apply(y)
 		bloom.Intensity = lerp(SURFACE.bloomI, CAVE.Bloom.Intensity, t)
 		bloom.Size      = lerp(SURFACE.bloomS, CAVE.Bloom.Size, t)
 		bloom.Threshold = lerp(SURFACE.bloomT, CAVE.Bloom.Threshold, t)
+	end
+
+	-- The grade was set once at boot and never moved, so the camp's positive
+	-- contrast was being applied seven hundred studs underground, crushing the
+	-- dim middle of the range — which is all the rock between lamps — to black.
+	-- Four raises of Ambient could not out-argue it.
+	if grade and CAVE.Grade then
+		grade.Contrast   = lerp(SURFACE.contrast, CAVE.Grade.Contrast, t)
+		grade.Saturation = lerp(SURFACE.saturation, CAVE.Grade.Saturation, t)
+		grade.Brightness = lerp(SURFACE.gradeB, CAVE.Grade.Brightness, t)
 	end
 end
 
