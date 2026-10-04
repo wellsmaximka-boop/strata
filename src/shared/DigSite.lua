@@ -515,6 +515,10 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 				-- game is ever placed near a ceiling — the height does the work
 				-- on its own. This is here for the map and the banner to read.
 				void        = (isVoid and v * 2 >= CFG.Void.KeepAbove) or nil,
+				-- The enclosing cavern. The map draws it as a boundary rather
+				-- than a room, because a filled circle that contains every other
+				-- circle is not information.
+				master      = isMaster or nil,
 				-- Blobs, so a hall is a lumpy open space rather than a ball.
 				-- Spread wide and kept shallow, which is what makes it read as
 				-- a cavern and not a bubble.

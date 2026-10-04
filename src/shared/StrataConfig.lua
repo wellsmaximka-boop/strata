@@ -268,18 +268,37 @@ StrataConfig.Look = {
 	-- Lighting is local to one player's view, so someone at the lodge and
 	-- someone at the bottom of the shaft each get the air they are standing in.
 	Cave = {
-		-- Not pure black, though the reference asks for it, and this is the one
-		-- place worth arguing. With Ambient at zero every surface no lamp
-		-- touches renders flat #000, and Future lighting has no bounce to
-		-- recover it — so a cave with no flare in it stops being a cave and
-		-- becomes an absence, with no silhouette, no edge and no sense of which
-		-- way is up. Five units of blue-grey is still black on screen and still
-		-- keeps the rock's shape. Set it to zero if you want the absence.
-		Ambient      = Color3.fromRGB(5, 5, 8),
-		Brightness   = 0.3,
-		ExposureBias = -0.2,
-		Diffuse      = 0.02,   -- skylight bounce, which underground is a lie
-		Specular     = 0.05,
+		-- Dark, but not an absence, and this number moved twice before it
+		-- settled. At 5 units it was effectively black, and black has a cost
+		-- nobody expects: anything that is not itself emissive stops existing.
+		-- Glowing mushroom caps hung in the dark with no stems under them, the
+		-- rock between lamps had no shape, and the only things on screen were
+		-- saturated coloured lights — which is what "too blind, no vision" was
+		-- describing. It was not too bright. It was too black to read, with a
+		-- few things screaming in it.
+		--
+		-- The reference is dark and perfectly legible: you can see rock
+		-- everywhere, it is cool, and the colour comes from a handful of small
+		-- accents. That needs a floor under the darkness, and this is it.
+		Ambient      = Color3.fromRGB(18, 22, 32),
+		Brightness   = 0.42,
+		ExposureBias = -0.16,
+		Diffuse      = 0.04,   -- skylight bounce, which underground is a lie
+		Specular     = 0.08,
+
+		-- Bloom is what turned every neon prop into a smear. At the surface
+		-- value a cave full of glowing props is a cave full of halos, and halos
+		-- are exactly what stops you unpacking what you are looking at. Lower
+		-- and much choosier underground: only genuinely bright things bloom.
+		Bloom = { Intensity = 0.2, Size = 14, Threshold = 2.0 },
+
+		-- How far the air is pulled towards one cool base before the layer's own
+		-- rock colour is allowed to tint it. At 0 each layer got its own hue and
+		-- the three of them plus the prop lights made four families of colour on
+		-- screen at once. At 0.62 a layer is a variation on cool rather than a
+		-- different palette, which is how the reference holds together.
+		CoolBlend = 0.62,
+		CoolBase  = Color3.fromRGB(26, 38, 54),
 
 		-- Hard shadow edges. A soft shadow reads as daylight through cloud; a
 		-- lamp in a rock corridor throws a hard one.
@@ -1116,18 +1135,24 @@ StrataConfig.Player = {
 -- a visible mark of having gone round again.
 StrataConfig.PackLight = {
 	Levels = {
+		-- The colours were saturated — level one was pure red — and a saturated
+		-- lamp does not light a cave, it dyes it. Everything the beam touched
+		-- came back red, the archetype lights came back green, and the two
+		-- together are the muddy wash that made the caves impossible to read.
+		--
+		-- The ladder still runs warm to cool, because that reads as cheap
+		-- filament giving way to arc, but every step is close enough to white
+		-- to show the rock its own colour. Colour belongs to the cave.
 		{ mast = 1.1, heads = 1, range = 16, brightness = 1.1,
-		  -- Never zero. The ambient underground is deliberately black, so level one
-		  -- still has to be enough to see the rock in front of you.
-		  colour = Color3.fromRGB(255, 78, 62),  name = "Ember",    grants = { light = 11, walkSpeed = 0 } },
+		  colour = Color3.fromRGB(255, 194, 150), name = "Ember",    grants = { light = 11, walkSpeed = 0 } },
 		{ mast = 1.5, heads = 2, range = 26, brightness = 1.5,
-		  colour = Color3.fromRGB(255, 146, 52), name = "Flare",    grants = { light = 18, walkSpeed = 1 } },
+		  colour = Color3.fromRGB(255, 212, 172), name = "Flare",    grants = { light = 18, walkSpeed = 1 } },
 		{ mast = 1.9, heads = 2, range = 38, brightness = 1.9,
-		  colour = Color3.fromRGB(255, 214, 86), name = "Beacon",   grants = { light = 28, walkSpeed = 2 } },
+		  colour = Color3.fromRGB(255, 236, 206), name = "Beacon",   grants = { light = 28, walkSpeed = 2 } },
 		{ mast = 2.3, heads = 3, range = 52, brightness = 2.3,
-		  colour = Color3.fromRGB(126, 222, 255), name = "Arclight", grants = { light = 42, walkSpeed = 3 } },
+		  colour = Color3.fromRGB(226, 242, 255), name = "Arclight", grants = { light = 42, walkSpeed = 3 } },
 		{ mast = 2.7, heads = 4, range = 70, brightness = 2.8,
-		  colour = Color3.fromRGB(196, 140, 255), name = "Nova",    grants = { light = 62, walkSpeed = 5 } },
+		  colour = Color3.fromRGB(240, 244, 255), name = "Nova",    grants = { light = 62, walkSpeed = 5 } },
 	},
 }
 

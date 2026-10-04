@@ -44,7 +44,12 @@ end
 
 local air = atmosphere()
 
+local bloom = Lighting:FindFirstChildOfClass("BloomEffect")
+
 local SURFACE = {
+	bloomI     = bloom and bloom.Intensity or 0,
+	bloomS     = bloom and bloom.Size or 0,
+	bloomT     = bloom and bloom.Threshold or 1,
 	ambient    = Lighting.Ambient,
 	outdoor    = Lighting.OutdoorAmbient,
 	brightness = Lighting.Brightness,
@@ -72,8 +77,20 @@ local function layerAir(y)
 			tint = s.color
 		end
 	end
+
 	local k = CAVE.TintShare
-	return Color3.new(tint.R * k, tint.G * k, tint.B * k)
+	local own = Color3.new(tint.R * k, tint.G * k, tint.B * k)
+
+	-- Pulled most of the way to one cool base. Each layer still reads as its
+	-- own place, but as a variation rather than a separate palette — three
+	-- unrelated hues plus the prop lights is four colour families competing,
+	-- and that is what made the caves hard to unpack.
+	local b = CAVE.CoolBase
+	local m = CAVE.CoolBlend
+	return Color3.new(
+		own.R + (b.R - own.R) * m,
+		own.G + (b.G - own.G) * m,
+		own.B + (b.B - own.B) * m)
 end
 
 -- ── The crossfade ────────────────────────────────────────────────────────────
@@ -118,6 +135,15 @@ local function apply(y)
 	air.Glare   = lerp(SURFACE.glare, CAVE.Glare, t)
 	air.Color   = lerpColour(SURFACE.colour, caveAir, t)
 	air.Decay   = lerpColour(SURFACE.decay, caveAir, t)
+
+	-- The lodge is lit by warm lamps and wants its bloom; a cave full of neon
+	-- props with the same bloom is a cave full of halos, and a halo is the
+	-- enemy of reading what you are looking at.
+	if bloom and CAVE.Bloom then
+		bloom.Intensity = lerp(SURFACE.bloomI, CAVE.Bloom.Intensity, t)
+		bloom.Size      = lerp(SURFACE.bloomS, CAVE.Bloom.Size, t)
+		bloom.Threshold = lerp(SURFACE.bloomT, CAVE.Bloom.Threshold, t)
+	end
 end
 
 -- ── The beam ─────────────────────────────────────────────────────────────────

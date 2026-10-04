@@ -374,20 +374,35 @@ local function draw(size)
 		ring.Position               = UDim2.new(0, x, 0, y)
 		ring.Size                   = UDim2.new(0, r * 2, 0, r * 2)
 		ring.BackgroundColor3       = colour
-		ring.BackgroundTransparency = visited[c.index] and 0.4 or 0.9
+		-- The master encloses every other hall, so filling it just puts a wash
+		-- behind the whole map. Outline only: it reads as the edge of the cavern
+		-- you are inside, which is what it is.
+		ring.BackgroundTransparency = c.master and 1
+			or (visited[c.index] and 0.4 or 0.9)
 		ring.BorderSizePixel        = 0
-		ring.ZIndex                 = 5
+		ring.ZIndex                 = c.master and 3 or 5
 		ring.Parent                 = ink
 		corner(ring, math.floor(r))
 
-		local edge = outline(ring, colour, c.role == "vault" and 3.5 or 2)
-		edge.Transparency = visited[c.index] and 0 or 0.35
+		local edge = outline(ring, colour,
+			c.master and 2.5 or (c.role == "vault" and 3.5 or 2))
+		edge.Transparency = c.master and 0.45
+			or (visited[c.index] and 0 or 0.35)
+
+		-- Labels go outward from the middle of the map rather than always
+		-- underneath, because the halls ring the master and "underneath" put
+		-- three of them in the same place.
+		local ox, oy = x - size * 0.5, y - size * 0.5
+		local m = math.sqrt(ox * ox + oy * oy)
+		if m < 0.01 then ox, oy, m = 0, 1, 1 end
 
 		local name = label(ink, visited[c.index] and string.upper(c.name) or "",
-			UDim2.new(0, 132, 0, 13), UDim2.new(0, x, 0, y + r + 2),
+			UDim2.new(0, 132, 0, 13),
+			UDim2.new(0, x + ox / m * (r + 7), 0, y + oy / m * (r + 7) - 6),
 			colour, expanded and 12 or 10)
 		name.AnchorPoint = Vector2.new(0.5, 0)
 		name.ZIndex      = 8
+		if c.master then name.Text = "" end
 
 		-- The vault gets a mark of its own: it is the one hall on the map worth
 		-- a detour and it should look like it.
@@ -396,6 +411,35 @@ local function draw(size)
 		end
 
 		marks[c.index] = { ring = ring, edge = edge, label = name, chamber = c }
+	end
+
+	-- Radial placement spreads them, it does not guarantee they miss. Two halls
+	-- on nearly the same bearing still land their names on top of each other,
+	-- which is what "DEEP STOPE" over "BLACK CHAMBER" over "STILL STOPE" was.
+	-- So: anything still overlapping gets nudged down until it is not.
+	do
+		local placed = {}
+		for _, mark in pairs(marks) do
+			if mark.label.Text ~= "" then table.insert(placed, mark.label) end
+		end
+		table.sort(placed, function(a, b)
+			return a.Position.Y.Offset < b.Position.Y.Offset
+		end)
+
+		local lineH = (expanded and 13 or 11) + 2
+		for i = 2, #placed do
+			for j = 1, i - 1 do
+				local a, b = placed[i], placed[j]
+				local dy = a.Position.Y.Offset - b.Position.Y.Offset
+				local dx = math.abs(a.Position.X.Offset - b.Position.X.Offset)
+				-- 132-wide labels centred: they clash long before their centres
+				-- do, so the horizontal test is generous
+				if dx < 92 and math.abs(dy) < lineH then
+					a.Position = UDim2.new(0, a.Position.X.Offset, 0,
+						b.Position.Y.Offset + lineH)
+				end
+			end
+		end
 	end
 
 	local hx, hy = project(0, 0, size)

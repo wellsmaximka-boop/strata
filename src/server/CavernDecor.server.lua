@@ -89,10 +89,14 @@ end
 -- do are dimmer. Darkness is the point of being underground; a flare is only
 -- worth throwing into somewhere dark.
 local GLOW = {
-	Share      = 0.34,   -- how many glowing props actually carry a light
-	Brightness = 0.85,
+	-- Fewer and dimmer again. With a readable ambient under them the props no
+	-- longer have to carry the room, and every one that lights is one more
+	-- colour laid over the last. Contrast is what makes a cave look deep, and
+	-- contrast is lights you can count.
+	Share      = 0.22,   -- how many glowing props actually carry a light
+	Brightness = 0.6,
 	Reach      = 1.5,    -- multiplier on the prop's own size
-	PoolBright = 1.2,
+	PoolBright = 0.9,
 	PoolReach  = 3.2,
 
 	-- A PointLight with Shadows off does not stop at a wall. It ignores the
@@ -108,6 +112,14 @@ local GLOW = {
 	-- Capped against the room it is in. Half the radius lights the floor of the
 	-- hall generously and dies before it reaches the wall, let alone past it.
 	PoolCap    = 0.5,
+}
+
+-- Water is scenery, not terrain. Scaled off the room it was in, a pond in the
+-- master cavern came out ninety studs across and read as a flooded floor
+-- rather than a pool you walk around.
+local WATER = {
+	MaxRadius = 34,
+	MaxDepth  = 11,
 }
 
 local litCount = 0
@@ -258,8 +270,22 @@ local function lavaPool(parent, base, radius, colour, roomRadius)
 	pl.Parent     = surface
 end
 
+-- A pond sunk into the floor, with a flat top at floor level.
+--
+-- This was a FillBall, and terrain water does not settle — it is voxels, so a
+-- ball of it stays a ball. Sunk at 0.45 of its own radius, well over half the
+-- sphere stood proud of the ground, which in the master cavern meant a dome of
+-- green water up to ninety studs across sitting in the middle of the room. A
+-- cylinder with its top at the floor is a pool; a sphere is a bubble.
 local function waterPool(parent, base, radius)
-	workspace.Terrain:FillBall(base - Vector3.new(0, radius * 0.45, 0), radius, Enum.Material.Water)
+	local wide  = math.min(radius, WATER.MaxRadius)
+	local depth = math.min(wide * 0.5, WATER.MaxDepth)
+
+	-- FillCylinder runs along the part's X, so this stands it up. Centred half
+	-- its depth below the floor point, which puts the surface exactly on it.
+	workspace.Terrain:FillCylinder(
+		CFrame.new(base - Vector3.new(0, depth * 0.5, 0)) * CFrame.Angles(0, 0, math.pi / 2),
+		depth, wide, Enum.Material.Water)
 end
 
 -- ── Furnishing a room ────────────────────────────────────────────────────────

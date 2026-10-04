@@ -342,3 +342,46 @@ Things I could only see from the picture:
 - [x] Character was a pure black silhouette — confirms the headlamp.
 - [x] Player list sitting on the run card — fixed.
 - [ ] The cyan objective arrow is very large and sits mid-screen.
+
+---
+
+## 14. Reading the cave — the palette pass
+
+From the three in-game shots against the Deep Rock reference. The complaint was
+"too blind, no vision" and "hard to unpack what's going on", and the cause was
+the opposite of what it sounds like: not too bright, **too black, with a few
+things screaming in it**.
+
+- [x] **The water was a sphere.** `FillBall` with Water, sunk at 0.45 of its own
+  radius, so well over half the ball stood proud of the floor — in the master
+  cavern that was a dome of green water up to 90 studs across sitting in the
+  room. Terrain water does not settle; it is voxels. It is a cylinder with its
+  top at floor level now, capped at 34 studs across.
+- [x] **Your own lamp was dyeing the cave red.** PackLight level one, "Ember",
+  was `(255, 78, 62)` — saturated red. Every surface the beam touched came back
+  red, the archetype lights came back green, and the two together are the muddy
+  wash in all three shots. The ladder still runs warm to cool, but every step is
+  now close enough to white to show the rock its own colour.
+- [x] **Ambient was too black to read.** At 5 units, anything not emissive simply
+  stopped existing — which is why glowing mushroom caps appear to hang in space
+  with no stems. Raised to a cool 18/22/32. Dark, but the rock has shape again.
+- [x] **Bloom was making halos.** The surface value over a cave full of neon
+  props turns every prop into a smear. Underground it drops to 0.2 with the
+  threshold nearly doubled, so only genuinely bright things bloom.
+- [x] **Four colour families at once.** Each layer tinted the air with its own
+  rock colour, on top of the archetype lights and the lamp. Layer air is now
+  pulled 62% toward one cool base, so a layer is a variation rather than a
+  separate palette. Fewer props carry lights (34% → 22%) and dimmer.
+- [x] **Map labels piled up.** "DEEP STOPE" over "BLACK CHAMBER" over "STILL
+  STOPE". Names now sit radially outward from the map centre, and anything still
+  overlapping is nudged down until it is not. The master cavern draws as an
+  outline instead of a filled circle, because a filled circle containing every
+  other circle is not information.
+
+- [ ] **Does it read now?** The target is the reference: dark, cool, legible
+  everywhere, with colour coming from a few small accents rather than from
+  floodlights. If it is now too dark to play rather than too muddy, the number
+  is `Look.Cave.Ambient`.
+- [ ] Still outstanding from these shots: props sitting half-inside terrain.
+  Raising the ambient should show whether they were ever floating or just
+  unlit — I could not tell which from the picture.
