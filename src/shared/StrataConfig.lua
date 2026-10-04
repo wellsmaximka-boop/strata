@@ -280,8 +280,8 @@ StrataConfig.Look = {
 		-- The reference is dark and perfectly legible: you can see rock
 		-- everywhere, it is cool, and the colour comes from a handful of small
 		-- accents. That needs a floor under the darkness, and this is it.
-		Ambient      = Color3.fromRGB(26, 31, 43),
-		Brightness   = 0.52,
+		Ambient      = Color3.fromRGB(38, 44, 58),
+		Brightness   = 0.68,
 		ExposureBias = -0.16,
 		Diffuse      = 0.04,   -- skylight bounce, which underground is a lie
 		Specular     = 0.08,
@@ -506,7 +506,7 @@ StrataConfig.Archetypes = {
 		tint    = Color3.fromRGB(96, 104, 62),
 		light   = Color3.fromRGB(150, 220, 130),
 		fog     = Color3.fromRGB(58, 74, 46),
-		decor   = { "vines", "mushrooms", "boulders" },
+		decor   = { "vines", "mushrooms", "stalagmites", "crystals", "boulders", "stalactites" },
 		oreBonus = 1.6,
 		tierBoost = 1.1,
 	},
@@ -517,7 +517,7 @@ StrataConfig.Archetypes = {
 		tint    = Color3.fromRGB(96, 110, 118),
 		light   = Color3.fromRGB(130, 200, 230),
 		fog     = Color3.fromRGB(38, 60, 72),
-		decor   = { "water", "stalagmites", "vines" },
+		decor   = { "stalagmites", "crystals", "water", "stalactites", "boulders" },
 		oreBonus = 1.8,
 		tierBoost = 1.15,
 	},
@@ -528,7 +528,7 @@ StrataConfig.Archetypes = {
 		tint    = Color3.fromRGB(132, 124, 108),
 		light   = Color3.fromRGB(190, 200, 215),
 		fog     = Color3.fromRGB(40, 44, 50),
-		decor   = { "stalagmites", "stalactites", "boulders" },
+		decor   = { "stalagmites", "stalactites", "crystals", "boulders" },
 		oreBonus = 1.9,
 		tierBoost = 1.15,
 	},
@@ -544,7 +544,7 @@ StrataConfig.Archetypes = {
 		tint    = Color3.fromRGB(74, 92, 74),
 		light   = Color3.fromRGB(120, 255, 180),
 		fog     = Color3.fromRGB(26, 54, 42),
-		decor   = { "mushrooms", "vines", "stalagmites" },
+		decor   = { "mushrooms", "crystals", "stalagmites", "vines", "stalactites" },
 		oreBonus = 2.1,
 		tierBoost = 1.25,
 	},
@@ -1436,7 +1436,11 @@ StrataConfig.Site = {
 	-- Columns floor to ceiling. The single biggest thing for scale — you cannot
 	-- tell how big a space is until something in it blocks your view of the far
 	-- side.
-	Pillars     = { min = 3, max = 7 },
+	-- More of them. A pillar is the single strongest thing for making a space
+	-- read as a cave rather than an open pit with rubble in it — you cannot
+	-- judge how big a room is until something inside it blocks your view across
+	-- it, and three in a hall 429 studs wide blocks nothing.
+	Pillars     = { min = 5, max = 11 },
 	PillarWidth = { min = 0.09, max = 0.2 },   -- as a share of hall radius
 
 	-- A pillar is stacked drums, not one cylinder. One cylinder is perfectly
@@ -1495,15 +1499,20 @@ StrataConfig.Site = {
 	-- across a tunnel entrance is cleared again by that pass and cannot seal a
 	-- hall.
 	Rough = {
-		Count = { min = 34, max = 62 },      -- per hall
-		Size  = { min = 0.05, max = 0.12 },  -- as a share of the host sphere
-		Solid = 0.55,                        -- share that bulge rather than bite
+		-- Fewer and bigger. At 34-62 small spheres a wall came out spiky rather
+		-- than textured: lots of little bites leave thin slivers of terrain
+		-- between them, and thin smooth-terrain slivers render as jagged shards.
+		-- Half as many, half again as large, reads as rock that has weathered
+		-- instead of rock that has been chipped at.
+		Count = { min = 16, max = 30 },      -- per hall
+		Size  = { min = 0.08, max = 0.17 },  -- as a share of the host sphere
+		Solid = 0.62,                        -- share that bulge rather than bite
 
 		-- An absolute ceiling, because a share of the host means the biggest
 		-- sphere in the biggest void threw a 15.7-stud lump — eight studs proud
-		-- of the wall, which is higher than you can jump. At nine the worst case
-		-- stands four and a half studs out: a step, not a wall.
-		Max   = 9,
+		-- of the wall, which is higher than you can jump. At thirteen the worst
+		-- case stands six and a half out, which is still a step you can clear.
+		Max   = 13,
 	},
 
 	-- ── Galleries ──

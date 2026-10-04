@@ -124,6 +124,8 @@ local GLOW = {
 local WATER = {
 	MaxRadius = 34,
 	MaxDepth  = 11,
+	Probe     = 14,   -- how far above the rim the flatness probes start
+	Level     = 4.5,  -- how much the rim may differ from the middle, in studs
 }
 
 local litCount = 0
@@ -303,6 +305,19 @@ local function waterPool(parent, base, radius)
 	local wide  = math.min(radius, WATER.MaxRadius)
 	local depth = math.min(wide * 0.5, WATER.MaxDepth)
 
+	-- Only on ground that is actually flat. A disc of water dropped on a slope
+	-- or across a terrace edge cuts out of the hillside and you see its circular
+	-- cross-section hanging in the open — the "weird water circles". Four probes
+	-- around the rim: if the ground under any of them is missing or more than a
+	-- few studs off the middle, there is no basin here and no pool goes in.
+	for i = 0, 3 do
+		local a = i * math.pi * 0.5
+		local rim = floorUnder(base
+			+ Vector3.new(math.cos(a) * wide, WATER.Probe, math.sin(a) * wide),
+			WATER.Probe * 2 + depth)
+		if not rim or math.abs(rim.Y - base.Y) > WATER.Level then return end
+	end
+
 	-- FillCylinder runs along the part's X, so this stands it up. Centred half
 	-- its depth below the floor point, which puts the surface exactly on it.
 	workspace.Terrain:FillCylinder(
@@ -331,7 +346,10 @@ local function furnish(room)
 	-- Scaled to the room. A dig site hall is four times the width of an ambient
 	-- cavern now, and twenty-six props scattered through one of those is an
 	-- empty room with some ornaments in it.
-	local count  = math.clamp(math.floor(room.radius * 0.55), 8, 46)
+	-- The cap of 46 was set for halls a quarter of this size. In the master
+	-- cavern it meant forty-six objects scattered through four hundred studs,
+	-- which is an empty room with ornaments in it rather than a cave.
+	local count  = math.clamp(math.floor(room.radius * 0.62), 10, 78)
 	local lights = 0
 
 	for i = 1, count do
