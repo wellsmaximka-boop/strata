@@ -1699,7 +1699,8 @@ local function contractCard(order, c)
 		can and INK or DIM, 17, StrataConfig.UI.Head)
 	name.Position = UDim2.new(0, tx, 0, 14)
 
-	local line = text(card, c.locked and "you have never been here" or c.line,
+	-- The server says why it is shut: never been here, or the level and the pick
+	local line = text(card, c.locked and (c.lockWhy or "you have never been here") or c.line,
 		UDim2.new(1, -tx - 20, 0, 18), DIM, 12, StrataConfig.UI.Body)
 	line.Position = UDim2.new(0, tx, 0, 38)
 
@@ -3175,7 +3176,14 @@ local function showCard(i)
 		or  ("%dm and below"):format(math.floor(math.abs(layer.top)))
 
 	if found then
-		cardHard.Text  = "hardness " .. (layer.hardness or 1)
+		-- Hardness alone answered "can I break it". The ladder is two locks, so
+		-- the chart states both, and states them in the same words the contract
+		-- board refuses you in.
+		local stratum = StrataConfig.GetStratumById and StrataConfig.GetStratumById(layer.id)
+		local gate = stratum and StrataConfig.LayerLock(stratum, S.level, S.miningPower)
+		cardHard.Text = gate and gate.why
+			or ("hardness %d  ·  open"):format(layer.hardness or 1)
+		cardHard.TextColor3 = gate and CRIT or GREEN
 		cardBlurb.Text = layer.blurb or ""
 
 		local names = {}

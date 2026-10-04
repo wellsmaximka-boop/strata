@@ -301,23 +301,34 @@ StrataConfig.Look = {
 		FadeTo   = -74,
 	},
 
-	-- The lamp on your helmet, and the reason the dark above is survivable. DRG
-	-- gives every dwarf one permanently; without it, three flares on a thirty
-	-- second refresh is not atmosphere, it is a blindfold with intermissions.
+	-- The beam, which is the *shape* of your pack lamp rather than a second
+	-- light source.
 	--
-	-- Note on cost: Shadows is true, which in Future lighting means one
-	-- shadow-casting light that moves every frame. That is the expensive kind.
-	-- If frames drop in a big hall, this is the first number to try at false.
+	-- Getting this wrong once is worth recording. The pack lamp in PackLight
+	-- already existed, with a six-step upgrade ladder behind it — so adding a
+	-- fixed headlamp handed every player a strong white light whatever their
+	-- pack, and quietly made that whole ladder worthless. A lamp you buy has to
+	-- be the lamp you see by.
+	--
+	-- So the numbers here are multipliers on whatever level of pack you are
+	-- carrying, not values of their own. An omnidirectional bulb lights the air
+	-- around you and a beam lights what you are looking at; a cave wants both,
+	-- and both get better when you upgrade.
 	Headlamp = {
 		Angle      = 64,
-		Range      = 76,
-		Brightness = 1.75,
-		Colour     = Color3.fromRGB(255, 243, 212),
-		Shadows    = true,
+		RangeScale = 2.6,   -- on the pack's own range: 16 studs becomes 42
+		BrightScale = 1.1,
+
+		-- Off by default. A shadow-casting light that moves every frame is the
+		-- expensive kind in Future lighting, and the deep shadows that make a
+		-- cave look like a cave come from the lamps bolted to the walls, which
+		-- do not move. Turn it on if you want it and the frames allow.
+		Shadows    = false,
+
 		-- A weak bulb at the chest so your own hands and the ground under your
-		-- feet exist. Without it you cast a lamp forward and stand in a hole.
-		FillRange      = 15,
-		FillBrightness = 0.5,
+		-- feet exist. Without it you cast a beam forward and stand in a hole.
+		FillScale      = 0.9,   -- on the pack's range
+		FillBrightness = 0.45,
 	},
 }
 
@@ -384,6 +395,7 @@ StrataConfig.Strata = {
 		hardness    = 1,    -- mining power needed to break it
 		strengthGain = 1,   -- strength earned per successful dig
 		tierBias    = 0.85, -- under 1 favours common ore, over 1 favours rare
+		reqLevel     = 1,   -- see StrataConfig.LayerLock
 		cavernChance = 0.75,
 		-- Topsoil is only 50 studs thick. Rooms the size of the ones below would
 		-- punch through into the camp, so this layer gets hollows instead.
@@ -405,6 +417,7 @@ StrataConfig.Strata = {
 		hardness    = 25,
 		strengthGain = 3,
 		tierBias    = 1.10,
+		reqLevel     = 3,
 		cavernChance = 0.45,
 		cavernRadius = { min = 34, max = 64 },
 		archetypes  = {
@@ -425,6 +438,7 @@ StrataConfig.Strata = {
 		hardness    = 120,
 		strengthGain = 9,
 		tierBias    = 1.32,
+		reqLevel     = 6,
 		cavernChance = 0.58,
 		cavernRadius = { min = 40, max = 76 },
 		archetypes  = {
@@ -1585,6 +1599,57 @@ StrataConfig.Levels = {
 function StrataConfig.XpForLevel(level)
 	local L = StrataConfig.Levels
 	return math.floor(L.Base * (math.max(level, 1) ^ L.Curve))
+end
+
+-- ── Who may work a layer ─────────────────────────────────────────────────────
+-- Two locks, and they are deliberately different questions.
+--
+-- The pick asks "can you break this rock at all". It is the layer's own
+-- `hardness` against your mining power, and it was already enforced — but only
+-- at the swing, which meant you could sign for the Magma Vents, ride down, and
+-- find out at the rock face that nothing you own will scratch it. A run you
+-- cannot do is worse than a run you cannot take.
+--
+-- The level asks "have you done this enough times". Levels have existed since
+-- the start and nothing has ever hung off them; this is the job they were
+-- always for. It is the slower of the two on purpose: the pick is something you
+-- buy and the level is something you earn, and a ladder with only a shop at the
+-- bottom of it is a shop.
+--
+-- Returns nil when the layer is open, or a table saying what is missing. One
+-- function so the contract board, the depth chart and the server that refuses
+-- the contract cannot drift apart.
+function StrataConfig.GetStratumById(id)
+	for _, s in ipairs(StrataConfig.Strata) do
+		if s.id == id then return s end
+	end
+	return nil
+end
+
+function StrataConfig.LayerLock(stratum, level, power)
+	if not stratum then return nil end
+
+	local needLevel = stratum.reqLevel or 1
+	local needPower = stratum.hardness or 1
+
+	local shortLevel = (level or 1) < needLevel
+	local shortPower = (power or 0) < needPower
+	if not shortLevel and not shortPower then return nil end
+
+	local why
+	if shortLevel and shortPower then
+		why = ("needs level %d and %d power"):format(needLevel, needPower)
+	elseif shortLevel then
+		why = ("needs level %d"):format(needLevel)
+	else
+		why = ("needs %d mining power"):format(needPower)
+	end
+
+	return {
+		level = shortLevel and needLevel or nil,
+		power = shortPower and needPower or nil,
+		why   = why,
+	}
 end
 
 -- How much a finished run is worth, before the objective bonus

@@ -120,45 +120,75 @@ local function apply(y)
 	air.Decay   = lerpColour(SURFACE.decay, caveAir, t)
 end
 
--- ── The helmet lamp ──────────────────────────────────────────────────────────
--- Permanent, not a pickup. The flares are for throwing light somewhere you are
--- not; this is for seeing the floor in front of you, and without it the dark
--- above stops being atmosphere and becomes a blindfold with intermissions.
+-- ── The beam ─────────────────────────────────────────────────────────────────
+-- Not a second light source: the shape of the pack lamp you are already
+-- carrying. PackLight has six steps and the whole point of buying one is seeing
+-- further, so the beam takes its range, its brightness and its colour from
+-- whichever step you own and gets better exactly when the pack does.
+--
+-- A bulb lights the air around you; a beam lights what you are looking at. A
+-- cave wants both, which is why there is also a weak fill at the chest — a beam
+-- on its own leaves you standing in a hole of your own making.
+
+local packLevel = 1
 
 local function fitLamp(character)
 	local head = character:WaitForChild("Head", 10)
 	if not head then return end
 
-	if not head:FindFirstChild("Headlamp") then
-		local beam = Instance.new("SpotLight")
-		beam.Name       = "Headlamp"
-		beam.Angle      = LAMP.Angle
-		beam.Range      = LAMP.Range
-		beam.Brightness = LAMP.Brightness
-		beam.Color      = LAMP.Colour
-		beam.Shadows    = LAMP.Shadows
-		beam.Face       = Enum.NormalId.Front
-		beam.Parent     = head
-	end
+	local spec = StrataConfig.PackLightLevel(packLevel)
+	if not spec then return end
 
-	-- The beam points where you look, which leaves you standing in a hole of
-	-- your own making. This is the bulb that puts your boots back.
+	local beam = head:FindFirstChild("Headlamp")
+	if not beam then
+		beam = Instance.new("SpotLight")
+		beam.Name   = "Headlamp"
+		beam.Face   = Enum.NormalId.Front
+		beam.Parent = head
+	end
+	beam.Angle      = LAMP.Angle
+	beam.Range      = spec.range * LAMP.RangeScale
+	beam.Brightness = spec.brightness * LAMP.BrightScale
+	beam.Color      = spec.colour
+	beam.Shadows    = LAMP.Shadows
+
 	local torso = character:FindFirstChild("UpperTorso")
 		or character:FindFirstChild("Torso")
-	if torso and not torso:FindFirstChild("HeadlampFill") then
-		local fill = Instance.new("PointLight")
-		fill.Name       = "HeadlampFill"
-		fill.Range      = LAMP.FillRange
+	if torso then
+		local fill = torso:FindFirstChild("HeadlampFill")
+		if not fill then
+			fill = Instance.new("PointLight")
+			fill.Name    = "HeadlampFill"
+			fill.Shadows = false
+			fill.Parent  = torso
+		end
+		fill.Range      = spec.range * LAMP.FillScale
 		fill.Brightness = LAMP.FillBrightness
-		fill.Color      = LAMP.Colour
-		fill.Shadows    = false
-		fill.Parent     = torso
+		fill.Color      = spec.colour
 	end
 end
 
-if player.Character then
-	task.spawn(fitLamp, player.Character)
+local function refit()
+	if player.Character then task.spawn(fitLamp, player.Character) end
 end
+
+-- The same push SurfaceUI reads. Subscribed to here rather than routed through
+-- that file, which is already sitting on Luau's limit of 200 locals per chunk.
+task.spawn(function()
+	local remotes = ReplicatedStorage:WaitForChild("MineRemotes", 20)
+	local changed = remotes and remotes:WaitForChild("StateChanged", 20)
+	if not changed then return end
+
+	changed.OnClientEvent:Connect(function(state)
+		local level = state and state.lightLevel
+		if level and level ~= packLevel then
+			packLevel = level
+			refit()
+		end
+	end)
+end)
+
+refit()
 player.CharacterAdded:Connect(function(character)
 	task.spawn(fitLamp, character)
 end)

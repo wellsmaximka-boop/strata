@@ -138,10 +138,32 @@ end
 -- and nowhere else would be invisible to the function above.
 function sendBoard(player)
 	local out = {}
+	local s     = PlayerState.Get(player)
+	local power = PlayerState.MiningPower(player)
+
 	for i, c in ipairs(board) do
 		local copy = table.clone(c)
-		copy.locked = not PlayerState.Discovered(player, c.layerId)
-		copy.index  = i
+		copy.index = i
+
+		-- Two ways a layer can be shut, and the card says which. Never having
+		-- been is the older one; the level and the pick are the ladder.
+		if not PlayerState.Discovered(player, c.layerId) then
+			copy.locked = true
+			copy.lockWhy = "you have never been here"
+		else
+			local stratum
+			for _, candidate in ipairs(StrataConfig.Strata) do
+				if candidate.id == c.layerId then stratum = candidate end
+			end
+			local gate = StrataConfig.LayerLock(stratum, s.level, power)
+			if gate then
+				copy.locked  = true
+				copy.lockWhy = ("the %s %s"):format(c.layerName, gate.why)
+			else
+				copy.locked = false
+			end
+		end
+
 		table.insert(out, copy)
 	end
 	contractBoard:FireClient(player, out, math.max(
@@ -202,6 +224,16 @@ contractAccept.OnServerEvent:Connect(function(player, index, tier)
 		if s.id == base.layerId then stratum = s end
 	end
 	if not stratum then return end
+
+	-- Checked here as well as on the board, because the board is a drawing and
+	-- this is the door. Refusing at the camp costs a message; refusing at the
+	-- rock face, which is where the hardness check used to catch it, costs the
+	-- whole ride down and the clock that was already running.
+	local locked = StrataConfig.LayerLock(stratum,
+		PlayerState.Get(player).level, PlayerState.MiningPower(player))
+	if locked then
+		return refuse(player, ("the %s %s"):format(stratum.name, locked.why))
+	end
 
 	-- The contract you signed for is the template scaled by the tier you picked.
 	-- Scaled here rather than on the board, because the board is shared and the
