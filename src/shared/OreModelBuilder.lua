@@ -153,20 +153,36 @@ function OreModelBuilder.Build(ore, variant)
 		shard.CanQuery = true
 	end
 
-	-- A brighter core peeking out of the top
-	rigid(model, "Core", Vector3.new(0.7, 0.9, 0.7),
+	-- A brighter core peeking out of the top. Pushed much closer to white,
+	-- because a core in the ore's own colour is just more of the ore — it is the
+	-- near-white highlight that makes a lump of rock read as a crystal.
+	rigid(model, "Core", Vector3.new(0.78, 1.05, 0.78),
 		CFrame.new(0, 0.95, 0) * CFrame.Angles(0.2, 0.6, 0.15),
-		ore.color:Lerp(Color3.new(1, 1, 1), 0.35), Enum.Material.Neon)
+		ore.color:Lerp(Color3.new(1, 1, 1), 0.62), Enum.Material.Neon)
 
-	if ore.glow then
+	-- A white glint across the core, catching the light the way a facet does
+	rigid(model, "Glint", Vector3.new(0.3, 1.35, 0.3),
+		CFrame.new(0.12, 1.0, -0.1) * CFrame.Angles(math.rad(16), 0.9, math.rad(22)),
+		Color3.fromRGB(255, 253, 244), Enum.Material.Neon)
+
+	-- Every ore carries a light now, not only the glowing ones. The halls went
+	-- from 112 studs across to 429 and the range here was twelve plus four a
+	-- tier — a lamp you had to already be standing on to see. Finding ore at a
+	-- distance is the whole of exploring, so the reach roughly trebled.
+	do
+		local tier = ore.tier or 1
+		local lit  = ore.glow
+
 		local light = Instance.new("PointLight")
-		light.Color      = ore.color
-		light.Brightness  = 1.2 + (ore.tier or 1) * 0.5
-		light.Range      = 12 + (ore.tier or 1) * 4
+		light.Color      = ore.color:Lerp(Color3.new(1, 1, 1), 0.25)
+		light.Brightness = lit and (2.4 + tier * 0.9) or 1.1
+		light.Range      = lit and (30 + tier * 9) or 18
 		light.Shadows    = false
 		light.Parent     = root
 
-		if (ore.tier or 1) >= 2 then
+		-- Sparkle on every ore rather than tier 2 and up. Motion is what the eye
+		-- catches across a dark room; a still glow at fifty studs is a dot.
+		do
 			local pe = Instance.new("ParticleEmitter")
 			pe.Texture       = SPARKLE
 			pe.Color         = ColorSequence.new(ore.color)

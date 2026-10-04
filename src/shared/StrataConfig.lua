@@ -280,8 +280,8 @@ StrataConfig.Look = {
 		-- The reference is dark and perfectly legible: you can see rock
 		-- everywhere, it is cool, and the colour comes from a handful of small
 		-- accents. That needs a floor under the darkness, and this is it.
-		Ambient      = Color3.fromRGB(18, 22, 32),
-		Brightness   = 0.42,
+		Ambient      = Color3.fromRGB(26, 31, 43),
+		Brightness   = 0.52,
 		ExposureBias = -0.16,
 		Diffuse      = 0.04,   -- skylight bounce, which underground is a lie
 		Specular     = 0.08,

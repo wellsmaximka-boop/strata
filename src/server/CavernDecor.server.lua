@@ -93,9 +93,13 @@ local GLOW = {
 	-- longer have to carry the room, and every one that lights is one more
 	-- colour laid over the last. Contrast is what makes a cave look deep, and
 	-- contrast is lights you can count.
-	Share      = 0.22,   -- how many glowing props actually carry a light
-	Brightness = 0.6,
-	Reach      = 1.5,    -- multiplier on the prop's own size
+	-- Back up again, but the shape of the light is different and that is the
+	-- point. The old problem was a few enormous ranges painting whole walls one
+	-- colour; these reach two prop-heights, so eight of them is eight pools you
+	-- can see between rather than one wash. More light, more contrast, both.
+	Share      = 0.34,   -- how many glowing props actually carry a light
+	Brightness = 0.9,
+	Reach      = 2.0,    -- multiplier on the prop's own size
 	PoolBright = 0.9,
 	PoolReach  = 3.2,
 
@@ -181,28 +185,46 @@ local function spike(parent, base, height, width, colour, up)
 	end
 end
 
+-- A cluster, not a row.
+--
+-- The shards were stepped along a single axis, which builds a line of boxes
+-- leaning the same way — the thing that reads as "random blocks". Spread around
+-- a centre, each tilted away from it and each a different height, the same
+-- parts read as something grown out of the floor.
+--
+-- One shard in three is near-white. A cluster in one flat colour is a shape; a
+-- cluster with white in it has facets, and facets are what make it look like
+-- crystal rather than painted rock.
 local function crystal(parent, base, height, colour, light)
-	local shards = 3 + math.floor(height / 6)
+	local shards = 4 + math.floor(height / 4)
+	local pale   = colour:Lerp(Color3.new(1, 1, 1), 0.74)
+
 	for i = 1, shards do
-		local lean  = math.rad((i - shards / 2) * 9)
-		local h     = height * (0.5 + (i % 3) * 0.25)
-		local w     = math.max(height * 0.13, 0.6)
-		local off   = (i - shards / 2) * w * 1.2
+		local a    = (i / shards) * math.pi * 2 + (i % 3) * 0.37
+		local out  = height * (0.05 + (i % 4) * 0.055)
+		local h    = height * (0.42 + ((i * 7) % 5) * 0.17)
+		local w    = math.max(height * 0.1, 0.5) * (0.7 + (i % 3) * 0.3)
+		local tilt = math.rad(7 + (i % 4) * 10)
 
-		local cf = CFrame.new(base + Vector3.new(off, h / 2, off * 0.4))
-			* CFrame.Angles(lean * 0.6, lean, lean)
+		local cf = CFrame.new(base
+			+ Vector3.new(math.cos(a) * out, h * 0.5, math.sin(a) * out))
+			* CFrame.Angles(math.cos(a) * tilt, a, math.sin(a) * tilt)
 
-		block(parent, Vector3.new(w, h, w), cf, colour, nil, true)
+		block(parent, Vector3.new(w, h, w), cf,
+			(i % 3 == 0) and pale or colour, nil, true)
 	end
 
 	if light and takesALight() then
 		local pl = Instance.new("PointLight")
-		pl.Color      = colour
+		-- Pulled towards white. A saturated bulb paints the rock its own colour
+		-- and you lose the rock; a near-white one lets the crystal be the
+		-- coloured thing in the picture, which is where the colour belongs.
+		pl.Color       = colour:Lerp(Color3.new(1, 1, 1), 0.45)
 		pl.Brightness  = GLOW.Brightness
 		pl.Range       = height * GLOW.Reach
 		pl.Shadows     = false
 		pl.Parent      = block(parent, Vector3.new(0.4, 0.4, 0.4),
-			CFrame.new(base + Vector3.new(0, height * 0.5, 0)), colour, nil, true)
+			CFrame.new(base + Vector3.new(0, height * 0.5, 0)), pale, nil, true)
 	end
 end
 

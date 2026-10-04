@@ -352,7 +352,10 @@ local function draw(size)
 	for _, c in ipairs(site.chambers) do
 		reach = math.max(reach, math.sqrt(c.x * c.x + c.z * c.z) + c.radius)
 	end
-	scale = (size * 0.5 - 22) / reach
+	-- More margin than before. The master cavern reaches most of the way to the
+	-- edge on its own, and names sit outside the ring they belong to, so 22
+	-- studs of padding left both of them against the wall.
+	scale = (size * 0.5 - 34) / reach
 
 	-- Galleries first, so everything else sits on top of them
 	for _, d in ipairs(site.drifts) do
@@ -377,8 +380,12 @@ local function draw(size)
 		-- The master encloses every other hall, so filling it just puts a wash
 		-- behind the whole map. Outline only: it reads as the edge of the cavern
 		-- you are inside, which is what it is.
+		-- Much lighter fills. Halls overlap the master and each other now, so at
+		-- 0.4 apiece three of them stack into one opaque blob and the map stops
+		-- showing you anything. The ring is what carries the shape; the fill is
+		-- only a tint saying you have been there.
 		ring.BackgroundTransparency = c.master and 1
-			or (visited[c.index] and 0.4 or 0.9)
+			or (visited[c.index] and 0.76 or 0.93)
 		ring.BorderSizePixel        = 0
 		ring.ZIndex                 = c.master and 3 or 5
 		ring.Parent                 = ink
@@ -396,9 +403,16 @@ local function draw(size)
 		local m = math.sqrt(ox * ox + oy * oy)
 		if m < 0.01 then ox, oy, m = 0, 1, 1 end
 
+		-- Held inside the card. The plan clips its children, so a name pushed
+		-- outward from a hall near the edge simply lost its second half —
+		-- "BLACK CHA". Half the label's own width of margin guarantees the whole
+		-- box stays in, so nothing is ever cut.
+		local halfW = 66
+		local lx = math.clamp(x + ox / m * (r + 7), halfW + 2, size - halfW - 2)
+		local ly = math.clamp(y + oy / m * (r + 7) - 6, 2, size - 16)
+
 		local name = label(ink, visited[c.index] and string.upper(c.name) or "",
-			UDim2.new(0, 132, 0, 13),
-			UDim2.new(0, x + ox / m * (r + 7), 0, y + oy / m * (r + 7) - 6),
+			UDim2.new(0, halfW * 2, 0, 13), UDim2.new(0, lx, 0, ly),
 			colour, expanded and 12 or 10)
 		name.AnchorPoint = Vector2.new(0.5, 0)
 		name.ZIndex      = 8
