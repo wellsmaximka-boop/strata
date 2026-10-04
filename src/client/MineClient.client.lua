@@ -95,7 +95,7 @@ local function label(parent, text, size, position, colour, textSize, font, align
 	-- in the helper means it happens everywhere without a line at each call.
 	local edge = Instance.new("UIStroke")
 	edge.Color           = StrataConfig.UI.StoneDark
-	edge.Thickness       = math.clamp((l.TextSize or 14) * 0.15, 1.1, 3.2)
+	edge.Thickness       = StrataConfig.UI.TextEdge or 0
 	edge.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 	edge.Parent          = l
 	l.Parent                 = parent

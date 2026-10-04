@@ -77,7 +77,7 @@ function UIKit.Text(parent, str, size, position, colour, textSize, font, align)
 
 	local edge = Instance.new("UIStroke")
 	edge.Color           = UIP.StoneDark
-	edge.Thickness       = math.clamp((textSize or 14) * 0.16, 1.2, 3.4)
+	edge.Thickness       = UIP.TextEdge or 0
 	edge.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 	edge.Parent          = l
 	return l

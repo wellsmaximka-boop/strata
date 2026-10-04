@@ -79,15 +79,19 @@ StrataConfig.Mine = {
 --      a flat rectangle read as an object with an edge.
 StrataConfig.UI = {
 	-- ── Surfaces ──
-	Stone      = Color3.fromRGB(38, 35, 56),    -- panel face
-	StoneDeep  = Color3.fromRGB(23, 21, 36),    -- recesses, wells, tracks
-	StoneDark  = Color3.fromRGB(9, 8, 16),      -- outlines, and they are thick
-	StoneLit   = Color3.fromRGB(72, 67, 104),   -- the lit top edge of a panel
-	Speckle    = Color3.fromRGB(150, 142, 205), -- grain
-	Vein       = Color3.fromRGB(104, 96, 148),
+	-- Gunmetal, not aubergine. The old faces were violet-tinted (38, 35, 56),
+	-- which is where the "soft purple panels" look came from — the reference is
+	-- painted steel in a working mine: cold, slightly green-grey, and the only
+	-- warmth in the whole interface comes from the amber it is labelled in.
+	Stone      = Color3.fromRGB(44, 48, 52),    -- panel face
+	StoneDeep  = Color3.fromRGB(26, 29, 32),    -- recesses, wells, tracks
+	StoneDark  = Color3.fromRGB(12, 13, 15),    -- outlines, and they are thick
+	StoneLit   = Color3.fromRGB(78, 85, 90),    -- the lit top edge of a panel
+	Speckle    = Color3.fromRGB(132, 142, 148), -- grain
+	Vein       = Color3.fromRGB(92, 100, 106),
 
-	Ink        = Color3.fromRGB(255, 252, 246),
-	Dim        = Color3.fromRGB(176, 170, 208), -- lavender, not dead grey
+	Ink        = Color3.fromRGB(246, 248, 250),
+	Dim        = Color3.fromRGB(158, 168, 176), -- cold steel, not lavender
 
 	-- ── Accents ──
 	-- Ore is the house colour and the one every heading, every total and every
@@ -123,15 +127,26 @@ StrataConfig.UI = {
 	-- ── Chrome ──
 	-- One set of numbers so every panel in the game has the same edge, the same
 	-- corner and the same drop shadow without any of them being typed twice.
-	Outline   = 4,     -- panel border, in pixels
-	EdgeThin  = 2.5,   -- and for the small stuff inside one
-	Corner    = 14,
-	CornerSm  = 8,
-	-- The black outline around text. Was 2.5, which suited Fredoka's fat rounded
-	-- strokes and swallows Oswald's condensed ones — at small sizes the counters
-	-- in a letter fill in and the word turns into a blob. Readability was the
-	-- complaint; this is half of the answer.
-	TextEdge  = 1.6,
+	Outline   = 3,     -- panel border, in pixels
+	EdgeThin  = 2,     -- and for the small stuff inside one
+
+	-- Hard corners. Fourteen pixels of radius is a phone app; the reference is
+	-- plate steel with the corners cut off, and nothing in a mine is round
+	-- because it was easier to round it. Two keeps the edge from aliasing into
+	-- a staircase without ever reading as a rounded card.
+	Corner    = 2,
+	CornerSm  = 2,
+
+	-- No outline on text at all.
+	--
+	-- Every label in the game carried a black UIStroke. It was there to keep
+	-- text legible over busy panels, and it is the single thing that made the
+	-- interface look cheap: a black halo around every word is what a sticker
+	-- looks like, not what a readout looks like. The reference has none — the
+	-- panels are dark enough that light text simply sits on them.
+	--
+	-- Set this above zero again and the halo comes back everywhere at once.
+	TextEdge  = 0,
 
 	-- An inventory tile. Here rather than in UIKit because the grid that lays
 	-- them out and the kit that draws them both need it, and a layout number is
@@ -280,8 +295,8 @@ StrataConfig.Look = {
 		-- The reference is dark and perfectly legible: you can see rock
 		-- everywhere, it is cool, and the colour comes from a handful of small
 		-- accents. That needs a floor under the darkness, and this is it.
-		Ambient      = Color3.fromRGB(38, 44, 58),
-		Brightness   = 0.68,
+		Ambient      = Color3.fromRGB(54, 62, 80),
+		Brightness   = 0.9,
 		ExposureBias = -0.16,
 		Diffuse      = 0.04,   -- skylight bounce, which underground is a lie
 		Specular     = 0.08,
@@ -1441,7 +1456,11 @@ StrataConfig.Site = {
 	-- judge how big a room is until something inside it blocks your view across
 	-- it, and three in a hall 429 studs wide blocks nothing.
 	Pillars     = { min = 5, max = 11 },
-	PillarWidth = { min = 0.09, max = 0.2 },   -- as a share of hall radius
+	-- Narrower, so they read as columns. At up to a fifth of the hall's radius a
+	-- pillar in the master cavern was ninety-six studs across and a hundred and
+	-- ninety tall — which is a buttress, not a column, and from inside the room
+	-- it is just another wall. Half as wide is twice as vertical.
+	PillarWidth = { min = 0.055, max = 0.12 },  -- as a share of hall radius
 
 	-- A pillar is stacked drums, not one cylinder. One cylinder is perfectly
 	-- round and the same width all the way up, which reads as a building in a
@@ -1459,10 +1478,16 @@ StrataConfig.Site = {
 	-- cut into — low enough to walk up. Bury is how much slab continues below
 	-- that floor, and it is the whole reason a terrace cannot float: its
 	-- underside is inside the rock whatever the ground does under it.
+	-- Slimmed down. Burying thirty studs of slab under the floor guaranteed a
+	-- terrace could never float, but it also made every one of them a block 110
+	-- studs across and over forty thick — and a dozen of those are the broad
+	-- horizontal masses that end up owning the silhouette of the room. Sixteen
+	-- is still far more than any floor wanders, and at seventy across a ledge is
+	-- a ledge rather than a storey.
 	Shelf = {
-		Step    = { min = 3.5, max = 13 },
-		Bury    = 30,
-		MaxSpan = 110,   -- or the master cavern gets a mezzanine, not a ledge
+		Step    = { min = 3.5, max = 11 },
+		Bury    = 16,
+		MaxSpan = 70,
 	},
 
 	-- Pockets bitten out of the wall. This is the perimeter detail: it stops the
@@ -1665,9 +1690,14 @@ StrataConfig.Flare = {
 	Life = 62,         -- seconds it burns for
 	Fade = 5,          -- and how long it takes to go out at the end
 
-	Colour     = Color3.fromRGB(255, 208, 138),
-	Range      = 82,
-	Brightness = 5.5,
+	-- These were tuned for halls 112 studs across. The master cavern is 429, so
+	-- a flare thrown into the middle of one lit a tenth of it and read as a
+	-- match rather than the thing you commit a charge to. A flare should own the
+	-- room it lands in — that is the entire reason to carry three instead of a
+	-- bigger lamp.
+	Colour     = Color3.fromRGB(255, 214, 158),
+	Range      = 168,
+	Brightness = 9,
 
 	-- The dotted line, Angry Birds style: simulated forward under real gravity
 	-- and stopped at the first thing it would hit, so it shows where the flare

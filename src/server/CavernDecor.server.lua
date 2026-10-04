@@ -97,9 +97,9 @@ local GLOW = {
 	-- point. The old problem was a few enormous ranges painting whole walls one
 	-- colour; these reach two prop-heights, so eight of them is eight pools you
 	-- can see between rather than one wash. More light, more contrast, both.
-	Share      = 0.34,   -- how many glowing props actually carry a light
-	Brightness = 0.9,
-	Reach      = 2.0,    -- multiplier on the prop's own size
+	Share      = 0.5,    -- how many glowing props actually carry a light
+	Brightness = 1.25,
+	Reach      = 2.6,    -- multiplier on the prop's own size
 	PoolBright = 0.9,
 	PoolReach  = 3.2,
 

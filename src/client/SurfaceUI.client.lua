@@ -92,14 +92,22 @@ local function text(parent, str, size, colour, textSize, font, align)
 	l.Font                   = font or StrataConfig.UI.Body
 	l.TextXAlignment         = align or Enum.TextXAlignment.Left
 
-	-- A heavy black outline on every label. It is the single change that makes
-	-- text on a dark panel read as a label rather than a smear, and putting it
-	-- in the helper means it happens everywhere without a line at each call.
-	local edge = Instance.new("UIStroke")
-	edge.Color           = StrataConfig.UI.StoneDark
-	edge.Thickness       = math.clamp((l.TextSize or 14) * 0.15, 1.1, 3.2)
-	edge.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-	edge.Parent          = l
+	-- The black outline every label used to carry. It was hardcoded here and
+	-- ignored StrataConfig.UI.TextEdge entirely, which is why turning that down
+	-- never did anything: a halo on every word, which is what a sticker looks
+	-- like rather than a readout. The panels are dark; light text sits on them
+	-- without help.
+	--
+	-- Driven by the config now, and skipped outright at zero rather than left as
+	-- a thousand UIStroke objects doing nothing.
+	local thick = StrataConfig.UI.TextEdge or 0
+	if thick > 0 then
+		local edge = Instance.new("UIStroke")
+		edge.Color           = StrataConfig.UI.StoneDark
+		edge.Thickness       = thick
+		edge.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+		edge.Parent          = l
+	end
 	l.Parent                 = parent
 	return l
 end

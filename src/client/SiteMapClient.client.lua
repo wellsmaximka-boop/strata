@@ -70,11 +70,17 @@ local function label(parent, str, size, position, colour, textSize, font, align)
 	l.ZIndex                 = 6
 	l.Parent                 = parent
 
-	local edge = Instance.new("UIStroke")
-	edge.Color            = UIP.StoneDark
-	edge.Thickness        = math.clamp((textSize or 13) * 0.15, 1.1, 3.2)
-	edge.ApplyStrokeMode  = Enum.ApplyStrokeMode.Contextual
-	edge.Parent           = l
+	-- Same halo this helper used to add unconditionally. Driven by the config
+	-- now, like every other label: both the map card and the world beacons draw
+	-- on dark plates, so there is nothing for an outline to rescue them from.
+	local thick = UIP.TextEdge or 0
+	if thick > 0 then
+		local edge = Instance.new("UIStroke")
+		edge.Color            = UIP.StoneDark
+		edge.Thickness        = thick
+		edge.ApplyStrokeMode  = Enum.ApplyStrokeMode.Contextual
+		edge.Parent           = l
+	end
 	return l
 end
 
