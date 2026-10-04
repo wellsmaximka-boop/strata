@@ -47,7 +47,7 @@ StrataConfig.Mine = {
 	Radius     = 359,
 	SurfaceY   = 0,     -- nominal ground level
 	CeilingY   = 16,    -- top of the generated region
-	FloorY     = -960,  -- bottom of the generated region: the Frostline is not built yet,
+	FloorY     = -1260,  -- bottom of the generated region: the Frostline is not built yet,
 	                    -- so the rock stops exactly where the depth chart says it does
 
 	-- The mine is far too big to write in one go now, so it is written in two
@@ -416,9 +416,12 @@ StrataConfig.Strata = {
 		tierBias    = 0.85, -- under 1 favours common ore, over 1 favours rare
 		reqLevel     = 1,   -- see StrataConfig.LayerLock
 		cavernChance = 0.75,
-		-- Topsoil is only 50 studs thick. Rooms the size of the ones below would
-		-- punch through into the camp, so this layer gets hollows instead.
-		cavernRadius = { min = 24, max = 42 },
+		-- This band, and the note that used to sit on it, were written when the
+		-- Topsoil was fifty studs thick and rooms had to be hollows or they
+		-- would punch through into the camp. It is 260 now, and the band was
+		-- still the thing capping the master cavern — not the layer, not the
+		-- claim, just a stale number from two rewrites ago.
+		cavernRadius = { min = 34, max = 62 },
 		archetypes  = {
 			{ id = "RootHollow", weight = 70 },
 			{ id = "SinkPool",   weight = 30 },
@@ -428,7 +431,7 @@ StrataConfig.Strata = {
 	{
 		id       = "Stonebed",
 		name     = "Stonebed",
-		top      = -160,
+		top      = -260,
 		material = Enum.Material.Rock,
 		color    = Color3.fromRGB(107, 112, 121),
 		nodeDensity = 0.24,
@@ -449,7 +452,7 @@ StrataConfig.Strata = {
 	{
 		id       = "MagmaVents",
 		name     = "Magma Vents",
-		top      = -460,
+		top      = -660,
 		material = Enum.Material.Basalt,
 		color    = Color3.fromRGB(88, 62, 55),
 		nodeDensity = 0.30,
@@ -988,27 +991,27 @@ StrataConfig.DepthChart = {
 	  hardness = 1,   blurb = "Loose dirt. Anything can break it.",
 	  finds = { "Ember" } },
 
-	{ id = "Stonebed",   name = "Stonebed",    top = -160,  built = true,
+	{ id = "Stonebed",   name = "Stonebed",    top = -260,  built = true,
 	  color = Color3.fromRGB(126, 132, 142),
 	  hardness = 25,  blurb = "Proper rock. The first wall you hit.",
 	  finds = { "Ember", "EmberRich" } },
 
-	{ id = "MagmaVents", name = "Magma Vents", top = -460,  built = true,
+	{ id = "MagmaVents", name = "Magma Vents", top = -660,  built = true,
 	  color = Color3.fromRGB(196, 92, 56), requires = "HEAT 3",
 	  hardness = 120, blurb = "Basalt and lava pockets. Rich, and it cooks you.",
 	  finds = { "Ember", "EmberRich", "Cinderheart" } },
 
-	{ id = "Frostline",  name = "Frostline",   top = -960,  built = false,
+	{ id = "Frostline",  name = "Frostline",   top = -1260,  built = false,
 	  color = Color3.fromRGB(104, 168, 200), requires = "COLD gear",
 	  hardness = 400, blurb = "Glacier ice over buried caverns.",
 	  finds = { "Insulite family" } },
 
-	{ id = "TheCrush",   name = "The Crush",   top = -1600, built = false,
+	{ id = "TheCrush",   name = "The Crush",   top = -2000, built = false,
 	  color = Color3.fromRGB(122, 116, 148), requires = "PRESSURE gear",
 	  hardness = 1200, blurb = "Salt and limestone under enormous weight.",
 	  finds = { "Densite family" } },
 
-	{ id = "TheNull",    name = "The Null",    top = -2600, built = false,
+	{ id = "TheNull",    name = "The Null",    top = -3200, built = false,
 	  color = Color3.fromRGB(138, 92, 190), requires = "unknown",
 	  hardness = 4000, blurb = "Nobody has come back with a description.",
 	  finds = { "???" } },
@@ -1033,7 +1036,7 @@ for _, layer in ipairs(StrataConfig.DepthChart) do
 	end
 end
 
-StrataConfig.ChartFloor = -3400   -- where the chart bottoms out
+StrataConfig.ChartFloor = -4100   -- where the chart bottoms out
 
 -- ── Surface ──────────────────────────────────────────────────────────────────
 -- Shared by the builder that puts the camp up and the service that watches it,
@@ -1431,9 +1434,27 @@ StrataConfig.Site = {
 	Pillars     = { min = 3, max = 7 },
 	PillarWidth = { min = 0.09, max = 0.2 },   -- as a share of hall radius
 
+	-- A pillar is stacked drums, not one cylinder. One cylinder is perfectly
+	-- round and the same width all the way up, which reads as a building in a
+	-- room that is meant to be rock.
+	Pillar = {
+		Drums = { min = 3, max = 5 },
+		Lean  = 0.55,   -- how far the top wanders off the foot, in base radii
+	},
+
 	-- Stepped floors. Every reference for this is a terrace rather than a flat
 	-- pan, and a slab put back after the air is cut is the cheapest way there is.
 	Shelves = { min = 3, max = 6 },
+
+	-- How a terrace sits. Step is how far its top stands above the floor it is
+	-- cut into — low enough to walk up. Bury is how much slab continues below
+	-- that floor, and it is the whole reason a terrace cannot float: its
+	-- underside is inside the rock whatever the ground does under it.
+	Shelf = {
+		Step    = { min = 3.5, max = 13 },
+		Bury    = 30,
+		MaxSpan = 110,   -- or the master cavern gets a mezzanine, not a ledge
+	},
 
 	-- Pockets bitten out of the wall. This is the perimeter detail: it stops the
 	-- hall being a clean sphere, and it is where the dark corners are.

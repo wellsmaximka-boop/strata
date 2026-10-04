@@ -617,14 +617,47 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 			-- ceiling, put back after the air is carved. The single biggest
 			-- thing for scale — you cannot tell how big a space is until
 			-- something inside it blocks your view of the far side.
+			-- Built in segments rather than as one cylinder. A single cylinder is
+			-- a column: perfectly round, perfectly straight, the same width top
+			-- to bottom, and it reads as architecture in a room that is supposed
+			-- to be rock. Three to five stacked drums of varying width, each
+			-- nudged off the axis, read as something that grew — wider at the
+			-- base, pinched in the middle, leaning slightly.
 			local pillars = math.floor(rand(CFG.Pillars.min, CFG.Pillars.max + 0.999))
 			for _ = 1, pillars do
 				local a = rand() * math.pi * 2
 				local d = radius * rand(0.28, 0.82)
+				local base = radius * rand(CFG.PillarWidth.min, CFG.PillarWidth.max)
+				local full = v * 2 + 14
+
+				-- A consistent lean, so the drums stack into one leaning column
+				-- instead of scattering
+				local la, lean = rand() * math.pi * 2, base * CFG.Pillar.Lean
+				local lx, lz = math.cos(la) * lean, math.sin(la) * lean
+
+				local drums = math.floor(rand(CFG.Pillar.Drums.min,
+					CFG.Pillar.Drums.max + 0.999))
+				local segments = {}
+				for s = 1, drums do
+					-- 0 at the base, 1 at the top
+					local t  = (s - 0.5) / drums
+					local hs = full / drums
+					-- Thickest at the foot, narrowest around two thirds up,
+					-- flaring a little again at the cap
+					local taper = 1 - 0.45 * math.sin(t * math.pi * 0.86)
+					table.insert(segments, {
+						y      = -full * 0.5 + full * t,
+						radius = base * taper * rand(0.88, 1.12),
+						height = hs * 1.35,   -- overlapping, so there are no seams
+						lean   = Vector3.new(lx * (t - 0.5) * 2, 0, lz * (t - 0.5) * 2),
+					})
+				end
+
 				table.insert(chamber.pillars, {
 					offset = Vector3.new(math.cos(a) * d, 0, math.sin(a) * d),
-					radius = radius * rand(CFG.PillarWidth.min, CFG.PillarWidth.max),
-					height = v * 2 + 14,
+					radius = base,
+					height = full,
+					segments = segments,
 				})
 			end
 
@@ -669,20 +702,39 @@ function DigSite.Build(seed, stratum, tierIndex, hubY, wantArchetype)
 			-- Terraces. The references are all stepped floors rather than flat
 			-- ones, and a slab dropped back in after the air is cut is the
 			-- cheapest possible way to get them.
+			-- A terrace is a step in the floor. It was a slab dropped anywhere
+			-- between 5% and 78% of the way down the room, which in a hall was
+			-- merely odd and in the master cavern — a hundred studs of
+			-- half-height — was a platform two hundred studs across hanging in
+			-- clear air with nothing under it. That is most of what "random
+			-- blocks floating about" was.
+			--
+			-- So it is seated instead. The hall is an ellipsoid, so the floor
+			-- under any offset is known, and the slab is placed with its top a
+			-- step above that floor and its bottom buried well beneath it. It
+			-- comes out as a ledge cut into the ground, which is what a terrace
+			-- is, and it can no longer float because its underside is inside the
+			-- rock by construction.
 			local shelves = math.floor(rand(CFG.Shelves.min, CFG.Shelves.max + 0.999))
 			for _ = 1, shelves do
+				local ox = rand(-1, 1) * radius * 0.55
+				local oz = rand(-1, 1) * radius * 0.55
+				local d  = math.sqrt(ox * ox + oz * oz) / math.max(radius, 1)
+
+				-- The hall's own floor at this offset, relative to its centre
+				local under = -v * math.sqrt(math.max(1 - d * d, 0))
+
+				local step  = rand(CFG.Shelf.Step.min, CFG.Shelf.Step.max)
+				local thick = step + CFG.Shelf.Bury
+
 				table.insert(chamber.shelves, {
-					offset = Vector3.new(
-						rand(-1, 1) * radius * 0.55,
-						-- Measured against the hall's height, not its width. A
-						-- terrace placed by radius in a hall twice as wide as it
-						-- is tall ends up under the floor.
-						rand(-0.78, -0.05) * v,
-						rand(-1, 1) * radius * 0.55),
+					-- Centre sits half a thickness below the top, and the top is
+					-- one step above the floor
+					offset = Vector3.new(ox, under + step - thick * 0.5, oz),
 					size = Vector3.new(
-						radius * rand(0.45, 1.05),
-						rand(4, 11),
-						radius * rand(0.45, 1.05)),
+						math.min(radius * rand(0.35, 0.8), CFG.Shelf.MaxSpan),
+						thick,
+						math.min(radius * rand(0.35, 0.8), CFG.Shelf.MaxSpan)),
 					spin = rand() * math.pi,
 				})
 			end

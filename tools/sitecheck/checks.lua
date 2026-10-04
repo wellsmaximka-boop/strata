@@ -193,3 +193,34 @@ for li, stratum in ipairs(StrataConfig.Strata) do
 	print(("  %-11s deck %7.1f   master r=%5.1f (%5.0f across, %5.0f tall)   floor off deck by %.2f")
 		:format(stratum.name, hubY, rad, rad * 2, hgt, worst))
 end
+
+-- Terraces: is every slab's underside inside the rock? A shelf whose bottom is
+-- above the hall's floor at that offset is a platform hanging in clear air.
+local floating, worstFloat, total = 0, 0, 0
+for li, stratum in ipairs(StrataConfig.Strata) do
+	local hubY = StrataConfig.LandingY(stratum)
+		- StrataConfig.Descent.LandingHalf + 1.4
+	for tier = 1, 4 do
+		for s = 1, 30 do
+			local site = DigSite.Build(li * 100000 + tier * 7777 + s * 131,
+				stratum, tier, hubY)
+			for _, c in ipairs(site.chambers) do
+				local v = c.radius / c.flatten
+				for _, sh in ipairs(c.shelves) do
+					total += 1
+					local d = math.sqrt(sh.offset.X ^ 2 + sh.offset.Z ^ 2)
+						/ math.max(c.radius, 1)
+					local under = -v * math.sqrt(math.max(1 - d * d, 0))
+					local bottom = sh.offset.Y - sh.size.Y * 0.5
+					if bottom > under then
+						floating += 1
+						worstFloat = math.max(worstFloat, bottom - under)
+					end
+				end
+			end
+		end
+	end
+end
+print("\n-- terraces --")
+print(("  %d slabs, FLOATING: %d (worst %.1f studs clear of the floor)")
+	:format(total, floating, worstFloat))

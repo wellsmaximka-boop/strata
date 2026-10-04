@@ -328,15 +328,24 @@ local function furnish(room)
 			math.sin(angle) * dist
 		)
 
+		-- Anything hung from the roof is sized against the room's height, not
+		-- given a flat few studs. In the master cavern the ceiling is two
+		-- hundred studs up, and an eight-stud stalactite at that height is not a
+		-- formation — it is a small object hanging in the middle of the air with
+		-- nothing above it that you can see.
+		local tall = room.flatten and room.radius / room.flatten or room.radius
+
 		if kind == "stalactites" then
 			local top = ceilingOver(spot, room.radius)
 			if top then
-				spike(roomFolder, top, 3 + rand() * 9, 1 + rand() * 2.2, arch.tint or light, false)
+				spike(roomFolder, top, math.clamp(tall * (0.1 + rand() * 0.26), 4, 52),
+					1 + rand() * 2.2 + tall * 0.02, arch.tint or light, false)
 			end
 		elseif kind == "vines" then
 			local top = ceilingOver(spot, room.radius)
 			if top then
-				vine(roomFolder, top, 3 + rand() * 8, Color3.fromRGB(78, 128, 58))
+				vine(roomFolder, top, math.clamp(tall * (0.08 + rand() * 0.22), 3, 44),
+					Color3.fromRGB(78, 128, 58))
 			end
 		else
 			local ground = floorUnder(spot, room.radius * 1.6)

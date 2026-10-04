@@ -181,9 +181,21 @@ local function carve(site, stratum)
 		end
 
 		for _, pillar in ipairs(chamber.pillars) do
-			terrain:FillCylinder(
-				CFrame.new(chamber.centre + pillar.offset) * CFrame.Angles(0, 0, math.pi / 2),
-				pillar.height, pillar.radius, stratum.material)
+			if pillar.segments then
+				-- Stacked drums: wider at the foot, pinched above it, leaning.
+				-- They overlap, so the column has no seams in it.
+				for _, drum in ipairs(pillar.segments) do
+					terrain:FillCylinder(
+						CFrame.new(chamber.centre + pillar.offset + drum.lean
+							+ Vector3.new(0, drum.y, 0))
+							* CFrame.Angles(0, 0, math.pi / 2),
+						drum.height, drum.radius, stratum.material)
+				end
+			else
+				terrain:FillCylinder(
+					CFrame.new(chamber.centre + pillar.offset) * CFrame.Angles(0, 0, math.pi / 2),
+					pillar.height, pillar.radius, stratum.material)
+			end
 		end
 		task.wait()
 	end
