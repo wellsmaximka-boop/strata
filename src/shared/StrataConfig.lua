@@ -304,6 +304,10 @@ StrataConfig.Look = {
 	-- The lamp on your helmet, and the reason the dark above is survivable. DRG
 	-- gives every dwarf one permanently; without it, three flares on a thirty
 	-- second refresh is not atmosphere, it is a blindfold with intermissions.
+	--
+	-- Note on cost: Shadows is true, which in Future lighting means one
+	-- shadow-casting light that moves every frame. That is the expensive kind.
+	-- If frames drop in a big hall, this is the first number to try at false.
 	Headlamp = {
 		Angle      = 64,
 		Range      = 76,
@@ -314,6 +318,53 @@ StrataConfig.Look = {
 		-- feet exist. Without it you cast a lamp forward and stand in a hole.
 		FillRange      = 15,
 		FillBrightness = 0.5,
+	},
+}
+
+-- ── Grapple ──────────────────────────────────────────────────────────────────
+-- The halls are 150 studs across and the void is 280 tall. Walking is the wrong
+-- verb for that, and height you cannot reach is not space — it is a ceiling.
+-- This is what turns the vertical cave into somewhere you move through.
+--
+-- It is a reel, not a swing. A rope swing in Roblox means a constraint, a
+-- pendulum and a lot of tuning before it stops throwing people into walls; a
+-- reel pulls you along a straight line at a known speed and is predictable the
+-- first time you use it. Deep Rock's scout works the same way and nobody has
+-- ever called that unsatisfying.
+--
+-- The momentum is the part that matters. Arriving dead-stopped against a wall
+-- is a lift. Arriving with a kick that carries you over the lip is traversal,
+-- and it is the difference between the hook being transport and being a move.
+StrataConfig.Grapple = {
+	Key      = Enum.KeyCode.Q,
+	Range    = 190,   -- how far the hook reaches
+	Speed    = 140,   -- reel-in, studs per second
+	Cooldown = 5.5,
+	Arrive   = 8,     -- close enough to the anchor to call it arrived
+
+	-- The kick on arrival, so you top out onto a ledge instead of stopping flat
+	-- against the rock under it. Up, plus whatever you were already carrying.
+	Launch   = 32,
+	Carry    = 0.45,  -- share of the reel speed kept as forward momentum
+
+	-- A hard stop. If anything goes wrong — the anchor is inside geometry, the
+	-- player is wedged — this is what stops the hook holding someone forever.
+	MaxTime  = 4.0,
+
+	MinDepth = 8,     -- underground only, like the flares
+
+	Rope = {
+		Thickness = 0.3,
+		Colour    = Color3.fromRGB(190, 206, 226),
+		Hook      = Color3.fromRGB(255, 196, 86),
+	},
+
+	-- The crosshair. It is the whole of "grapple point detection": if it is lit
+	-- you can go there, and if it is not you cannot.
+	Reticle = {
+		Size = 22,
+		Good = Color3.fromRGB(120, 240, 170),
+		Bad  = Color3.fromRGB(150, 150, 164),
 	},
 }
 
