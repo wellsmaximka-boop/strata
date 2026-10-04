@@ -308,8 +308,13 @@ StrataConfig.Look = {
 		-- far wall fades into its own darkness and you have to throw a flare to
 		-- learn the shape of the space. Tinted per layer off that layer's own
 		-- rock colour, so a layer added later gets its own air for nothing.
-		Density   = 0.42,
-		Haze      = 0.7,
+		-- Down from 0.42. There are two hazes in this game — this one and the
+		-- Lighting fog MineClient drives per room — and they stack. With the fog
+		-- view distances fixed, the atmosphere only has to add depth, not hide
+		-- the far wall, and at 0.42 the two together were enough to flatten a
+		-- four-hundred-stud cavern into a sheet of one colour.
+		Density   = 0.2,
+		Haze      = 0.5,
 		Glare     = 0,
 		TintShare = 0.17,  -- how much of the rock's colour the air keeps
 
@@ -426,7 +431,7 @@ StrataConfig.Strata = {
 			{ id = "RootHollow", weight = 70 },
 			{ id = "SinkPool",   weight = 30 },
 		},
-		fog      = { color = Color3.fromRGB(120, 115, 100), start = 40, ending = 260 },
+		fog      = { color = Color3.fromRGB(120, 115, 100), start = 60, ending = 760 },
 	},
 	{
 		id       = "Stonebed",
@@ -447,7 +452,7 @@ StrataConfig.Strata = {
 			{ id = "FungalHollow", weight = 30 },
 			{ id = "CrystalVault", weight = 18 },
 		},
-		fog      = { color = Color3.fromRGB(46, 52, 60), start = 18, ending = 150 },
+		fog      = { color = Color3.fromRGB(46, 52, 60), start = 48, ending = 620 },
 	},
 	{
 		id       = "MagmaVents",
@@ -468,7 +473,7 @@ StrataConfig.Strata = {
 			{ id = "ObsidianHollow",  weight = 34 },
 			{ id = "CinderCathedral", weight = 8 },
 		},
-		fog      = { color = Color3.fromRGB(58, 26, 18), start = 12, ending = 110 },
+		fog      = { color = Color3.fromRGB(58, 26, 18), start = 40, ending = 540 },
 	},
 }
 

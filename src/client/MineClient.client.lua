@@ -1989,9 +1989,31 @@ end)
 local SKY_FOG = Color3.fromRGB(176, 188, 204)
 local lastFog = nil
 
+-- Every distance in here was set when a hall was about 112 studs across. The
+-- master cavern is 429, and a room fog ending at 120 studs means everything past
+-- a quarter of the way across it is solid colour — which is not a dark cave, it
+-- is a green wall, and it is why props looked like they were floating: the floor
+-- underneath them was past the fog.
+--
+-- So the room's own size sets the view distance, and the colour is pulled
+-- towards the same cool base the atmosphere uses. An archetype fog at full
+-- strength dyes the whole screen its own hue; blended, it tints. Same lesson as
+-- the pack lamp: colour belongs to the things in the cave, not to the air.
+local CAVE_LOOK = StrataConfig.Look.Cave
+
+local function cooled(c)
+	local b = CAVE_LOOK.CoolBase
+	local m = CAVE_LOOK.CoolBlend
+	return Color3.new(
+		c.R + (b.R - c.R) * m,
+		c.G + (b.G - c.G) * m,
+		c.B + (b.B - c.B) * m)
+end
+
 local function fogTarget()
 	if currentRoom and currentRoom.fog then
-		return currentRoom.fog, 10, 120
+		local r = currentRoom.radius or 90
+		return cooled(currentRoom.fog), r * 0.18, math.max(r * 3.2, 280)
 	end
 
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -2001,7 +2023,7 @@ local function fogTarget()
 	end
 
 	local f = StrataConfig.GetStratum(y).fog
-	return f.color, f.start, f.ending
+	return cooled(f.color), f.start, f.ending
 end
 
 task.spawn(function()

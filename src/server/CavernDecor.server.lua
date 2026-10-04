@@ -416,6 +416,9 @@ local function announce(player, room)
 		name  = arch.name,
 		blurb = arch.blurb,
 		fog   = arch.fog,
+		-- The client scales its fog distance off this. A fixed view distance
+		-- cannot serve both a forty-stud hollow and a four-hundred-stud cavern.
+		radius = room.radius,
 		light = arch.light,
 		rare  = arch.rare == true,
 	})
