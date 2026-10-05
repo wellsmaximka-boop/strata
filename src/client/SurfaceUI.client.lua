@@ -2984,7 +2984,15 @@ end)
 -- Lives in its own module now. It declared thirty-odd locals and this file sits
 -- on Luau's ceiling of 200 per function, so those registers were the most
 -- expensive in the project. Over there they are free; here it costs one name.
-refreshChart = require(script.Parent.ui.DepthChart)({
+--
+-- WaitForChild, not a dot. A LocalScript in PlayerScripts can start running
+-- before its siblings have finished replicating, so indexing the folder
+-- directly threw "ui is not a valid member of PlayerScripts" — and because that
+-- error killed the script at this line, every panel defined below it never got
+-- built. The camp simply did not open. Every other require in this project
+-- already waits; this one did not.
+refreshChart = require(
+	script.Parent:WaitForChild("ui"):WaitForChild("DepthChart"))({
 	gui = gui, state = S, player = player,
 	text = text, corner = corner,
 	StrataConfig = StrataConfig,
