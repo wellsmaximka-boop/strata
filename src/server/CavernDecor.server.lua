@@ -318,11 +318,15 @@ local function waterPool(parent, base, radius)
 		if not rim or math.abs(rim.Y - base.Y) > WATER.Level then return end
 	end
 
-	-- FillCylinder runs along the part's X, so this stands it up. Centred half
-	-- its depth below the floor point, which puts the surface exactly on it.
-	workspace.Terrain:FillCylinder(
-		CFrame.new(base - Vector3.new(0, depth * 0.5, 0)) * CFrame.Angles(0, 0, math.pi / 2),
-		depth, wide, Enum.Material.Water)
+	-- A block, not a cylinder. FillCylinder takes its axis from the CFrame and
+	-- the rotation this used is the same one the pillars used — the one the long
+	-- horizontal masses in the cave suggest is backwards. A pond stood on its
+	-- edge is a disc of water in the air, which is exactly what "weird water
+	-- circles" described. A block has no axis to get wrong, and a pool with
+	-- straight sides under the surface is a pool.
+	workspace.Terrain:FillBlock(
+		CFrame.new(base - Vector3.new(0, depth * 0.5, 0)),
+		Vector3.new(wide * 2, depth, wide * 2), Enum.Material.Water)
 end
 
 -- ── Furnishing a room ────────────────────────────────────────────────────────

@@ -188,21 +188,33 @@ local function carve(site, stratum)
 				step.size, stratum.material)
 		end
 
+		-- Stacked balls, not cylinders.
+		--
+		-- FillCylinder takes its axis from the CFrame it is given, and the whole
+		-- project has carried one rotation for it everywhere — which means every
+		-- cylinder in the game is oriented right or wrong *together*. The long
+		-- horizontal masses floating in the caves say wrong, and they have been
+		-- reported three times. Reasoning about the convention from the bore
+		-- shaft was not conclusive either way: the cage is moved by CFrame with
+		-- the rider welded to it, so it would ride a mis-cut shaft without
+		-- anyone noticing.
+		--
+		-- A column of overlapping spheres has no axis to get backwards. It is
+		-- vertical because the centres go up, and nothing else decides that. It
+		-- also reads better — domed at the cap, lumpy down the shaft, which is
+		-- what rock does and what a perfect cylinder never did.
 		for _, pillar in ipairs(chamber.pillars) do
-			if pillar.segments then
-				-- Stacked drums: wider at the foot, pinched above it, leaning.
-				-- They overlap, so the column has no seams in it.
-				for _, drum in ipairs(pillar.segments) do
-					terrain:FillCylinder(
-						CFrame.new(chamber.centre + pillar.offset + drum.lean
-							+ Vector3.new(0, drum.y, 0))
-							* CFrame.Angles(0, 0, math.pi / 2),
-						drum.height, drum.radius, stratum.material)
+			for _, drum in ipairs(pillar.segments or {}) do
+				local r     = math.max(drum.radius, 1)
+				local steps = math.max(math.ceil(drum.height / r), 2)
+				local foot  = chamber.centre + pillar.offset + drum.lean
+					+ Vector3.new(0, drum.y - drum.height * 0.5, 0)
+
+				for s = 0, steps do
+					terrain:FillBall(
+						foot + Vector3.new(0, drum.height * (s / steps), 0),
+						r, stratum.material)
 				end
-			else
-				terrain:FillCylinder(
-					CFrame.new(chamber.centre + pillar.offset) * CFrame.Angles(0, 0, math.pi / 2),
-					pillar.height, pillar.radius, stratum.material)
 			end
 		end
 		task.wait()

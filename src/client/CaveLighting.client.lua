@@ -25,7 +25,9 @@ local StrataConfig = require(ReplicatedStorage:WaitForChild("StrataConfig"))
 
 local LOOK = StrataConfig.Look
 local CAVE = LOOK.Cave
-local LAMP = StrataConfig.Headlamp
+-- Inside Look, not at the top level. Reading it from the wrong table made LAMP
+-- nil, so fitLamp threw on every spawn and the beam has never once existed.
+local LAMP = LOOK.Headlamp
 
 local player = Players.LocalPlayer
 
