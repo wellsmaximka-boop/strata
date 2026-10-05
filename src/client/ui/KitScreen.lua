@@ -109,10 +109,15 @@ end
 backdrop(kit)
 
 local _, kitClose = dress(kit, "KIT", ORE)
-;(function()
-	local K = require(ReplicatedStorage:WaitForChild("UIKit"))
-	K.Ribbon(kit, "KIT", ORE)
-end)()
+
+-- This used to re-require UIKit inside its own IIFE, because in the parent file
+-- a second local would have cost a register it could not spare. The IIFE also
+-- reached for ReplicatedStorage, which was a top-level local of that file and is
+-- not one here — so the module threw on its first line of real work. In here
+-- there is no register pressure and UIKit is already required at the top, so the
+-- wrapper does nothing but hide a dependency.
+UIKit.Ribbon(kit, "KIT", ORE)
+
 local kitScale = scaler(kit)
 
 -- ── Slabs ────────────────────────────────────────────────────────────────────
