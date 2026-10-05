@@ -434,6 +434,40 @@ local function dress(frame, titleText, accent, headerHeight)
 		tick.Parent           = hazard
 	end
 
+	-- The well: a recessed surface for content to sit in.
+	--
+	-- Until now a panel was one flat fill with everything floating on it, which
+	-- is the flattest thing in the interface and most of why it read as a web
+	-- page rather than a box with things in it. A darker inset, a hard inner
+	-- border and a lit lip along its top edge give the plate a front and a back.
+	-- It is the cheapest thing that makes a panel look built rather than drawn,
+	-- and because it lives in dress() every screen gets it at once.
+	local well = Instance.new("Frame")
+	well.Name             = "Well"
+	well.Size             = UDim2.new(1, -22, 1, -(headerHeight + 61))
+	well.Position         = UDim2.new(0, 11, 0, headerHeight + 15)
+	well.BackgroundColor3 = UIP.StoneDeep
+	well.BorderSizePixel  = 0
+	well.ZIndex           = 1
+	well.Parent           = frame
+	corner(well, UIP.CornerSm)
+
+	local wellEdge = Instance.new("UIStroke", well)
+	wellEdge.Color     = OUTLINE
+	wellEdge.Thickness = 2
+
+	-- A lit line along the inside top edge. Light falls from above, so the upper
+	-- lip of something cut into a surface catches it and the lower does not —
+	-- that one asymmetry is what reads as depth rather than as a drawn rectangle.
+	local wellLip = Instance.new("Frame")
+	wellLip.Size                   = UDim2.new(1, -6, 0, 2)
+	wellLip.Position               = UDim2.new(0, 3, 0, 1)
+	wellLip.BackgroundColor3       = UIP.StoneLit
+	wellLip.BackgroundTransparency = 0.4
+	wellLip.BorderSizePixel        = 0
+	wellLip.ZIndex                 = 1
+	wellLip.Parent                 = well
+
 	gloss(header, 26, 22).Position = UDim2.new(0, 40, -0.5, 0)
 	gloss(header, 12, 22).Position = UDim2.new(0, 76, -0.5, 0)
 
@@ -441,10 +475,10 @@ local function dress(frame, titleText, accent, headerHeight)
 		Color3.fromRGB(255, 255, 255), 20, StrataConfig.UI.Head)
 	title.Position = UDim2.new(0, 52, 0, 0)   -- clear of the corner bracket
 	title.ZIndex   = 3
-	local titleShade = Instance.new("UIStroke", title)
-	titleShade.Color     = OUTLINE
-	titleShade.Thickness = 2
-	titleShade.Transparency = 0.35
+
+	-- The panel title kept its own hardcoded halo when every other label lost
+	-- theirs, so it was the one word on screen still wearing an outline. It sits
+	-- on a saturated accent band; it does not need help.
 
 	-- Round close button, overhanging the corner like the references
 	local close = Instance.new("TextButton")
