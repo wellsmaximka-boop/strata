@@ -508,10 +508,37 @@ function UIKit.Detail(parent, width)
 		UIP.Ore, 15, UIP.Head, Enum.TextXAlignment.Left)
 	rank.ZIndex = 9
 
+	-- A seam under the title, so the heading and the body of the pane read as two
+	-- pieces of plate rather than one surface with text at different sizes.
+	UIKit.Rule(pane, UDim2.new(1, -UIP.Gap.lg, 0, 1), UDim2.new(0, UIP.Gap.md, 0, 58))
+
+	-- The same recessed slot the tiles use, for the same reason: art laid
+	-- straight on the panel is a picture of a thing, art in a tray is the thing.
+	local bay = Instance.new("Frame")
+	bay.Name                   = "Bay"
+	bay.Size                   = UDim2.new(1, -UIP.Gap.lg, 0, 158)
+	bay.Position               = UDim2.new(0, UIP.Gap.md, 0, 66)
+	bay.BackgroundColor3       = UIP.StoneDark
+	bay.BackgroundTransparency = 0.25
+	bay.BorderSizePixel        = 0
+	bay.ZIndex                 = 8
+	bay.Parent                 = pane
+	UIKit.Corner(bay, UIP.CornerSm)
+	UIKit.Outline(bay, UIP.StoneDark, 2)
+
+	local bayLip = Instance.new("Frame")
+	bayLip.Size                   = UDim2.new(1, -6, 0, 2)
+	bayLip.Position               = UDim2.new(0, 3, 0, 1)
+	bayLip.BackgroundColor3       = UIP.StoneLit
+	bayLip.BackgroundTransparency = 0.5
+	bayLip.BorderSizePixel        = 0
+	bayLip.ZIndex                 = 8
+	bayLip.Parent                 = bay
+
 	local art = Instance.new("Frame")
 	art.Name                   = "Art"
 	art.Size                   = UDim2.new(1, -40, 0, 150)
-	art.Position               = UDim2.new(0, 20, 0, 60)
+	art.Position               = UDim2.new(0, 20, 0, 70)
 	art.BackgroundTransparency = 1
 	art.ZIndex                 = 9
 	art.Parent                 = pane

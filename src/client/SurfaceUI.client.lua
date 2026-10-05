@@ -471,9 +471,14 @@ local function dress(frame, titleText, accent, headerHeight)
 	gloss(header, 26, 22).Position = UDim2.new(0, 40, -0.5, 0)
 	gloss(header, 12, 22).Position = UDim2.new(0, 76, -0.5, 0)
 
-	local title = text(header, titleText, UDim2.new(1, -40, 1, 0),
+	-- Stops short of the credits plate on the right. At 20px a long title merely
+	-- got close to it; at 24 it runs underneath, and a title sliding behind the
+	-- money is the kind of thing that only shows up on the one screen with the
+	-- longest name.
+	local title = text(header, titleText, UDim2.new(1, -(52 + 152 + UIP.Gap.lg), 1, 0),
 		Color3.fromRGB(255, 255, 255), 24, StrataConfig.UI.Head)
-	title.Position = UDim2.new(0, 52, 0, 0)   -- clear of the corner bracket
+	title.Position     = UDim2.new(0, 52, 0, 0)   -- clear of the corner bracket
+	title.TextTruncate = Enum.TextTruncate.AtEnd
 	title.ZIndex   = 3
 
 	-- The panel title kept its own hardcoded halo when every other label lost
@@ -881,27 +886,52 @@ panel.Parent                 = gui
 local panelHeader, closeBtn, panelTitle, setPanelAccent = dress(panel, "SHOP", SIGNAL)
 local panelScale = scaler(panel)
 
-local panelCredits = text(panelHeader, "0", UDim2.new(0, 140, 1, 0),
-	Color3.fromRGB(255, 255, 255), 16, StrataConfig.UI.Head, Enum.TextXAlignment.Right)
-panelCredits.Position    = UDim2.new(1, -54, 0, 0)
-panelCredits.AnchorPoint = Vector2.new(1, 0)
-panelCredits.ZIndex      = 3
+-- ── The credits readout ──────────────────────────────────────────────────────
+-- A number and a coin used to sit loose on the header gradient, which makes
+-- money a caption. It is the one figure on the screen that every decision in the
+-- shop is measured against, so it gets a housing: a recessed plate cut into the
+-- header, the coin on the left, the figure in amber monospace on the right.
+--
+-- Monospace matters here more than anywhere. Credits tick up and down by
+-- thousands, and a proportional face makes the whole number jump sideways every
+-- time a digit changes.
+local cashPlate = Instance.new("Frame")
+cashPlate.Name             = "Credits"
+cashPlate.AnchorPoint      = Vector2.new(1, 0.5)
+cashPlate.Size             = UDim2.new(0, 152, 0, 28)
+cashPlate.Position         = UDim2.new(1, -UIP.Gap.md, 0.5, 0)
+cashPlate.BackgroundColor3 = UIP.StoneDark
+cashPlate.BackgroundTransparency = 0.12
+cashPlate.BorderSizePixel  = 0
+cashPlate.ZIndex           = 3
+cashPlate.Parent           = panelHeader
+corner(cashPlate, UIP.CornerSm)
+
+local cashEdge = Instance.new("UIStroke", cashPlate)
+cashEdge.Color     = OUTLINE
+cashEdge.Thickness = 2
 
 -- A drawn gold coin instead of the icon asset, which rendered almost black and
 -- disappeared against the dark end of the header gradient.
 local panelCash = Instance.new("Frame")
-panelCash.Size             = UDim2.new(0, 20, 0, 20)
+panelCash.Size             = UDim2.new(0, 18, 0, 18)
 panelCash.AnchorPoint      = Vector2.new(0, 0.5)
-panelCash.Position         = UDim2.new(1, -50, 0.5, 0)
+panelCash.Position         = UDim2.new(0, UIP.Gap.sm, 0.5, 0)
 panelCash.BackgroundColor3 = Color3.fromRGB(255, 204, 92)
 panelCash.BorderSizePixel  = 0
-panelCash.ZIndex           = 3
-panelCash.Parent           = panelHeader
+panelCash.ZIndex           = 4
+panelCash.Parent           = cashPlate
 round(panelCash)   -- a coin is a circle, not a rounded square
 
 local panelCashRim = Instance.new("UIStroke", panelCash)
 panelCashRim.Color     = Color3.fromRGB(150, 102, 28)
 panelCashRim.Thickness = 2
+
+local panelCredits = text(cashPlate, "0", UDim2.new(1, -34, 1, 0),
+	UIP.Ore, 17, StrataConfig.UI.Number, Enum.TextXAlignment.Right)
+panelCredits.Position    = UDim2.new(1, -UIP.Gap.sm, 0, 0)
+panelCredits.AnchorPoint = Vector2.new(1, 0)
+panelCredits.ZIndex      = 4
 
 local panelBody = Instance.new("ScrollingFrame")
 panelBody.Size                   = UDim2.new(1, -36, 1, -116)
