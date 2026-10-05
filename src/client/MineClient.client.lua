@@ -116,7 +116,7 @@ depthBanner.Position         = UDim2.new(0.5, 0, 0, 10)
 depthBanner.BackgroundColor3 = StrataConfig.UI.Stone
 depthBanner.BorderSizePixel  = 0
 depthBanner.Parent           = gui
-Instance.new("UICorner", depthBanner).CornerRadius = UDim.new(0, 16)
+Instance.new("UICorner", depthBanner).CornerRadius = UDim.new(0, math.min(16, StrataConfig.UI.Corner))
 
 local bannerEdge = Instance.new("UIStroke", depthBanner)
 bannerEdge.Color     = OUTLINE
@@ -130,7 +130,7 @@ bannerShadow.BackgroundTransparency = 0.65
 bannerShadow.BorderSizePixel        = 0
 bannerShadow.ZIndex                 = 0
 bannerShadow.Parent                 = depthBanner
-Instance.new("UICorner", bannerShadow).CornerRadius = UDim.new(0, 20)
+Instance.new("UICorner", bannerShadow).CornerRadius = UDim.new(0, math.min(20, StrataConfig.UI.Corner))
 
 -- Colour bar down the left, tinted by the layer you are in
 local depthBar = Instance.new("Frame")
@@ -140,7 +140,7 @@ depthBar.BackgroundColor3 = Color3.fromRGB(122, 106, 79)
 depthBar.BorderSizePixel  = 0
 depthBar.ZIndex           = 2
 depthBar.Parent           = depthBanner
-Instance.new("UICorner", depthBar).CornerRadius = UDim.new(0, 4)
+Instance.new("UICorner", depthBar).CornerRadius = UDim.new(0, math.min(4, StrataConfig.UI.Corner))
 
 local depthValue = label(depthBanner, "0m", UDim2.new(0, 150, 0, 32),
 	UDim2.new(0, 26, 0, 6), INK, 30, StrataConfig.UI.Number)
@@ -181,7 +181,7 @@ cashStrip.Position         = UDim2.new(0, 8, 0, 38)
 cashStrip.BackgroundColor3 = Color3.fromRGB(56, 42, 18)
 cashStrip.BorderSizePixel  = 0
 cashStrip.Parent           = packPanel
-Instance.new("UICorner", cashStrip).CornerRadius = UDim.new(0, 9)
+Instance.new("UICorner", cashStrip).CornerRadius = UDim.new(0, math.min(9, StrataConfig.UI.Corner))
 
 local stripEdge = Instance.new("UIStroke", cashStrip)
 stripEdge.Color     = GOLD_DEEP
@@ -1303,7 +1303,7 @@ card.Position         = UDim2.new(0, CARD.X, 1, -CARD.Bottom)
 card.BackgroundColor3 = UIP.Stone
 card.BorderSizePixel  = 0
 card.Parent           = gui
-Instance.new("UICorner", card).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", card).CornerRadius = UDim.new(0, math.min(14, StrataConfig.UI.Corner))
 
 local cardEdge = Instance.new("UIStroke", card)
 cardEdge.Color     = UIP.StoneDark
@@ -1324,7 +1324,7 @@ grain.Size             = UDim2.fromScale(1, 1)
 grain.BackgroundTransparency = 1
 grain.ClipsDescendants = true
 grain.Parent           = card
-Instance.new("UICorner", grain).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", grain).CornerRadius = UDim.new(0, math.min(14, StrataConfig.UI.Corner))
 
 local seed = 20261
 for i = 1, 46 do
@@ -1405,7 +1405,7 @@ levelPlate.BackgroundColor3 = UIP.StoneDark
 levelPlate.BorderSizePixel  = 0
 levelPlate.ZIndex           = 6
 levelPlate.Parent           = card
-Instance.new("UICorner", levelPlate).CornerRadius = UDim.new(0, 7)
+Instance.new("UICorner", levelPlate).CornerRadius = UDim.new(0, math.min(7, StrataConfig.UI.Corner))
 
 local levelEdge = Instance.new("UIStroke", levelPlate)
 levelEdge.Color     = UIP.Ore
@@ -1580,7 +1580,7 @@ local function slotFor(order, spec)
 	slot.LayoutOrder      = order
 	slot.ClipsDescendants = true
 	slot.Parent           = hotbar
-	Instance.new("UICorner", slot).CornerRadius = UDim.new(0, 10)
+	Instance.new("UICorner", slot).CornerRadius = UDim.new(0, math.min(10, StrataConfig.UI.Corner))
 
 	local edge = Instance.new("UIStroke", slot)
 	edge.Color     = spec.active and UIP.Ore or UIP.StoneDark
@@ -1620,7 +1620,7 @@ local function slotFor(order, spec)
 		keyPlate.BorderSizePixel  = 0
 		keyPlate.ZIndex           = 3
 		keyPlate.Parent           = slot
-		Instance.new("UICorner", keyPlate).CornerRadius = UDim.new(0, 4)
+		Instance.new("UICorner", keyPlate).CornerRadius = UDim.new(0, math.min(4, StrataConfig.UI.Corner))
 
 		local k = label(keyPlate, spec.key, UDim2.new(1, 0, 1, 0), UDim2.new(),
 			UIP.Crystal, 10, StrataConfig.UI.Number, Enum.TextXAlignment.Center)
@@ -1694,7 +1694,7 @@ bar.BackgroundColor3 = UIP.StoneDeep
 bar.BorderSizePixel  = 0
 bar.BackgroundTransparency = 1
 bar.Parent           = gui
-Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 5)
+Instance.new("UICorner", bar).CornerRadius = UDim.new(0, math.min(5, StrataConfig.UI.Corner))
 
 local barEdge = Instance.new("UIStroke", bar)
 barEdge.Color        = UIP.StoneDark
@@ -1707,7 +1707,7 @@ fill.BackgroundColor3 = UIP.Crystal
 fill.BorderSizePixel  = 0
 fill.BackgroundTransparency = 1
 fill.Parent           = bar
-Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 5)
+Instance.new("UICorner", fill).CornerRadius = UDim.new(0, math.min(5, StrataConfig.UI.Corner))
 
 local function humanoid()
 	local char = player.Character
@@ -1798,7 +1798,7 @@ manifest.BackgroundColor3 = UIP.Stone
 manifest.BorderSizePixel  = 0
 manifest.Visible          = false
 manifest.Parent           = gui
-Instance.new("UICorner", manifest).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", manifest).CornerRadius = UDim.new(0, math.min(12, StrataConfig.UI.Corner))
 
 local manEdge = Instance.new("UIStroke", manifest)
 manEdge.Color     = UIP.StoneDark
@@ -1925,7 +1925,7 @@ cavernCard.BackgroundColor3 = StrataConfig.UI.Stone
 cavernCard.BorderSizePixel  = 0
 cavernCard.Visible          = false
 cavernCard.Parent           = gui
-Instance.new("UICorner", cavernCard).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", cavernCard).CornerRadius = UDim.new(0, math.min(14, StrataConfig.UI.Corner))
 
 local cavernEdge = Instance.new("UIStroke", cavernCard)
 cavernEdge.Color     = Color3.fromRGB(8, 10, 14)
@@ -1937,7 +1937,7 @@ cavernStripe.Position         = UDim2.new(0, 12, 0, 10)
 cavernStripe.BackgroundColor3 = SIGNAL
 cavernStripe.BorderSizePixel  = 0
 cavernStripe.Parent           = cavernCard
-Instance.new("UICorner", cavernStripe).CornerRadius = UDim.new(0, 3)
+Instance.new("UICorner", cavernStripe).CornerRadius = UDim.new(0, math.min(3, StrataConfig.UI.Corner))
 
 local cavernName = label(cavernCard, "", UDim2.new(1, -40, 0, 22),
 	UDim2.new(0, 30, 0, 12), INK, 18, StrataConfig.UI.Head)
@@ -2055,7 +2055,7 @@ cavernFound.OnClientEvent:Connect(function(find)
 	card.BorderSizePixel  = 0
 	card.ZIndex           = 20
 	card.Parent           = gui
-	Instance.new("UICorner", card).CornerRadius = UDim.new(0, 14)
+	Instance.new("UICorner", card).CornerRadius = UDim.new(0, math.min(14, StrataConfig.UI.Corner))
 
 	local edge = Instance.new("UIStroke", card)
 	edge.Color     = find.light or ORE
@@ -2114,7 +2114,7 @@ runCard.BackgroundColor3 = StrataConfig.UI.Stone
 runCard.BorderSizePixel  = 0
 runCard.Visible          = false
 runCard.Parent           = gui
-Instance.new("UICorner", runCard).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", runCard).CornerRadius = UDim.new(0, math.min(14, StrataConfig.UI.Corner))
 
 local runEdge = Instance.new("UIStroke", runCard)
 runEdge.Color     = StrataConfig.UI.StoneDark
@@ -2159,7 +2159,7 @@ extractBtn.TextSize         = 18
 extractBtn.Font             = StrataConfig.UI.Head
 extractBtn.Visible          = false
 extractBtn.Parent           = gui
-Instance.new("UICorner", extractBtn).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", extractBtn).CornerRadius = UDim.new(0, math.min(12, StrataConfig.UI.Corner))
 
 local extractEdge = Instance.new("UIStroke", extractBtn)
 extractEdge.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
@@ -2235,7 +2235,7 @@ runEnded.OnClientEvent:Connect(function(summary)
 	card.BorderSizePixel  = 0
 	card.ZIndex           = 30
 	card.Parent           = gui
-	Instance.new("UICorner", card).CornerRadius = UDim.new(0, 16)
+	Instance.new("UICorner", card).CornerRadius = UDim.new(0, math.min(16, StrataConfig.UI.Corner))
 
 	local tone = summary.success and Color3.fromRGB(142, 192, 142) or Color3.fromRGB(224, 112, 92)
 

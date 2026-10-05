@@ -278,7 +278,7 @@ brief.BorderSizePixel  = 0
 brief.ZIndex           = 61
 brief.Visible          = false
 brief.Parent           = gui
-Instance.new("UICorner", brief).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", brief).CornerRadius = UDim.new(0, math.min(12, UIP.Corner))
 
 local briefEdge = Instance.new("UIStroke", brief)
 briefEdge.Color     = UIP.StoneDark

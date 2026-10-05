@@ -244,7 +244,7 @@ slot.BackgroundColor3 = UIP.StoneDeep
 slot.BorderSizePixel  = 0
 slot.Visible          = false
 slot.Parent           = gui
-Instance.new("UICorner", slot).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", slot).CornerRadius = UDim.new(0, math.min(10, UIP.Corner))
 
 local slotEdge = Instance.new("UIStroke", slot)
 slotEdge.Color     = UIP.StoneDark
@@ -256,7 +256,7 @@ keyPlate.Position         = UDim2.new(0, 9, 0, 8)
 keyPlate.BackgroundColor3 = UIP.Stone
 keyPlate.BorderSizePixel  = 0
 keyPlate.Parent           = slot
-Instance.new("UICorner", keyPlate).CornerRadius = UDim.new(0, 5)
+Instance.new("UICorner", keyPlate).CornerRadius = UDim.new(0, math.min(5, UIP.Corner))
 
 label(keyPlate, "Q", UDim2.new(1, 0, 1, 0), UDim2.new(), UIP.Ink, 12,
 	UIP.Head, Enum.TextXAlignment.Center)

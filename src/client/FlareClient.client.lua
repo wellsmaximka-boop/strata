@@ -134,7 +134,7 @@ slot.Size             = UDim2.new(0, 158, 0, 52)
 slot.BackgroundColor3 = UIP.StoneDeep
 slot.BorderSizePixel  = 0
 slot.Parent           = gui
-Instance.new("UICorner", slot).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", slot).CornerRadius = UDim.new(0, math.min(10, UIP.Corner))
 
 local slotEdge = Instance.new("UIStroke", slot)
 slotEdge.Color     = UIP.StoneDark
@@ -154,7 +154,7 @@ keyPlate.BackgroundColor3 = UIP.StoneDark
 keyPlate.BorderSizePixel  = 0
 keyPlate.ZIndex           = 3
 keyPlate.Parent           = slot
-Instance.new("UICorner", keyPlate).CornerRadius = UDim.new(0, 5)
+Instance.new("UICorner", keyPlate).CornerRadius = UDim.new(0, math.min(5, UIP.Corner))
 
 local function label(parent, text, size, position, colour, textSize, font, align)
 	local l = Instance.new("TextLabel")
@@ -199,7 +199,7 @@ for i = 1, CFG.Charges do
 	pip.BorderSizePixel  = 0
 	pip.ZIndex           = 3
 	pip.Parent           = slot
-	Instance.new("UICorner", pip).CornerRadius = UDim.new(0, 4)
+	Instance.new("UICorner", pip).CornerRadius = UDim.new(0, math.min(4, UIP.Corner))
 	pips[i] = pip
 end
 
@@ -212,7 +212,7 @@ refill.BackgroundTransparency = 0.55
 refill.BorderSizePixel  = 0
 refill.ZIndex           = 4
 refill.Parent           = slot
-Instance.new("UICorner", refill).CornerRadius = UDim.new(0, 4)
+Instance.new("UICorner", refill).CornerRadius = UDim.new(0, math.min(4, UIP.Corner))
 
 -- ── Power ────────────────────────────────────────────────────────────────────
 
@@ -224,7 +224,7 @@ power.BackgroundColor3 = UIP.StoneDeep
 power.BorderSizePixel  = 0
 power.Visible          = false
 power.Parent           = gui
-Instance.new("UICorner", power).CornerRadius = UDim.new(0, 4)
+Instance.new("UICorner", power).CornerRadius = UDim.new(0, math.min(4, UIP.Corner))
 
 local powerEdge = Instance.new("UIStroke", power)
 powerEdge.Color     = UIP.StoneDark
@@ -235,7 +235,7 @@ powerFill.Size             = UDim2.new(0, 0, 1, 0)
 powerFill.BackgroundColor3 = CFG.Colour
 powerFill.BorderSizePixel  = 0
 powerFill.Parent           = power
-Instance.new("UICorner", powerFill).CornerRadius = UDim.new(0, 4)
+Instance.new("UICorner", powerFill).CornerRadius = UDim.new(0, math.min(4, UIP.Corner))
 
 -- ── State ────────────────────────────────────────────────────────────────────
 

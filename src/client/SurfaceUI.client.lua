@@ -68,9 +68,28 @@ local function commas(n)
 end
 
 
+-- The requested radius is a suggestion; the config decides.
+--
+-- There were 78 places setting a corner by hand across the interface, using
+-- nineteen different radii between 2 and 22. That inconsistency is most of what
+-- read as unpolished — nothing lined up with anything, and a panel at 18 next to
+-- a chip at 9 next to a tile at 12 is three different products on one screen.
+-- It is also why setting StrataConfig.UI.Corner to 2 changed nothing: not one of
+-- those 78 asked.
+--
+-- Capped rather than replaced, so a caller that deliberately wanted a tight 3
+-- still gets 3 and nothing grows. Anything genuinely circular — a coin, a pip,
+-- the end of a bar — calls round() instead, which is scale-based and stays a
+-- circle whatever the chrome does.
 local function corner(inst, radius)
 	local c = Instance.new("UICorner", inst)
-	c.CornerRadius = UDim.new(0, radius or 8)
+	c.CornerRadius = UDim.new(0, math.min(radius or UIP.Corner, UIP.Corner))
+	return c
+end
+
+local function round(inst)
+	local c = Instance.new("UICorner", inst)
+	c.CornerRadius = UDim.new(1, 0)
 	return c
 end
 
@@ -770,7 +789,7 @@ panelCash.BackgroundColor3 = Color3.fromRGB(255, 204, 92)
 panelCash.BorderSizePixel  = 0
 panelCash.ZIndex           = 3
 panelCash.Parent           = panelHeader
-corner(panelCash, 10)
+round(panelCash)   -- a coin is a circle, not a rounded square
 
 local panelCashRim = Instance.new("UIStroke", panelCash)
 panelCashRim.Color     = Color3.fromRGB(150, 102, 28)

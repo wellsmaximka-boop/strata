@@ -42,9 +42,11 @@ local UIP = StrataConfig.UI
 -- One place a panel gets its corner, its edge and its shadow, so every panel
 -- has the same ones.
 
+-- Capped by the config, like the one in SurfaceUI. The map drew its halls with
+-- their own radii and ended up softer than the panels around it.
 local function corner(object, radius)
 	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, radius or UIP.Corner)
+	c.CornerRadius = UDim.new(0, math.min(radius or UIP.Corner, UIP.Corner))
 	c.Parent = object
 	return c
 end

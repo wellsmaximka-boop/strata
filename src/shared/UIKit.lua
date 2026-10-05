@@ -32,9 +32,22 @@ local UIP = StrataConfig.UI
 
 -- ── Primitives ───────────────────────────────────────────────────────────────
 
+-- Capped by the config rather than obeying the caller. See the note on the
+-- matching helper in SurfaceUI: the radius passed at a call site is a
+-- suggestion, and letting 78 of them each pick their own is what made the
+-- interface look like three products on one screen.
 function UIKit.Corner(object, radius)
 	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, radius or UIP.Corner)
+	c.CornerRadius = UDim.new(0, math.min(radius or UIP.Corner, UIP.Corner))
+	c.Parent = object
+	return c
+end
+
+-- For the things that really are circles — a coin, a pip, the cap of a bar.
+-- Scale-based, so it stays round however hard the chrome gets.
+function UIKit.Round(object)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(1, 0)
 	c.Parent = object
 	return c
 end
