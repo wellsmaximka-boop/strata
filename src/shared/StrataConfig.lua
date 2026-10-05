@@ -130,6 +130,22 @@ StrataConfig.UI = {
 	Outline   = 3,     -- panel border, in pixels
 	EdgeThin  = 2,     -- and for the small stuff inside one
 
+	-- ── Spacing ──
+	-- One ladder, used everywhere. Padding and gaps were picked per call site —
+	-- 4 here, 5 there, 9 somewhere else — so nothing lined up with anything and
+	-- every panel was very slightly its own thing. A reader cannot name that,
+	-- but they feel it, and it is a large part of what "unpolished" means.
+	--
+	-- The steps roughly double. That is the point: two values close together
+	-- read as a mistake, two steps apart read as a decision.
+	Gap = {
+		xs = 4,
+		sm = 8,
+		md = 14,
+		lg = 22,
+		xl = 34,
+	},
+
 	-- Hard corners. Fourteen pixels of radius is a phone app; the reference is
 	-- plate steel with the corners cut off, and nothing in a mine is round
 	-- because it was easier to round it. Two keeps the edge from aliasing into

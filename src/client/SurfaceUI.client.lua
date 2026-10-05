@@ -472,7 +472,7 @@ local function dress(frame, titleText, accent, headerHeight)
 	gloss(header, 12, 22).Position = UDim2.new(0, 76, -0.5, 0)
 
 	local title = text(header, titleText, UDim2.new(1, -40, 1, 0),
-		Color3.fromRGB(255, 255, 255), 20, StrataConfig.UI.Head)
+		Color3.fromRGB(255, 255, 255), 24, StrataConfig.UI.Head)
 	title.Position = UDim2.new(0, 52, 0, 0)   -- clear of the corner bracket
 	title.ZIndex   = 3
 
@@ -918,9 +918,15 @@ panelBody.Parent                 = panel
 -- that made every panel feel like a wall of text.
 local bodyLayout = Instance.new("UIGridLayout", panelBody)
 bodyLayout.CellSize    = UDim2.new(0, StrataConfig.UI.TileW, 0, StrataConfig.UI.TileH)
-bodyLayout.CellPadding = UDim2.new(0, 12, 0, 12)
+bodyLayout.CellPadding = UDim2.new(0, StrataConfig.UI.Gap.md, 0, StrataConfig.UI.Gap.md)
+bodyLayout.SortOrder   = Enum.SortOrder.LayoutOrder
 
-bodyLayout.SortOrder = Enum.SortOrder.LayoutOrder
+-- Centred, which is the cheap half of the "huge empty space on tile screens"
+-- note. A grid pinned left puts six tiles against one wall of a 900px panel and
+-- leaves a void on the other side; centred, a short row reads as a short row
+-- rather than as a panel that failed to fill. The expensive half — the panel
+-- sizing itself to its contents — is a separate job.
+bodyLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
 -- A strip along the bottom for the footer line to sit on, rather than text
 -- floating on the backing. It also stops the panel ending in nothing, which is
@@ -1383,6 +1389,9 @@ function card(order, o)
 		mark       = mark,
 		markColour = markColour,
 		enabled    = o.enabled ~= false,
+		-- Locked is a different thing from unavailable: the item is real and is
+		-- being withheld, which is worth saying out loud rather than greying out
+		locked     = o.locked or o.pill == "LOCKED" or nil,
 		art        = function(into) drawArt(o, into) end,
 		onClick    = function() selectCard(o) end,
 	})

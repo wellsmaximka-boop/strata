@@ -61,6 +61,33 @@ function UIKit.Outline(object, colour, thickness, transparency)
 	return s
 end
 
+-- ── Rule ─────────────────────────────────────────────────────────────────────
+-- A separator, built the way every other edge in this interface is built: a
+-- dark line with a lit one directly under it. One line is a border; two lines a
+-- pixel apart are a seam between two pieces of plate, and that is the whole
+-- difference between a divider and a panel that looks fabricated.
+function UIKit.Rule(parent, width, y, accent)
+	local rule = Instance.new("Frame")
+	rule.Name             = "Rule"
+	rule.Size             = width or UDim2.new(1, 0, 0, 1)
+	rule.Position         = y or UDim2.new(0, 0, 0, 0)
+	rule.BackgroundColor3 = UIP.StoneDark
+	rule.BorderSizePixel  = 0
+	rule.ZIndex           = 6
+	rule.Parent           = parent
+
+	local lit = Instance.new("Frame")
+	lit.Size                   = UDim2.new(1, 0, 0, 1)
+	lit.Position               = UDim2.new(0, 0, 1, 0)
+	lit.BackgroundColor3       = accent or UIP.StoneLit
+	lit.BackgroundTransparency = accent and 0.35 or 0.6
+	lit.BorderSizePixel        = 0
+	lit.ZIndex                 = 6
+	lit.Parent                 = rule
+
+	return rule
+end
+
 function UIKit.Gradient(object, top, bottom, rotation)
 	local g = Instance.new("UIGradient")
 	g.Rotation = rotation or 90
@@ -283,7 +310,34 @@ function UIKit.Tile(parent, spec)
 	UIKit.Corner(shell, 14)
 	UIKit.Outline(shell, UIP.StoneDark, 4)
 
-	-- The art, floating on the colour rather than sunk into a well
+	-- The art, sunk into a well rather than floating on the colour.
+	--
+	-- It used to sit straight on the rarity wash, which is the thing that makes
+	-- an icon look like a picture pasted onto a card instead of an object held
+	-- in one. A recessed slot with a hard border and a lit top edge — the same
+	-- light rule as the panel wells and the button lips — makes the tile read as
+	-- a tray with something in it.
+	local slot = Instance.new("Frame")
+	slot.Name                   = "Slot"
+	slot.Size                   = UDim2.new(0, 86, 0, 76)
+	slot.Position               = UDim2.new(0.5, -43, 0, 23)
+	slot.BackgroundColor3       = UIP.StoneDeep
+	slot.BackgroundTransparency = live and 0.18 or 0.42
+	slot.BorderSizePixel        = 0
+	slot.ZIndex                 = 5
+	slot.Parent                 = tile
+	UIKit.Corner(slot, UIP.CornerSm)
+	UIKit.Outline(slot, UIP.StoneDark, 2)
+
+	local slotLip = Instance.new("Frame")
+	slotLip.Size                   = UDim2.new(1, -6, 0, 2)
+	slotLip.Position               = UDim2.new(0, 3, 0, 1)
+	slotLip.BackgroundColor3       = UIP.StoneLit
+	slotLip.BackgroundTransparency = 0.5
+	slotLip.BorderSizePixel        = 0
+	slotLip.ZIndex                 = 5
+	slotLip.Parent                 = slot
+
 	local art = Instance.new("Frame")
 	art.Name                   = "Art"
 	art.Size                   = UDim2.new(0, 78, 0, 70)
@@ -293,6 +347,35 @@ function UIKit.Tile(parent, spec)
 	art.Parent                 = tile
 
 	if spec.art then spec.art(art) end
+
+	-- Locked is its own state, not "disabled with a different word on it". A
+	-- hazard wash over the whole tile says the item exists and is being withheld,
+	-- which is the thing the player needs to understand; a greyed-out card just
+	-- says nothing is there.
+	if spec.locked then
+		local bar = Instance.new("Frame")
+		bar.Name                   = "Locked"
+		bar.Size                   = UDim2.new(1, 0, 0, 20)
+		bar.Position               = UDim2.new(0, 0, 0, 0)
+		bar.BackgroundColor3       = UIP.Warning
+		bar.BackgroundTransparency = 0.52
+		bar.BorderSizePixel        = 0
+		bar.ClipsDescendants       = true
+		bar.ZIndex                 = 8
+		bar.Parent                 = tile
+
+		for i = 0, 9 do
+			local tick = Instance.new("Frame")
+			tick.Size             = UDim2.new(0, 6, 2, 0)
+			tick.Position         = UDim2.new(0, i * 16 - 8, -0.5, 0)
+			tick.Rotation         = 34
+			tick.BackgroundColor3 = UIP.StoneDark
+			tick.BackgroundTransparency = 0.45
+			tick.BorderSizePixel  = 0
+			tick.ZIndex           = 8
+			tick.Parent           = bar
+		end
+	end
 
 	-- Level, top left
 	if spec.level then
