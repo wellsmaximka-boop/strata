@@ -36,6 +36,19 @@ local closePanel   = ctx.closePanel
 local equipRequest = ctx.equipRequest
 local dress        = ctx.dress
 
+-- Required here rather than passed. Both are ReplicatedStorage modules that the
+-- parent happened to keep in top-level locals, which is exactly the invisible
+-- coupling the split exists to end: a screen should fetch what it needs, not
+-- inherit it from whichever file it used to live in.
+local GearConfig = require(game:GetService("ReplicatedStorage"):WaitForChild("GearConfig"))
+local ItemModels = require(game:GetService("ReplicatedStorage"):WaitForChild("ItemModels"))
+
+-- Required here, not passed. Both are ReplicatedStorage modules the parent
+-- happened to hold in top-level locals, which is exactly the kind of invisible
+-- coupling the split is meant to end.
+local GearConfig  = require(game:GetService("ReplicatedStorage"):WaitForChild("GearConfig"))
+local ItemModels  = require(game:GetService("ReplicatedStorage"):WaitForChild("ItemModels"))
+
 local INK, DIM, ORE     = ctx.INK, ctx.DIM, ctx.ORE
 local CRIT, GREEN       = ctx.CRIT, ctx.GREEN
 local SIGNAL            = ctx.SIGNAL
