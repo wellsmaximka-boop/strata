@@ -128,24 +128,50 @@ end
 -- A title inside the panel is a caption; a title hanging off it is a label on
 -- an object, and that is the whole difference.
 
+-- A nameplate bolted to the panel, not a sticker stuck on it.
+--
+-- This was a saturated slab of the screen's accent, tilted a degree and a half,
+-- with a gradient and dark text — which is sign-painting, and once the header
+-- behind it went steel it became the loudest thing left on screen by a wide
+-- margin. Now it is the same plate as everything else: steel, square to the
+-- panel, lit along its top edge, with the accent as a bar down its leading edge
+-- and the title stencilled in that colour. An index tab, which is what it is.
 function UIKit.Ribbon(parent, title, accent)
 	local plate = Instance.new("Frame")
 	plate.Name             = "Ribbon"
 	plate.AnchorPoint      = Vector2.new(0, 1)
-	plate.Position         = UDim2.new(0, 18, 0, 16)
-	plate.Size             = UDim2.new(0, 250, 0, 50)
-	plate.BackgroundColor3 = accent or UIP.Ore
+	plate.Position         = UDim2.new(0, 18, 0, 14)
+	plate.Size             = UDim2.new(0, 238, 0, 44)
+	plate.BackgroundColor3 = UIP.Stone
 	plate.BorderSizePixel  = 0
-	plate.Rotation         = -1.5
 	plate.ZIndex           = 20
 	plate.Parent           = parent
-	UIKit.Corner(plate, 12)
-	UIKit.Outline(plate, UIP.StoneDark, 4)
-	UIKit.Gradient(plate, Color3.fromRGB(255, 255, 255), Color3.fromRGB(180, 180, 180))
+	UIKit.Corner(plate, UIP.CornerSm)
+	UIKit.Outline(plate, UIP.StoneDark, UIP.Outline)
+	UIKit.Gradient(plate, UIP.StoneLit, UIP.Stone)
+
+	-- The accent, as an edge rather than a fill
+	local tab = Instance.new("Frame")
+	tab.Name             = "Tab"
+	tab.Size             = UDim2.new(0, 5, 1, -10)
+	tab.Position         = UDim2.new(0, 5, 0, 5)
+	tab.BackgroundColor3 = accent or UIP.Ore
+	tab.BorderSizePixel  = 0
+	tab.ZIndex           = 21
+	tab.Parent           = plate
+
+	local lip = Instance.new("Frame")
+	lip.Size                   = UDim2.new(1, -8, 0, 2)
+	lip.Position               = UDim2.new(0, 4, 0, 2)
+	lip.BackgroundColor3       = Color3.new(1, 1, 1)
+	lip.BackgroundTransparency = 0.72
+	lip.BorderSizePixel        = 0
+	lip.ZIndex                 = 21
+	lip.Parent                 = plate
 
 	local label = UIKit.Text(plate, string.upper(title or ""),
-		UDim2.new(1, -18, 1, -10), UDim2.new(0, 9, 0, 5),
-		Color3.fromRGB(26, 20, 6), 26, UIP.Head, Enum.TextXAlignment.Left)
+		UDim2.new(1, -28, 1, -8), UDim2.new(0, 18, 0, 4),
+		accent or UIP.Ore, 24, UIP.Head, Enum.TextXAlignment.Left)
 	label.ZIndex = 21
 
 	return {
@@ -153,7 +179,10 @@ function UIKit.Ribbon(parent, title, accent)
 		label = label,
 		Set = function(text, colour)
 			label.Text = string.upper(text or "")
-			if colour then plate.BackgroundColor3 = colour end
+			if colour then
+				tab.BackgroundColor3   = colour
+				label.TextColor3       = colour
+			end
 		end,
 	}
 end

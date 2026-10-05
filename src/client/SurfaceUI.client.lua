@@ -504,12 +504,19 @@ local function dress(frame, titleText, accent, headerHeight)
 	-- theirs, so it was the one word on screen still wearing an outline. It sits
 	-- on a saturated accent band; it does not need help.
 
-	-- Round close button, overhanging the corner like the references
+	-- Sat in the header rather than overhanging the corner, and the same steel
+	-- as the plate it is set into.
+	--
+	-- It used to hang off the corner as a bright circle, which is a cartoon
+	-- affordance: it drew more attention than anything in the panel, and once
+	-- the header stopped being a coloured slab it became the only saturated
+	-- object left. Red is still the hover, because a destructive control should
+	-- say so when you reach for it — but it says it then, not permanently.
 	local close = Instance.new("TextButton")
-	close.Size             = UDim2.new(0, 40, 0, 40)
-	close.AnchorPoint      = Vector2.new(0.5, 0.5)
-	close.Position         = UDim2.new(1, -6, 0, 6)
-	close.BackgroundColor3 = CLOSE_R
+	close.Size             = UDim2.new(0, 34, 0, 34)
+	close.AnchorPoint      = Vector2.new(1, 0.5)
+	close.Position         = UDim2.new(1, -UIP.Gap.sm, 0, headerHeight / 2 + 5)
+	close.BackgroundColor3 = UIP.StoneDeep
 	close.BorderSizePixel  = 0
 	close.Text             = "X"
 	close.TextColor3       = Color3.fromRGB(255, 255, 255)
@@ -518,18 +525,19 @@ local function dress(frame, titleText, accent, headerHeight)
 	close.AutoButtonColor  = false
 	close.ZIndex           = 5
 	close.Parent           = frame
-	corner(close, 20)
+	corner(close, UIP.CornerSm)
 
 	local closeEdge = Instance.new("UIStroke", close)
 	closeEdge.Color     = OUTLINE
-	closeEdge.Thickness = 3
+	closeEdge.Thickness = 2
 
 	close.MouseEnter:Connect(function()
 		TweenService:Create(close, TweenInfo.new(0.1),
-			{ BackgroundColor3 = Color3.fromRGB(232, 96, 80) }):Play()
+			{ BackgroundColor3 = CLOSE_R }):Play()
 	end)
 	close.MouseLeave:Connect(function()
-		TweenService:Create(close, TweenInfo.new(0.1), { BackgroundColor3 = CLOSE_R }):Play()
+		TweenService:Create(close, TweenInfo.new(0.1),
+			{ BackgroundColor3 = UIP.StoneDeep }):Play()
 	end)
 
 	-- Recolours the header. An explicit function rather than a metatable hook,
@@ -1894,9 +1902,37 @@ local function contractCard(order, c)
 	stroked(card, chosen and accent or (can and accent or Color3.fromRGB(52, 60, 72)), 2,
 		chosen and 0 or 0.35)
 
-	biomePreview(card, c.layerId, 132, 88, 12, 12, not c.locked)
+	-- A lit top edge, so a row reads as a plate laid on the panel rather than a
+	-- rectangle drawn on it. Same light rule as the wells, the button lips and
+	-- the tile slots — it is the repetition that makes them one material.
+	local cardLip = Instance.new("Frame")
+	cardLip.Size                   = UDim2.new(1, -8, 0, 2)
+	cardLip.Position               = UDim2.new(0, 4, 0, 1)
+	cardLip.BackgroundColor3       = UIP.StoneLit
+	cardLip.BackgroundTransparency = can and 0.45 or 0.78
+	cardLip.BorderSizePixel        = 0
+	cardLip.ZIndex                 = 2
+	cardLip.Parent                 = card
 
-	local tx = 156
+	-- A locked layer gets a narrow bar in its accent down the leading edge
+	-- instead of a 132-wide thumbnail of a question mark. A big empty box is the
+	-- most space on screen spent saying the least, and it gave a layer you
+	-- cannot enter exactly the same visual weight as the one you can.
+	if c.locked then
+		local bar = Instance.new("Frame")
+		bar.Size             = UDim2.new(0, 6, 1, -24)
+		bar.Position         = UDim2.new(0, 12, 0, 12)
+		bar.BackgroundColor3 = accent
+		bar.BackgroundTransparency = 0.25
+		bar.BorderSizePixel  = 0
+		bar.ZIndex           = 3
+		bar.Parent           = card
+	else
+		biomePreview(card, c.layerId, 132, 88, 12, 12, true)
+	end
+
+	-- Text starts where the art ends, and a locked row has no art
+	local tx = c.locked and 32 or 156
 	local name = text(card, c.layerName, UDim2.new(1, -tx - 130, 0, 22),
 		can and INK or DIM, 17, StrataConfig.UI.Head)
 	name.Position = UDim2.new(0, tx, 0, 14)
