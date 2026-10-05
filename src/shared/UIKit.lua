@@ -287,10 +287,18 @@ function UIKit.Tile(parent, spec)
 
 	-- The rarity colour washing up the card, strongest at the top. This is what
 	-- makes a legendary look gold from across the screen.
+	-- Rarity earns its loudness. A common item filled the whole card with
+	-- saturated colour, so the ordinary looked as urgent as the exceptional and
+	-- the ladder said nothing — the prompt's "rarity colours only where
+	-- appropriate". Commons keep a steel card with a coloured rim; the wash
+	-- comes in from uncommon and climbs from there, so a legendary is still gold
+	-- from across the room and a canvas hood is not.
+	local plain = rarity.id == "common"
+
 	local wash = Instance.new("Frame")
 	wash.Size                   = UDim2.new(1, 0, 1, 0)
 	wash.BackgroundColor3       = live and rarity.colour or Color3.fromRGB(96, 96, 112)
-	wash.BackgroundTransparency = live and 0.24 or 0.72
+	wash.BackgroundTransparency = (not live and 0.72) or (plain and 0.86) or 0.24
 	wash.BorderSizePixel        = 0
 	wash.ZIndex                 = 4
 	wash.Parent                 = tile
@@ -562,16 +570,19 @@ function UIKit.Detail(parent, width)
 	foot.ZIndex                 = 9
 	foot.Parent                 = pane
 
-	local empty = UIKit.Text(pane, "PICK SOMETHING", UDim2.new(1, -20, 0, 20),
-		UDim2.new(0, 10, 0.5, -10), UIP.Dim, 14)
-	empty.ZIndex = 9
-
 	local handle = { frame = pane, art = art, foot = foot }
 
+	-- An empty pane hides itself rather than captioning its own emptiness.
+	--
+	-- There was a "PICK SOMETHING" label here, sitting in the middle of a tall
+	-- dark box that took a third of the panel. A caption explaining that a thing
+	-- is empty does not make it less empty — it draws the eye to the one part of
+	-- the screen with nothing in it, which is what the playtest note about a big
+	-- empty box was describing. Cleared now means gone, and Show brings it back.
 	function handle.Clear()
 		title.Text   = ""
 		rank.Text    = ""
-		empty.Visible = true
+		pane.Visible = false
 		for _, c in ipairs(art:GetChildren()) do c:Destroy() end
 		for _, c in ipairs(rows:GetChildren()) do
 			if c:IsA("GuiObject") then c:Destroy() end
@@ -584,7 +595,7 @@ function UIKit.Detail(parent, width)
 	-- `info` is { title, rarity, stats = { { label, value, colour } } }
 	function handle.Show(info)
 		handle.Clear()
-		empty.Visible = false
+		pane.Visible = true
 
 		local rarity = info.rarity or StrataConfig.RarityAt(1)
 		title.Text        = string.upper(info.title or "")
@@ -691,14 +702,14 @@ function UIKit.Chips(parent, position)
 			chip.LayoutOrder      = i
 			chip.ZIndex           = 8
 			chip.Parent           = row
-			UIKit.Corner(chip, 8)
-			UIKit.Outline(chip, UIP.StoneDark, 3)
+			UIKit.Corner(chip, UIP.CornerSm)
+			UIKit.Outline(chip, UIP.StoneDark, 2)
 
-			local edge = Instance.new("UIStroke")
-			edge.Color           = UIP.StoneDark
-			edge.Thickness       = 2
-			edge.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-			edge.Parent          = chip
+			-- There was a second stroke here, in Contextual mode. On a TextButton
+			-- that outlines the *text* as well as the border, and a 2px black
+			-- stroke on 13px letters fills them in completely — which is why the
+			-- selected category rendered as a solid black blob instead of a word.
+			-- The Outline above already draws the border.
 
 			chip.Activated:Connect(function()
 				if handle.active == option.id then return end

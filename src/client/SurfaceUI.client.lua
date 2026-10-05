@@ -396,12 +396,31 @@ local function dress(frame, titleText, accent, headerHeight)
 	header.Parent           = frame
 	corner(header, 13)
 
+	-- Dark plate, not a coloured band.
+	--
+	-- The header used to be filled with the screen's accent at full strength —
+	-- a saturated cyan slab a thousand pixels wide, which is the loudest thing
+	-- in the game and says nothing except "shop". The reference does the
+	-- opposite: the plate is the same steel as everything else and the colour
+	-- arrives as a thin rule under it. Accent as a line reads as a label on
+	-- equipment; accent as a fill reads as a website banner.
 	local headerFade = Instance.new("UIGradient", header)
 	headerFade.Rotation = 90
 	headerFade.Color    = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, accent),
-		ColorSequenceKeypoint.new(1, accent:Lerp(OUTLINE, 0.45)),
+		ColorSequenceKeypoint.new(0, UIP.StoneLit),
+		ColorSequenceKeypoint.new(1, UIP.Stone),
 	})
+
+	-- The rule along the bottom of the header, which is now where the accent
+	-- lives. Thick enough to be a decision rather than a hairline.
+	local accentRule = Instance.new("Frame")
+	accentRule.Name             = "Accent"
+	accentRule.Size             = UDim2.new(1, 0, 0, 4)
+	accentRule.Position         = UDim2.new(0, 0, 1, -4)
+	accentRule.BackgroundColor3 = accent
+	accentRule.BorderSizePixel  = 0
+	accentRule.ZIndex           = 4
+	accentRule.Parent           = header
 
 	local headerEdge = Instance.new("UIStroke", header)
 	headerEdge.Color     = OUTLINE
@@ -515,12 +534,12 @@ local function dress(frame, titleText, accent, headerHeight)
 
 	-- Recolours the header. An explicit function rather than a metatable hook,
 	-- which was clever and fragile in equal measure.
+	-- The plate and the rule carry the accent now; the header itself stays steel
+	-- whatever screen is open, which is what makes six screens look like six
+	-- views of one machine rather than six differently painted boxes.
 	local function setAccent(colour)
 		setPlate(colour)
-		headerFade.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, colour),
-			ColorSequenceKeypoint.new(1, colour:Lerp(OUTLINE, 0.45)),
-		})
+		accentRule.BackgroundColor3 = colour
 	end
 
 	return header, close, title, setAccent
