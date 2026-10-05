@@ -577,6 +577,80 @@ local function pressable(button, baseColour, hoverColour)
 	end
 end
 
+-- ── Button states ────────────────────────────────────────────────────────────
+-- Normal, hover and disabled, on top of the press squish pressable() already
+-- gives. The interface had normal and a squish; a button you cannot use looked
+-- exactly like one you can, which is the state that matters most because it is
+-- the one that needs explaining.
+--
+-- Disabled is not the same colour turned down. It drops to steel and loses its
+-- lit edge completely, because a dimmed amber still reads as amber and people
+-- keep clicking it. Losing the bevel is what says "this is not a thing right
+-- now" rather than "this is a thing, quietly".
+--
+-- The lit edge follows the same rule as the well's lip: light from above, so
+-- the top catches it. A raised button lights its top; a cut well lights its
+-- inside top. Same light, opposite surfaces, and together they read as one
+-- material.
+local function states(button, tone)
+	local lip = Instance.new("Frame")
+	lip.Name                   = "Lip"
+	lip.Size                   = UDim2.new(1, -8, 0, 2)
+	lip.Position               = UDim2.new(0, 4, 0, 2)
+	lip.BackgroundColor3       = Color3.new(1, 1, 1)
+	lip.BackgroundTransparency = 0.62
+	lip.BorderSizePixel        = 0
+	lip.ZIndex                 = (button.ZIndex or 1) + 1
+	lip.Parent                 = button
+
+	local handle = { tone = tone, enabled = true, hovering = false }
+
+	local function paint(instant)
+		local fill, ink
+		if not handle.enabled then
+			fill, ink = UIP.Stone, UIP.Dim
+		elseif handle.hovering then
+			fill, ink = handle.tone:Lerp(Color3.new(1, 1, 1), 0.22), OUTLINE
+		else
+			fill, ink = handle.tone, OUTLINE
+		end
+
+		lip.Visible      = handle.enabled
+		button.TextColor3 = ink
+		button.Active     = handle.enabled
+		button.AutoButtonColor = false
+
+		if instant then
+			button.BackgroundColor3 = fill
+		else
+			TweenService:Create(button, TweenInfo.new(0.1),
+				{ BackgroundColor3 = fill }):Play()
+		end
+	end
+
+	button.MouseEnter:Connect(function()
+		handle.hovering = true
+		if handle.enabled then paint() end
+	end)
+	button.MouseLeave:Connect(function()
+		handle.hovering = false
+		paint()
+	end)
+
+	function handle.setTone(colour)
+		handle.tone = colour
+		paint(true)
+	end
+
+	function handle.setEnabled(on)
+		handle.enabled = on and true or false
+		paint(true)
+	end
+
+	paint(true)
+	return handle
+end
+
 local function popOut(frame, scale, onDone)
 	local target = frame:GetAttribute("FitScale") or 1
 	local t = TweenService:Create(scale, POP_OUT, { Scale = target * 0.86 })
@@ -921,17 +995,26 @@ actionEdge.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 actionEdge.Color           = Color3.fromRGB(12, 14, 18)
 actionEdge.Thickness       = 3
 
+local actionState = states(panelAction, Color3.fromRGB(214, 164, 64))
+pressable(panelAction)
+
 local actionHandler = nil
 panelAction.Activated:Connect(function()
-	if actionHandler then actionHandler() end
+	-- Checked here as well as painted. A disabled button that still fires is
+	-- worse than one that never looked disabled, because now the interface has
+	-- lied about it.
+	if actionState.enabled and actionHandler then actionHandler() end
 end)
 
-local function showAction(label, colour, onClick)
-	panelAction.Text             = label
-	panelAction.BackgroundColor3 = colour
-	panelAction.Visible          = true
-	actionHandler                = onClick
-	panelBody.Size               = UDim2.new(1, -36, 1, -178)
+-- `enabled` is optional and defaults to true, so every existing caller keeps
+-- working and the ones that have a reason to refuse can say so.
+local function showAction(label, colour, onClick, enabled)
+	panelAction.Text    = label
+	panelAction.Visible = true
+	actionState.setTone(colour)
+	actionState.setEnabled(enabled ~= false)
+	actionHandler       = onClick
+	panelBody.Size      = UDim2.new(1, -36, 1, -178)
 end
 
 
@@ -1982,9 +2065,13 @@ local function buildSell()
 		return
 	end
 
+	-- Worth nothing means the button refuses rather than firing a sale of zero.
+	-- The pack can hold things the depot will not buy, so "has items" and "is
+	-- worth selling" are different questions and only the second one matters
+	-- here.
 	showAction("SELL ALL    +" .. commas(total), Color3.fromRGB(214, 164, 64), function()
 		sellRequest:FireServer()
-	end)
+	end, total > 0)
 end
 
 local builders = {
