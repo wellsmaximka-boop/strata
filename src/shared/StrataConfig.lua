@@ -455,22 +455,98 @@ StrataConfig.Look = {
 -- is a lift. Arriving with a kick that carries you over the lip is traversal,
 -- and it is the difference between the hook being transport and being a move.
 StrataConfig.Grapple = {
-	Key      = Enum.KeyCode.Q,
+	-- ── Controls ─────────────────────────────────────────────────────────────
+	-- Fire is Q and not the left mouse button, which is where a traversal
+	-- prompt would usually put it. The left button is the pickaxe, and mining
+	-- is hold-to-swing: every swing at a wall would throw a hook at it. Right
+	-- click is the camera. So Q fires, Q releases, and G releases as well for
+	-- the hand that would rather not do both with one finger.
+	Key     = Enum.KeyCode.Q,
+	Release = Enum.KeyCode.G,
+	ReelIn  = Enum.KeyCode.W,   -- travel up the cable, toward the anchor
+	ReelOut = Enum.KeyCode.S,   -- and pay it back out
+
 	Range    = 190,   -- how far the hook reaches
-	Speed    = 140,   -- reel-in, studs per second
-	Cooldown = 5.5,
-	Arrive   = 8,     -- close enough to the anchor to call it arrived
-
-	-- The kick on arrival, so you top out onto a ledge instead of stopping flat
-	-- against the rock under it. Up, plus whatever you were already carrying.
-	Launch   = 32,
-	Carry    = 0.45,  -- share of the reel speed kept as forward momentum
-
-	-- A hard stop. If anything goes wrong — the anchor is inside geometry, the
-	-- player is wedged — this is what stops the hook holding someone forever.
-	MaxTime  = 4.0,
-
 	MinDepth = 8,     -- underground only, like the flares
+
+	-- Short, because the whole point is chaining. Anything above a second and
+	-- "jump, hook, release, re-hook" stops being a route and becomes a queue.
+	-- The server still owns it; this is only what the server is told to use.
+	Cooldown = 0.6,
+
+	-- ── The rope, as a rope ──────────────────────────────────────────────────
+	-- A RopeConstraint is a hard distance limit that can pull but never push,
+	-- which is what a rope is. You fall until it goes taut and then you swing,
+	-- and the swing is Roblox's solver rather than anything written here.
+	MinLength = 10,
+	MaxLength = 220,
+
+	-- Reeling is a force, never a shortening. Winching Length down below where
+	-- the player actually is yanks them, and that yank is the jitter every
+	-- grapple system is accused of. Instead the force does the pulling and
+	-- Length ratchets down behind them, so it is always a limit and never a
+	-- winch. See GrappleRig.
+	ReelForce   = 2.4,   -- × gravity
+	ReelFollow  = 64,    -- studs/sec the limit is allowed to chase you in at
+	PayoutSpeed = 52,    -- studs/sec it feeds back out on S
+
+	-- The bite. A hook that lands and then waits for input reads as a miss, so
+	-- the first fraction of a second reels whether or not anything is held.
+	BiteTime  = 0.2,
+	BiteForce = 3.0,
+
+	-- ── Momentum ─────────────────────────────────────────────────────────────
+	-- Accelerations, in studs/sec², converted to force against the character's
+	-- real mass so none of these numbers change if the rig does.
+	AirControl   = 42,    -- steering in freefall, full WASD
+	SwingControl = 58,    -- steering on the rope, A/D only
+	-- Ground acceleration, ground deceleration and jump strength are not knobs
+	-- here on purpose, because they already have owners. The Humanoid does
+	-- ground movement, PlayerState.WalkSpeed sets the speed and pushes it on
+	-- every state change, MineClient's sprint reads it, and DescentService sets
+	-- JumpHeight when it hands the character back at the bottom of the lift.
+	-- A second set of numbers for the same behaviour is not a tuning surface,
+	-- it is a bug with two authors.
+
+	MaxAirSpeed   = 200,
+	MaxSwingSpeed = 260,
+
+	-- Landing. Roblox clamps you to WalkSpeed the moment you touch down, which
+	-- deletes the swing you just spent four seconds building. This is the slide
+	-- that gives the swing somewhere to go.
+	LandKeep   = 0.74,   -- share of horizontal speed kept on touchdown
+	LandDecay  = 1.7,    -- e-folds per second; higher stops sooner
+	LandAssist = 150,    -- cap on the corrective accel, so the slide is smooth
+	LandFloor  = 5,      -- don't bother below this much excess speed
+
+	-- Zero by default. The release should carry the velocity you earned and no
+	-- more; a free upward kick is the "unnatural magnetic" feel to avoid.
+	ReleaseBoost = 0,
+
+	-- A safety net, not a mechanic. Hanging still to look around is fine, and
+	-- being stuck on a bad anchor until you reset is not.
+	HangLimit = 15,
+
+	-- ── What counts as a surface ─────────────────────────────────────────────
+	Surfaces = {
+		Terrain = true,
+		Parts   = true,
+		-- Deposits are excluded because reeling into the objective you are
+		-- trying to mine is not a move anyone meant to make. The rest are our
+		-- own effects, which should never be hookable.
+		Ignore  = { "SiteDeposits", "FlareArc", "GrappleRope", "GrappleAnchors" },
+	},
+
+	-- ── Camera ───────────────────────────────────────────────────────────────
+	-- Speed widens the lens slightly and nothing else moves. Aiming happens
+	-- down the camera's LookVector, which field of view does not touch, so this
+	-- cannot cost precision. Only ever written while CameraType is Custom,
+	-- which is how DescentClient's scripted lift camera is left alone.
+	Camera = { FovGain = 7, FovSpeed = 180, Smooth = 5 },
+
+	-- Hooks, deliberately empty. Fill a SoundId in and it plays; leave it and
+	-- nothing happens and nothing errors.
+	Sfx = { Fire = "", Attach = "", Miss = "", Release = "" },
 
 	Rope = {
 		Thickness = 0.3,
