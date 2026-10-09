@@ -22,20 +22,24 @@ camp.Name   = "SurfaceCamp"
 camp.Parent = workspace
 
 -- ── Palette ──────────────────────────────────────────────────────────────────
-local TIMBER  = Color3.fromRGB(124, 86, 54)    -- posts and beams
-local TIMBER_D= Color3.fromRGB(92, 63, 40)     -- shadowed timber
-local PLANK   = Color3.fromRGB(158, 116, 74)   -- decking and walls
-local STONE   = Color3.fromRGB(122, 120, 116)  -- masonry
-local STONE_D = Color3.fromRGB(92, 90, 88)
-local DECK    = Color3.fromRGB(150, 146, 138)  -- plaza slab
-local DECK_2  = Color3.fromRGB(132, 128, 121)
-local IRON    = Color3.fromRGB(84, 88, 94)
-local IRON_L  = Color3.fromRGB(126, 132, 140)
-local CANVAS  = Color3.fromRGB(176, 162, 132)
-local HAZARD  = Color3.fromRGB(214, 174, 72)
-local EMBER   = Color3.fromRGB(226, 118, 48)
-local LAMP    = Color3.fromRGB(232, 196, 128)
-local OUTLINE = Color3.fromRGB(38, 32, 28)
+-- Lives in StrataConfig.Look.Camp, next to the lighting it has to match. These
+-- are the short names the two thousand lines below already use.
+local PAL     = StrataConfig.Look.Camp
+local TIMBER  = PAL.Timber
+local TIMBER_D= PAL.TimberDark
+local PLANK   = PAL.Plank
+local STONE   = PAL.Stone
+local STONE_D = PAL.StoneDark
+local DECK    = PAL.Deck
+local DECK_2  = PAL.DeckAlt
+local IRON    = PAL.Iron
+local IRON_L  = PAL.IronLit
+local CANVAS  = PAL.Canvas
+local HAZARD  = PAL.Hazard
+local EMBER   = PAL.Ember
+local LAMP    = PAL.Lamp
+local SIGNAL  = PAL.Signal
+local OUTLINE = PAL.Outline
 
 local Y = S.PlatformY
 
@@ -216,7 +220,11 @@ local function lantern(cf, parent, onPost)
 		cf * CFrame.new(onPost and 1.0 or 0, -0.4, 0), LAMP, Enum.Material.Neon, parent)
 	decor("LanternCap", Vector3.new(0.9, 0.18, 0.9),
 		cf * CFrame.new(onPost and 1.0 or 0, 0.14, 0), IRON, Enum.Material.Metal, parent)
-	glow(body, LAMP, 0.85, 20)
+	-- Brighter and much shorter than it was, which is the whole principle:
+	-- range is what makes the wash and brightness is what makes the pool. At
+	-- twenty studs seven of these overlapped into a single flat sheet and the
+	-- lodge had no dark left in it anywhere. At twelve each one owns a table.
+	glow(body, LAMP, 1.0, 12)
 	return body
 end
 
@@ -390,7 +398,9 @@ local function forgeScene(cf, g, base)
 	-- Glowing mouth
 	local mouth = decor("FurnaceMouth", Vector3.new(2.6, 1.9, 0.5),
 		at(furnaceCf * CFrame.new(0, 2.0, 1.75)), EMBER, Enum.Material.Neon, g)
-	glow(mouth, EMBER, 2.2, 26)
+	-- A furnace is allowed to spill further than a lantern, but twenty-six put
+	-- orange on the far wall of a building it is not even in.
+	glow(mouth, EMBER, 2.4, 17)
 	emitter(mouth, { texture = "rbxasset://textures/particles/fire_main.dds",
 		colour = EMBER, rate = 14, size = 1.1, speed = 1.4, life = 0.7, emission = 0.9 })
 	decor("FurnaceArch", Vector3.new(3.2, 0.6, 0.7), at(furnaceCf * CFrame.new(0, 3.1, 1.75)), STONE_D, Enum.Material.Slate, g)
@@ -750,10 +760,10 @@ local WALL_STEPS  = math.floor((math.pi * 2 * WALL_R) / 13)
 -- wall wider than the arch built to fill it.
 local GATE_ARC    = 21 / WALL_R
 
-local WALL_STONE   = Color3.fromRGB(146, 140, 130)
-local WALL_STONE_D = Color3.fromRGB(112, 107, 100)
-local WALL_MOSS    = Color3.fromRGB(108, 128, 88)
-local CRYSTAL      = Color3.fromRGB(150, 206, 226)
+local WALL_STONE   = PAL.WallStone
+local WALL_STONE_D = PAL.WallStoneDark
+local WALL_MOSS    = PAL.WallMoss
+local CRYSTAL      = SIGNAL
 
 local function nearGate(angle)
 	for _, gate in ipairs({ 0, math.pi / 2, math.pi, math.pi * 1.5 }) do
@@ -1024,6 +1034,21 @@ local function groundFloor()
 	}) do
 		lpart("Substrate", band[1], CFrame.new(band[2]), STONE_D, Enum.Material.Slate)
 	end
+
+	-- ── The cold coming up the bore ──────────────────────────────────────────
+	-- The only cool light in a room full of lanterns, and it is here to make
+	-- them look warm. Every single thing in this lodge was amber — the paint,
+	-- the lamps, the sun, the haze — and a scene with nothing cool in it has
+	-- no warm in it either. It just has a colour.
+	--
+	-- Sunk well below the grate, and short enough that it dies at about knee
+	-- height on the deck. What you should see is a cold rim around the hole
+	-- and light on the shaft walls going down, not a cyan room: the mine
+	-- breathing, rather than a lamp somebody left at the bottom.
+	local chill = ldecor("ShaftChill", Vector3.new(1, 1, 1),
+		CFrame.new(0, LODGE_Y - 9, 0), SIGNAL, Enum.Material.SmoothPlastic)
+	chill.Transparency = 1
+	glow(chill, SIGNAL, 1.1, 20)
 end
 
 -- ── Shell ────────────────────────────────────────────────────────────────────
@@ -1281,7 +1306,11 @@ local function lanternBox(at, drop, range, lit)
 	-- lamp and the two of them turn the hall into one flat sheet of light; at
 	-- this range each one is its own pool with dark in between, which is the
 	-- whole look.
-	light.Range      = range or 24
+	--
+	-- That was true when it was written and the number still did not do it:
+	-- twenty-four studs in a lodge this size is every lamp meeting every other
+	-- lamp. The comment was right and the value was from a bigger room.
+	light.Range      = range or 17
 	light.Shadows    = false
 	light.Parent     = glass
 end
@@ -1312,7 +1341,8 @@ local function chandelier(x, z, y)
 	local light = Instance.new("PointLight")
 	light.Color      = Color3.fromRGB(255, 192, 124)
 	light.Brightness = 3.1
-	light.Range      = 36
+	-- Was 36, which is most of the camp from one fixture.
+	light.Range      = 21
 	-- No shadow casting. Shadow-casting lights are the scarcest thing the
 	-- renderer has, and asking for them is what makes the rest blink out as you
 	-- turn. Flip this back to true if you want the drama and can spare it.
@@ -2016,7 +2046,7 @@ local function lampPost(x, z, ground)
 	local light = Instance.new("PointLight")
 	light.Color      = Color3.fromRGB(255, 190, 118)
 	light.Brightness = 2.2
-	light.Range      = 26
+	light.Range      = 19
 	light.Shadows    = false
 	light.Parent     = glass
 

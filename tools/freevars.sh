@@ -21,7 +21,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 KEYWORDS='^(and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while|continue|export|type|self)$'
-GLOBALS='^(game|workspace|script|math|table|string|os|task|pairs|ipairs|next|type|typeof|tostring|tonumber|print|warn|error|assert|select|unpack|pcall|xpcall|setmetatable|getmetatable|rawget|rawset|rawequal|rawlen|require|tick|time|wait|spawn|delay|Instance|Vector2|Vector3|CFrame|Color3|UDim|UDim2|Enum|Ray|Region3|NumberRange|NumberSequence|NumberSequenceKeypoint|ColorSequence|ColorSequenceKeypoint|TweenInfo|Random|bit32|utf8|coroutine|debug|buffer|Rect|Font|BrickColor|PhysicalProperties|Axes|Faces|DateTime|RaycastParams|OverlapParams|RaycastResult|Vector3int16|Vector2int16|Region3int16|ctx)$'
+GLOBALS='^(game|workspace|script|math|table|string|os|task|pairs|ipairs|next|type|typeof|tostring|tonumber|print|warn|error|assert|select|unpack|pcall|xpcall|setmetatable|getmetatable|rawget|rawset|rawequal|rawlen|require|tick|time|wait|spawn|delay|Instance|Vector2|Vector3|CFrame|Color3|UDim|UDim2|Enum|Ray|Region3|NumberRange|NumberSequence|NumberSequenceKeypoint|ColorSequence|ColorSequenceKeypoint|TweenInfo|Random|bit32|utf8|coroutine|debug|buffer|Rect|Font|BrickColor|PhysicalProperties|Axes|Faces|DateTime|RaycastParams|OverlapParams|RaycastResult|Vector3int16|Vector2int16|Region3int16|_G|shared|collectgarbage|newproxy|loadstring|gcinfo|elapsedTime|settings|UserSettings|ctx)$'
 
 status=0
 

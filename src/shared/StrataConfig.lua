@@ -284,14 +284,22 @@ StrataConfig.Hud = {
 StrataConfig.Look = {
 	-- Deliberately dark and cool. This is what fills every surface no lamp
 	-- reaches, and it is what makes a lamp look like a lamp.
-	Ambient        = Color3.fromRGB(13, 16, 26),
+	--
+	-- Which it never got to do, because there was no such surface: seven
+	-- lanterns at a range of twenty studs in one lodge reach everything, so
+	-- the room was lit entirely by lamps and this never showed at all. The
+	-- ranges are the fix and they live with the lamps; what changed here is
+	-- that the shadows are now a little more present, so the darkened timber
+	-- has somewhere cool to sit instead of going to mud.
+	Ambient        = Color3.fromRGB(22, 27, 38),
 	OutdoorAmbient = Color3.fromRGB(78, 90, 112),
 	Brightness     = 2.6,
 	ExposureBias   = -0.12,
 
-	-- Skylight bounce. Turned well down, or the interior gets a free wash of
-	-- daylight it has not earned and the lamps stop mattering.
-	EnvironmentDiffuse  = 0.22,
+	-- Skylight bounce. Still well down — a free wash of daylight is how the
+	-- lamps stop mattering — but up enough that the cool half of the scene
+	-- actually registers, because daylight is the only cool light in here.
+	EnvironmentDiffuse  = 0.30,
 	EnvironmentSpecular = 0.45,
 
 	-- Sun low and warm, so it rakes through the roof opening rather than
@@ -299,28 +307,92 @@ StrataConfig.Look = {
 	ClockTime      = 16.4,
 	GeographicLatitude = 22,
 
+	-- The air is cool now, and it is doing a job. Warm only reads as warm when
+	-- something near it is not: the reference sells its lantern light with a
+	-- blue-grey cave mouth behind it, and ours had amber haze behind amber
+	-- lamps on amber planks, which is three ways of saying the same thing. The
+	-- lamps did not get warmer when this went cool. They got warm at all.
 	Atmosphere = {
-		Density = 0.28,
-		Haze    = 1.1,
-		Glare   = 0.25,
-		Colour  = Color3.fromRGB(208, 190, 168),
-		Decay   = Color3.fromRGB(94, 82, 92),
+		Density = 0.3,
+		Haze    = 1.2,
+		Glare   = 0.18,
+		Colour  = Color3.fromRGB(168, 180, 198),
+		Decay   = Color3.fromRGB(78, 86, 104),
 	},
 
-	-- Lamps are neon, so they bloom. This is most of the warmth.
-	Bloom = { Intensity = 0.62, Size = 22, Threshold = 1.15 },
+	-- Lamps are neon, so they bloom. This used to be "most of the warmth" and
+	-- that was the problem: a threshold of 1.15 blooms almost everything lit,
+	-- not just the lamp glass, and at size 22 each lantern spread into a white
+	-- rectangle with no fixture visible inside it. The threshold is now above
+	-- what a lit plank reaches, so only the emissive parts flare, and they
+	-- flare amber instead of blowing out to white.
+	Bloom = { Intensity = 0.34, Size = 15, Threshold = 2.0 },
 
-	-- A light grade: a touch more contrast so the darks stay dark, a touch
-	-- more saturation so the amber is amber, and a warm tint over everything.
+	-- A light grade: enough contrast to keep the darks dark, and close to
+	-- neutral everywhere else.
+	--
+	-- Saturation was +0.09 and the tint was warm, which sounds harmless until
+	-- you count what else in here is already warm: the lamps, the sun at 16.4,
+	-- the atmosphere colour, and the paint itself. Five warm multipliers on
+	-- one scene do not read as five times as cosy, they read as orange. Same
+	-- shape of mistake as the cave lighting chain, in the other direction —
+	-- every value defensible alone, and the stack doing something none of them
+	-- intended.
 	Grade = {
-		Contrast   = 0.14,
-		Saturation = 0.09,
-		Brightness = -0.015,
-		Tint       = Color3.fromRGB(255, 246, 236),
+		Contrast   = 0.16,
+		Saturation = 0.02,
+		Brightness = -0.02,
+		Tint       = Color3.fromRGB(248, 248, 250),
 	},
 
 	-- Shafts of light through the hole in the lodge roof
 	SunRays = { Intensity = 0.07, Spread = 0.72 },
+
+	-- ── What the camp is painted ─────────────────────────────────────────────
+	-- Here rather than in SurfaceBuilder, where it was a block of local
+	-- constants, because paint and the light that lands on it are one setting
+	-- pretending to be two. Every time they have been edited apart in this
+	-- project the result has been a scene lit for colours it no longer has.
+	--
+	-- All of the structural tones are roughly half what they were. The
+	-- reference everyone keeps pointing at has nearly black walls: the orange
+	-- in it is light, not paint, and the whole trick is that the wood is dark
+	-- enough for a lamp to be the brightest thing in frame. Ours was a
+	-- mid-tone saturated orange-brown already most of the way to lit, so a
+	-- lamp on it had nowhere left to go and the room flattened into one sheet.
+	--
+	-- Hazard, Ember and Lamp are untouched. They are signal and fire, and they
+	-- are supposed to be the loudest things here — which they finally can be.
+	Camp = {
+		Timber     = Color3.fromRGB( 62,  44,  30),   -- posts and beams
+		TimberDark = Color3.fromRGB( 42,  30,  21),   -- shadowed timber
+		Plank      = Color3.fromRGB( 84,  62,  42),   -- decking and walls
+		Stone      = Color3.fromRGB( 78,  77,  74),   -- masonry
+		StoneDark  = Color3.fromRGB( 56,  55,  54),
+		Deck       = Color3.fromRGB( 96,  93,  88),   -- plaza slab
+		DeckAlt    = Color3.fromRGB( 80,  78,  74),
+		Iron       = Color3.fromRGB( 52,  56,  62),
+		IronLit    = Color3.fromRGB( 88,  93, 101),
+		Canvas     = Color3.fromRGB(118, 108,  88),
+		Outline    = Color3.fromRGB( 20,  17,  14),
+
+		Hazard = Color3.fromRGB(214, 174,  72),
+		Ember  = Color3.fromRGB(226, 118,  48),
+		Lamp   = Color3.fromRGB(232, 196, 128),
+
+		-- The cool one, and the reason the rest can be warm. Already in use on
+		-- a crystal seam; it belongs in the palette so the next cold thing in
+		-- the camp is the same cold as that one.
+		Signal = Color3.fromRGB(150, 206, 226),
+
+		-- The cliff wall that rings the camp. Its own set of constants further
+		-- down SurfaceBuilder, which is how it stayed light when the rest of
+		-- the camp went dark and then read as a bright backdrop behind a dim
+		-- scene. Darkened on the same curve as everything else.
+		WallStone     = Color3.fromRGB(88, 85, 80),
+		WallStoneDark = Color3.fromRGB(64, 62, 58),
+		WallMoss      = Color3.fromRGB(66, 80, 54),
+	},
 
 	-- The top few studs of the world are turf rather than bare dirt. One line in
 	-- the generator, and the whole surface stops looking like a building site.
