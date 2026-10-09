@@ -471,9 +471,22 @@ local function dress(frame, titleText, accent, headerHeight)
 	well.Parent           = frame
 	corner(well, UIP.CornerSm)
 
+	-- Two rings, dark outside and brass inside. One line is a border; a dark
+	-- line with a bright one inside it is a rebate — the thing the references
+	-- put round every panel, well and slot, and most of what makes a dark box
+	-- read as an object rather than a hole in the page.
 	local wellEdge = Instance.new("UIStroke", well)
 	wellEdge.Color     = OUTLINE
-	wellEdge.Thickness = 2
+	wellEdge.Thickness = 3
+
+	local wellBrass = Instance.new("Frame")
+	wellBrass.Size                   = UDim2.new(1, -4, 1, -4)
+	wellBrass.Position               = UDim2.new(0, 2, 0, 2)
+	wellBrass.BackgroundTransparency = 1
+	wellBrass.ZIndex                 = 1
+	wellBrass.Parent                 = well
+	corner(wellBrass, UIP.CornerSm)
+	stroked(wellBrass, UIP.Brass, 1.5, 0.45)
 
 	-- A lit line along the inside top edge. Light falls from above, so the upper
 	-- lip of something cut into a surface catches it and the lower does not —

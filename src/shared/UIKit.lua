@@ -366,6 +366,17 @@ function UIKit.Tile(parent, spec)
 	UIKit.Corner(slot, UIP.CornerSm)
 	UIKit.Outline(slot, UIP.StoneDark, 2)
 
+	-- The brass rebate, same as the panel wells. Every slot in the references
+	-- has one and it is what stops a dark square reading as a gap.
+	local slotBrass = Instance.new("Frame")
+	slotBrass.Size                   = UDim2.new(1, -4, 1, -4)
+	slotBrass.Position               = UDim2.new(0, 2, 0, 2)
+	slotBrass.BackgroundTransparency = 1
+	slotBrass.ZIndex                 = 5
+	slotBrass.Parent                 = slot
+	UIKit.Corner(slotBrass, UIP.CornerSm)
+	UIKit.Outline(slotBrass, UIP.Brass, 1.5, live and 0.4 or 0.8)
+
 	local slotLip = Instance.new("Frame")
 	slotLip.Size                   = UDim2.new(1, -6, 0, 2)
 	slotLip.Position               = UDim2.new(0, 3, 0, 1)
@@ -562,6 +573,16 @@ function UIKit.Detail(parent, width)
 	bay.Parent                 = pane
 	UIKit.Corner(bay, UIP.CornerSm)
 	UIKit.Outline(bay, UIP.StoneDark, 2)
+
+	-- Brass rebate, like the wells and the tile slots
+	local bayBrass = Instance.new("Frame")
+	bayBrass.Size                   = UDim2.new(1, -4, 1, -4)
+	bayBrass.Position               = UDim2.new(0, 2, 0, 2)
+	bayBrass.BackgroundTransparency = 1
+	bayBrass.ZIndex                 = 8
+	bayBrass.Parent                 = bay
+	UIKit.Corner(bayBrass, UIP.CornerSm)
+	UIKit.Outline(bayBrass, UIP.Brass, 1.5, 0.45)
 
 	local bayLip = Instance.new("Frame")
 	bayLip.Size                   = UDim2.new(1, -6, 0, 2)

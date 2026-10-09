@@ -83,15 +83,35 @@ StrataConfig.UI = {
 	-- which is where the "soft purple panels" look came from — the reference is
 	-- painted steel in a working mine: cold, slightly green-grey, and the only
 	-- warmth in the whole interface comes from the amber it is labelled in.
-	Stone      = Color3.fromRGB(44, 48, 52),    -- panel face
-	StoneDeep  = Color3.fromRGB(26, 29, 32),    -- recesses, wells, tracks
-	StoneDark  = Color3.fromRGB(12, 13, 15),    -- outlines, and they are thick
-	StoneLit   = Color3.fromRGB(78, 85, 90),    -- the lit top edge of a panel
-	Speckle    = Color3.fromRGB(132, 142, 148), -- grain
-	Vein       = Color3.fromRGB(92, 100, 106),
+	-- Warm, and with room to breathe.
+	--
+	-- The grey read as lifeless and the reason was measurable rather than a
+	-- matter of taste: the whole interface lived between 12 and 90 on a scale
+	-- of 255. Frame, contents and edges were all within forty units of each
+	-- other, so nothing could sit in front of anything else and every panel was
+	-- one flat sheet of nearly-the-same.
+	--
+	-- The references do the opposite. Their frame is a light warm mid-tone,
+	-- their slots are nearly black, and their edges are bright metal — a range
+	-- of almost the whole scale. That contrast is what reads as life; the brown
+	-- is incidental. So this runs 10 to 200, and leans warm, because cold grey
+	-- at high contrast looks like a spreadsheet and warm metal looks like kit.
+	Stone      = Color3.fromRGB(78, 70, 60),    -- panel face, the lightest plate
+	StoneDeep  = Color3.fromRGB(24, 21, 18),    -- recesses, wells, slots
+	StoneDark  = Color3.fromRGB(10, 9, 8),      -- outlines, and they are thick
+	StoneLit   = Color3.fromRGB(132, 118, 96),  -- the lit top edge of a plate
 
-	Ink        = Color3.fromRGB(246, 248, 250),
-	Dim        = Color3.fromRGB(158, 168, 176), -- cold steel, not lavender
+	-- The framing metal. Every panel, well and slot in the references is edged
+	-- in bright brass, and it is the single thing doing most of the work: a dark
+	-- box with a bright rim reads as a thing, and the same box without one reads
+	-- as a hole in the page.
+	Brass      = Color3.fromRGB(198, 160, 92),
+
+	Speckle    = Color3.fromRGB(148, 134, 112), -- grain
+	Vein       = Color3.fromRGB(104, 94, 78),
+
+	Ink        = Color3.fromRGB(250, 246, 238),
+	Dim        = Color3.fromRGB(176, 164, 144), -- warm steel, not cold grey
 
 	-- ── Accents ──
 	-- Ore is the house colour and the one every heading, every total and every
