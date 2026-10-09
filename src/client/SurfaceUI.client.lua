@@ -108,7 +108,7 @@ local function text(parent, str, size, colour, textSize, font, align)
 	l.Text                   = str
 	l.TextColor3             = colour or INK
 	l.TextSize               = textSize or 14
-	l.Font                   = font or StrataConfig.UI.Body
+	l.Font                   = StrataConfig.FaceFor(font or StrataConfig.UI.Body, l.TextSize)
 	l.TextXAlignment         = align or Enum.TextXAlignment.Left
 
 	-- The black outline every label used to carry. It was hardcoded here and
@@ -534,7 +534,7 @@ local function dress(frame, titleText, accent, headerHeight)
 	close.Text             = "X"
 	close.TextColor3       = Color3.fromRGB(255, 255, 255)
 	close.TextSize         = 20
-	close.Font             = StrataConfig.UI.Head
+	close.Font = StrataConfig.FaceFor(StrataConfig.UI.Head, close.TextSize)
 	close.AutoButtonColor  = false
 	close.ZIndex           = 5
 	close.Parent           = frame
@@ -1064,7 +1064,7 @@ panelAction.BorderSizePixel  = 0
 panelAction.Text             = ""
 panelAction.TextColor3       = Color3.fromRGB(40, 28, 10)
 panelAction.TextSize         = 20
-panelAction.Font             = StrataConfig.UI.Head
+	panelAction.Font = StrataConfig.FaceFor(StrataConfig.UI.Head, panelAction.TextSize)
 panelAction.AutoButtonColor  = false
 panelAction.Visible          = false
 panelAction.Parent           = panel
@@ -2264,7 +2264,7 @@ hazardBanner.BorderSizePixel        = 0
 hazardBanner.Text                   = ""
 hazardBanner.TextColor3             = CRIT
 hazardBanner.TextSize               = 15
-hazardBanner.Font                   = StrataConfig.UI.Head
+	hazardBanner.Font = StrataConfig.FaceFor(StrataConfig.UI.Head, hazardBanner.TextSize)
 hazardBanner.Visible                = false
 hazardBanner.Parent                 = gui
 corner(hazardBanner, 10)

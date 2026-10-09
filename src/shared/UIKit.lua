@@ -110,7 +110,7 @@ function UIKit.Text(parent, str, size, position, colour, textSize, font, align)
 	l.Text                   = str
 	l.TextColor3             = colour or UIP.Ink
 	l.TextSize               = textSize or 14
-	l.Font                   = font or UIP.Head
+	l.Font                   = StrataConfig.FaceFor(font or UIP.Head, l.TextSize)
 	l.TextXAlignment         = align or Enum.TextXAlignment.Center
 	l.ZIndex                 = 6
 	l.Parent                 = parent
@@ -201,7 +201,7 @@ function UIKit.Close(parent, onClick)
 	btn.Text             = "X"
 	btn.TextColor3       = Color3.fromRGB(255, 255, 255)
 	btn.TextSize         = 22
-	btn.Font             = UIP.Head
+	btn.Font = StrataConfig.FaceFor(StrataConfig.UI.Head, btn.TextSize)
 	btn.AutoButtonColor  = false
 	btn.BorderSizePixel  = 0
 	btn.ZIndex           = 22
@@ -244,7 +244,7 @@ function UIKit.Chunky(parent, spec)
 	btn.Text             = string.upper(spec.text or "")
 	btn.TextColor3       = spec.ink or Color3.fromRGB(255, 255, 255)
 	btn.TextSize         = spec.textSize or 16
-	btn.Font             = UIP.Head
+	btn.Font = StrataConfig.FaceFor(StrataConfig.UI.Head, btn.TextSize)
 	btn.AutoButtonColor  = false
 	btn.BorderSizePixel  = 0
 	btn.LayoutOrder      = spec.order or 1
@@ -746,7 +746,7 @@ function UIKit.Chips(parent, position)
 			chip.Text             = string.upper(option.text)
 			chip.TextColor3       = live and Color3.fromRGB(24, 18, 6) or UIP.Dim
 			chip.TextSize         = 13
-			chip.Font             = UIP.Head
+			chip.Font             = StrataConfig.FaceFor(UIP.Head, chip.TextSize)
 			chip.AutoButtonColor  = false
 			chip.BorderSizePixel  = 0
 			chip.LayoutOrder      = i

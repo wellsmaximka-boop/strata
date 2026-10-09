@@ -164,7 +164,7 @@ local function label(parent, text, size, position, colour, textSize, font, align
 	l.Text                   = text
 	l.TextColor3             = colour
 	l.TextSize               = textSize
-	l.Font                   = font or StrataConfig.UI.Head
+	l.Font                   = StrataConfig.FaceFor(font or StrataConfig.UI.Head, l.TextSize)
 	l.TextXAlignment         = align or Enum.TextXAlignment.Center
 	l.ZIndex                 = 4
 

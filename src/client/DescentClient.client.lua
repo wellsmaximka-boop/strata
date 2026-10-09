@@ -48,7 +48,7 @@ local function label(parent, text, size, position, colour, textSize, font, align
 	l.Text                   = text
 	l.TextColor3             = colour or UIP.Ink
 	l.TextSize               = textSize or 14
-	l.Font                   = font or StrataConfig.UI.Number
+	l.Font                   = StrataConfig.FaceFor(font or StrataConfig.UI.Number, l.TextSize)
 	l.TextXAlignment         = align or Enum.TextXAlignment.Left
 
 	-- A heavy black outline on every label. It is the single change that makes

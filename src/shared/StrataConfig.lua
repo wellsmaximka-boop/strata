@@ -155,6 +155,9 @@ StrataConfig.UI = {
 	Body   = Enum.Font.GothamMedium,
 	Number = Enum.Font.RobotoMono,
 
+	-- Below this size, Head is swapped for Body. See StrataConfig.FaceFor.
+	HeadFloor = 16,
+
 	-- ── Chrome ──
 	-- One set of numbers so every panel in the game has the same edge, the same
 	-- corner and the same drop shadow without any of them being typed twice.
@@ -1857,6 +1860,26 @@ end
 -- Returns nil when the layer is open, or a table saying what is missing. One
 -- function so the contract board, the depth chart and the server that refuses
 -- the contract cannot drift apart.
+-- ── Which face, at this size ─────────────────────────────────────────────────
+-- Oswald is a condensed display face. At 24px in caps it is a stencil on a
+-- plate, which is exactly what the headings want. At 10 or 11 it is the "tall
+-- and skinny words" problem: condensed letterforms lose the width that tells
+-- them apart, caps remove the ascenders and descenders that do the same job,
+-- and the result is a picket fence you have to decode rather than read.
+--
+-- And it was everywhere small — tab labels, slot captions, HEAT 0/3, PACK,
+-- every stat heading — because "it is a label, labels use Head" is a reasonable
+-- rule that happens to be wrong below about sixteen pixels.
+--
+-- So the size decides, not the call site. Ask for Head at 11 and you get Body,
+-- which at that size is the only one of the two that is still a word.
+function StrataConfig.FaceFor(font, size)
+	if font == StrataConfig.UI.Head and (size or 14) < StrataConfig.UI.HeadFloor then
+		return StrataConfig.UI.Body
+	end
+	return font
+end
+
 function StrataConfig.GetStratumById(id)
 	for _, s in ipairs(StrataConfig.Strata) do
 		if s.id == id then return s end

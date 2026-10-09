@@ -108,7 +108,7 @@ local function label(parent, text, size, position, colour, textSize, font, align
 	l.Text                   = text
 	l.TextColor3             = colour or INK
 	l.TextSize               = textSize or 14
-	l.Font                   = font or StrataConfig.UI.Number
+	l.Font                   = StrataConfig.FaceFor(font or StrataConfig.UI.Number, l.TextSize)
 	l.TextXAlignment         = align or Enum.TextXAlignment.Left
 
 	-- A heavy black outline on every label. It is the single change that makes
@@ -2187,7 +2187,7 @@ extractBtn.BorderSizePixel  = 0
 extractBtn.Text             = "EXTRACT"
 extractBtn.TextColor3       = Color3.fromRGB(14, 24, 14)
 extractBtn.TextSize         = 18
-extractBtn.Font             = StrataConfig.UI.Head
+	extractBtn.Font = StrataConfig.FaceFor(StrataConfig.UI.Head, extractBtn.TextSize)
 extractBtn.Visible          = false
 extractBtn.Parent           = gui
 Instance.new("UICorner", extractBtn).CornerRadius = UDim.new(0, math.min(12, StrataConfig.UI.Corner))

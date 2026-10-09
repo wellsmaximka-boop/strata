@@ -206,7 +206,7 @@ for i, mode in ipairs({ { id = "body", name = "BODY" }, { id = "pack", name = "B
 	b.Text             = mode.name
 	b.TextColor3       = DIM
 	b.TextSize         = 10
-	b.Font             = StrataConfig.UI.Head
+	b.Font = StrataConfig.FaceFor(StrataConfig.UI.Head, b.TextSize)
 	b.AutoButtonColor  = false
 	b.Parent           = bodySlab
 	corner(b, 7)
@@ -436,7 +436,7 @@ detailAct.BorderSizePixel  = 0
 detailAct.Text             = "EQUIP"
 detailAct.TextColor3       = Color3.fromRGB(14, 18, 24)
 detailAct.TextSize         = 12
-detailAct.Font             = StrataConfig.UI.Head
+	detailAct.Font = StrataConfig.FaceFor(StrataConfig.UI.Head, detailAct.TextSize)
 detailAct.Visible          = false
 detailAct.Parent           = detail
 corner(detailAct, 8)
@@ -471,7 +471,7 @@ for i, cat in ipairs(CATS) do
 	b.Text             = cat.name
 	b.TextColor3       = DIM
 	b.TextSize         = 11
-	b.Font             = StrataConfig.UI.Head
+	b.Font = StrataConfig.FaceFor(StrataConfig.UI.Head, b.TextSize)
 	b.AutoButtonColor  = false
 	b.Parent           = kit
 	corner(b, 9)
