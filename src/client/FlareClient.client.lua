@@ -13,6 +13,12 @@ local remotes    = ReplicatedStorage:WaitForChild("MineRemotes")
 local flareThrow = remotes:WaitForChild("FlareThrow")
 local flareState = remotes:WaitForChild("FlareState")
 
+-- Where this script's two widgets sit along the bottom edge. Shared with
+-- MineClient and GrappleClient, which is the point: three scripts each picking
+-- their own offset is how the hint ended up printed under this slot.
+local BOT  = StrataConfig.HudBottom()
+local BOTW = StrataConfig.Hud.Bottom.Width
+
 -- ── Flares, from the throwing end ────────────────────────────────────────────
 -- Hold F, the arc appears; the longer you hold the further it goes; let go and
 -- it flies.
@@ -129,8 +135,8 @@ gui.Parent         = player:WaitForChild("PlayerGui")
 local slot = Instance.new("Frame")
 slot.Name             = "FlareSlot"
 slot.AnchorPoint      = Vector2.new(0.5, 1)
-slot.Position         = UDim2.new(0.5, 0, 1, -94)
-slot.Size             = UDim2.new(0, 158, 0, 52)
+slot.Position         = UDim2.new(0.5, 0, 1, -BOT.FlareSlot.y)
+slot.Size             = UDim2.new(0, BOTW, 0, BOT.FlareSlot.h)
 slot.BackgroundColor3 = UIP.StoneDeep
 slot.BorderSizePixel  = 0
 slot.Parent           = gui
@@ -218,8 +224,8 @@ Instance.new("UICorner", refill).CornerRadius = UDim.new(0, math.min(4, UIP.Corn
 
 local power = Instance.new("Frame")
 power.AnchorPoint      = Vector2.new(0.5, 1)
-power.Position         = UDim2.new(0.5, 0, 1, -152)
-power.Size             = UDim2.new(0, 158, 0, 8)
+power.Position         = UDim2.new(0.5, 0, 1, -BOT.FlarePower.y)
+power.Size             = UDim2.new(0, BOTW, 0, BOT.FlarePower.h)
 power.BackgroundColor3 = UIP.StoneDeep
 power.BorderSizePixel  = 0
 power.Visible          = false

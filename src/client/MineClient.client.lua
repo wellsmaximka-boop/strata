@@ -349,11 +349,14 @@ barFill.BorderSizePixel  = 0
 barFill.Parent           = barBg
 
 -- Return to surface now lives in the action bar (SurfaceUI), not here.
--- Controls hint, bottom left
--- Centred just above the pickaxe hotbar. It used to sit in the bottom-left,
--- which is now the player card.
-local hint = label(gui, "HOLD [LMB] DIG   ·   [E] SWEEP   ·   [SHIFT] RUN", UDim2.new(0, 420, 0, 18),
-	UDim2.new(0.5, 0, 1, -94), DIM, 12, nil, Enum.TextXAlignment.Center)
+-- Controls hint, centred above the hotbar. It was at -94, which is exactly
+-- where the flare slot starts, so for months it has been printed underneath a
+-- solid panel and only its ends were visible.
+local BOT = StrataConfig.HudBottom()
+
+local hint = label(gui, "HOLD [LMB] DIG   ·   [E] SWEEP   ·   [SHIFT] RUN",
+	UDim2.new(0, 420, 0, BOT.Hint.h),
+	UDim2.new(0.5, 0, 1, -BOT.Hint.y), DIM, 12, nil, Enum.TextXAlignment.Center)
 hint.AnchorPoint = Vector2.new(0.5, 1)
 
 -- ── Audio hooks ──────────────────────────────────────────────────────────────
@@ -1587,8 +1590,8 @@ local UIP = StrataConfig.UI
 local hotbar = Instance.new("Frame")
 hotbar.Name                   = "Hotbar"
 hotbar.AnchorPoint            = Vector2.new(0.5, 1)
-hotbar.Position               = UDim2.new(0.5, 0, 1, -18)
-hotbar.Size                   = UDim2.new(0, 0, 0, 68)
+hotbar.Position               = UDim2.new(0.5, 0, 1, -BOT.Hotbar.y)
+hotbar.Size                   = UDim2.new(0, 0, 0, BOT.Hotbar.h)
 hotbar.AutomaticSize          = Enum.AutomaticSize.X
 hotbar.BackgroundTransparency = 1
 hotbar.Parent                 = gui
@@ -1724,8 +1727,8 @@ local restedAt  = 0
 local bar = Instance.new("Frame")
 bar.Name             = "Stamina"
 bar.AnchorPoint      = Vector2.new(0.5, 1)
-bar.Position         = UDim2.new(0.5, 0, 1, -112)
-bar.Size             = UDim2.new(0, 220, 0, 9)
+bar.Position         = UDim2.new(0.5, 0, 1, -BOT.Stamina.y)
+bar.Size             = UDim2.new(0, 220, 0, BOT.Stamina.h)
 bar.BackgroundColor3 = UIP.StoneDeep
 bar.BorderSizePixel  = 0
 bar.BackgroundTransparency = 1

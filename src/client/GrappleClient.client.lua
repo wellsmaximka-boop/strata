@@ -47,6 +47,11 @@ local grappleRope  = remotes:WaitForChild("GrappleRope")
 local CFG = StrataConfig.Grapple
 local UIP = StrataConfig.UI
 
+-- Where the slot sits along the bottom edge. Shared, because this script used
+-- to park itself at -152 and so did the flare's charge gauge.
+local BOT  = StrataConfig.HudBottom()
+local BOTW = StrataConfig.Hud.Bottom.Width
+
 -- Matches GrappleRig, and only used for other people's cables: for our own we
 -- read the attachment's world position straight off the rig, and theirs we do
 -- not have. A hand's width of error on a rope across the room is nothing.
@@ -353,8 +358,8 @@ end
 local slot = Instance.new("Frame")
 slot.Name             = "GrappleSlot"
 slot.AnchorPoint      = Vector2.new(0.5, 1)
-slot.Position         = UDim2.new(0.5, 0, 1, -152)
-slot.Size             = UDim2.new(0, 158, 0, 44)
+slot.Position         = UDim2.new(0.5, 0, 1, -BOT.GrappleSlot.y)
+slot.Size             = UDim2.new(0, BOTW, 0, BOT.GrappleSlot.h)
 slot.BackgroundColor3 = UIP.StoneDeep
 slot.BorderSizePixel  = 0
 slot.Visible          = false

@@ -298,7 +298,50 @@ StrataConfig.Hud = {
 	-- The run manifest inherits the corner the card left, and it suits it
 	-- better than sharing: top left is you, bottom left is this run.
 	Manifest = { Bottom = 16, W = 300, H = 56 },
+
+	-- ── The bottom edge ──────────────────────────────────────────────────────
+	-- Six things stacked above the hotbar, built by three different scripts
+	-- that each picked their own offset off the bottom of the screen. Three of
+	-- them overlapped: the controls hint was underneath the flare slot, the
+	-- stamina bar ran through it, and the grapple slot sat on top of the
+	-- flare's charge gauge. All of that is visible in any screenshot once you
+	-- know to look, and none of it is findable by reading one file.
+	--
+	-- Heights live here too, not just positions. A height that is declared in
+	-- one place and set in another is the same bug waiting to come back the
+	-- next time somebody makes a slot taller.
+	--
+	-- Listed bottom up, in the order they sit on screen.
+	Bottom = {
+		Floor = 18,
+		Gap   = 8,
+		Width = 158,   -- the slots; the hint and bars set their own
+		Order = {
+			{ id = "Hotbar",      h = 68 },
+			{ id = "Stamina",     h = 9  },
+			{ id = "Hint",        h = 18 },
+			{ id = "FlareSlot",   h = 52 },
+			{ id = "FlarePower",  h = 8  },
+			{ id = "GrappleSlot", h = 44 },
+		},
+	},
 }
+
+-- Each row's distance up from the bottom of the screen, and its height. Use it
+-- as Position = UDim2.new(0.5, 0, 1, -row.y) with AnchorPoint (0.5, 1).
+function StrataConfig.HudBottom()
+	local B   = StrataConfig.Hud.Bottom
+	local y   = B.Floor
+	local out = {}
+
+	for _, row in ipairs(B.Order) do
+		out[row.id] = { y = y, h = row.h }
+		y += row.h + B.Gap
+	end
+
+	out.Top = y - B.Gap
+	return out
+end
 
 -- Where each row of the column starts. One pass, so the order in this list is
 -- the order on screen and the arithmetic is never written down twice.

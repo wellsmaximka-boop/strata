@@ -109,13 +109,69 @@ if gridW > H.Width then
 	bad += 1
 end
 
+-- The bottom edge, built by three different scripts. Same failure, other axis.
+print("")
+print("-- bottom edge, up from the floor --")
+local B   = H.Bottom
+local bot = StrataConfig.HudBottom()
+print(("  %-14s %6s %6s %6s"):format("row", "bottom", "height", "top"))
+local reach = 0
+for _, row in ipairs(B.Order) do
+	local r = bot[row.id]
+	print(("  %-14s %6d %6d %6d"):format(row.id, r.y, r.h, r.y + r.h))
+	reach = math.max(reach, r.y + r.h)
+end
+
+local botClashes = 0
+for i = 2, #B.Order do
+	local below = bot[B.Order[i - 1].id]
+	local here  = bot[B.Order[i].id]
+	if here.y < below.y + below.h then
+		print(("  %s overlaps %s by %d")
+			:format(B.Order[i].id, B.Order[i - 1].id, below.y + below.h - here.y))
+		botClashes += 1
+	end
+end
+print(("  %d overlapping rows, %d tall in total"):format(botClashes, reach))
+bad += botClashes
+
+-- Not checked against the left column, deliberately. This stack is centred and
+-- the column is pinned sixteen pixels from the left edge, so the two never
+-- share a pixel however short the window gets. The first version of this check
+-- compared their heights, reported a collision at 864p, and was wrong: what
+-- the column actually has to clear is the run manifest below it, which is the
+-- test further up.
+--
+-- What this stack owes is restraint. It is the middle of the screen and the
+-- game is behind it.
+print("")
+print("-- how much of the view the bottom edge takes --")
+for _, height in ipairs({ 1080, 720 }) do
+	local share   = reach / height
+	local verdict = "ok"
+	if share > 0.4 then
+		verdict = "TOO TALL"
+		bad += 1
+	elseif share > 0.3 then
+		verdict = "tight"
+	end
+	print(("  %4dp high   %2d%% of the screen   %s")
+		:format(height, math.floor(share * 100 + 0.5), verdict))
+end
+
 print("")
 if bad > 0 then
-	print(("FAILED: %d problem(s)"):format(bad))
-	os.exit(1)
+	-- Not os.exit: the luau CLI does not have it. The shell greps for this.
+	print(("HUDCHECK-FAILED: %d problem(s)"):format(bad))
+else
+	print("clean")
 end
-print("clean")
 LUA
 } > "$OUT"
 
-"$LUAU" "$OUT"
+REPORT="$("$LUAU" "$OUT")"
+printf '%s\n' "$REPORT"
+
+if printf '%s' "$REPORT" | grep -q "HUDCHECK-FAILED"; then
+	exit 1
+fi
