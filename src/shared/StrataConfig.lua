@@ -140,8 +140,19 @@ StrataConfig.UI = {
 	--
 	-- These three lines are the whole typeface of the game; changing them back
 	-- is a one-line revert if the new one reads worse in motion.
+	-- Body goes from Titillium to Gotham.
+	--
+	-- Titillium is a display face: it has personality at 24px and falls apart at
+	-- 11, where its strokes thin out and its letterforms run together. Almost
+	-- all the prose in this game is 11 to 13px on a dark panel, which is the
+	-- worst case for it — hence descriptions you could only read once they were
+	-- highlighted. Gotham is a workhorse: open counters, even weight, and it
+	-- stays legible small, which is the only thing a description has to do.
+	--
+	-- Oswald stays for headings. Condensed caps at 24px is where it is good, and
+	-- that is all it is asked to do.
 	Head   = Enum.Font.Oswald,
-	Body   = Enum.Font.TitilliumWeb,
+	Body   = Enum.Font.GothamMedium,
 	Number = Enum.Font.RobotoMono,
 
 	-- ── Chrome ──
@@ -187,8 +198,11 @@ StrataConfig.UI = {
 	-- An inventory tile. Here rather than in UIKit because the grid that lays
 	-- them out and the kit that draws them both need it, and a layout number is
 	-- exactly what this file is for.
-	TileW = 118,
-	TileH = 136,
+	-- Bigger. At 118 across, an item name at a readable size truncated on
+	-- almost everything — "Canvas Trousers" did not fit — and the fix for text
+	-- you cannot read is not a smaller font, it is a wider card.
+	TileW = 136,
+	TileH = 152,
 	Shadow    = 0.55,  -- transparency of the drop shadow behind a panel
 	ShadowDrop = 6,    -- and how far it sits below it
 }

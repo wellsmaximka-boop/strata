@@ -1663,7 +1663,9 @@ local function refreshHotbar(state)
 	-- The pick in your hand, whatever it is
 	local held = state.pickaxe and GearConfig.Get(state.pickaxe) or nil
 	local list = { {
-		id     = held and held.id or nil,
+		-- Falls back to the starter model rather than nil, so the slot shows a
+		-- pickaxe instead of the letter T before you have bought one
+		id     = held and held.id or "StarterPick",
 		name   = held and (held.name:gsub(" Pick", "")) or "Starter",
 		active = true,
 		glyph  = "T",

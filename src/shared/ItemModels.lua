@@ -155,6 +155,42 @@ end
 
 -- ── Worn items: which pieces go on which limbs ───────────────────────────────
 
+local CANVAS      = Color3.fromRGB(146, 124, 88)
+local CANVAS_DARK = Color3.fromRGB(104, 86, 60)
+local BRASSY      = Color3.fromRGB(198, 160, 92)
+local GLASS       = Color3.fromRGB(236, 226, 180)
+
+local function canvasHood(size)
+	local m, root = newModel("CanvasHood")
+	piece(m, root, "Crown", size * Vector3.new(1.08, 0.78, 1.08),
+		CFrame.new(0, 0.18, 0), CANVAS, Enum.Material.Fabric)
+	piece(m, root, "Brim", size * Vector3.new(1.22, 0.16, 0.5),
+		CFrame.new(0, -0.1, -0.42), CANVAS_DARK, Enum.Material.Fabric)
+	piece(m, root, "Band", size * Vector3.new(1.12, 0.14, 1.12),
+		CFrame.new(0, -0.16, 0), CANVAS_DARK, Enum.Material.Fabric)
+	return m
+end
+
+local function canvasVest(size)
+	local m, root = newModel("CanvasVest")
+	piece(m, root, "Body", size * Vector3.new(1.06, 0.94, 1.14),
+		CFrame.new(), CANVAS, Enum.Material.Fabric)
+	piece(m, root, "Strap", size * Vector3.new(0.22, 1.0, 1.2),
+		CFrame.new(-0.3, 0.05, 0), CANVAS_DARK, Enum.Material.Fabric)
+	piece(m, root, "Buckle", size * Vector3.new(0.3, 0.18, 0.2),
+		CFrame.new(-0.3, -0.18, -0.56), BRASSY, Enum.Material.Metal)
+	return m
+end
+
+local function canvasLegs(size)
+	local m, root = newModel("CanvasLegs")
+	piece(m, root, "Thigh", size * Vector3.new(1.08, 0.92, 1.08),
+		CFrame.new(0, 0.1, 0), CANVAS, Enum.Material.Fabric)
+	piece(m, root, "Cuff", size * Vector3.new(1.14, 0.2, 1.14),
+		CFrame.new(0, -0.42, 0), CANVAS_DARK, Enum.Material.Fabric)
+	return m
+end
+
 local WORN = {
 	ThermalVisor = {
 		{ limb = "Head", build = thermalVisor },
@@ -169,6 +205,20 @@ local WORN = {
 		{ limb = "RightUpperLeg", build = thermalCuisse },
 		{ limb = "LeftLowerLeg",  build = thermalGreave },
 		{ limb = "RightLowerLeg", build = thermalGreave },
+	},
+
+	-- The canvas set. It is what everyone owns first and had no art at all, so
+	-- the first three things in the shop were a triangle, a square and a
+	-- down-arrow.
+	CanvasHood = {
+		{ limb = "Head", build = canvasHood },
+	},
+	CanvasVest = {
+		{ limb = "UpperTorso", build = canvasVest },
+	},
+	CanvasLegs = {
+		{ limb = "LeftUpperLeg",  build = canvasLegs },
+		{ limb = "RightUpperLeg", build = canvasLegs },
 	},
 }
 
@@ -231,6 +281,57 @@ HELD.IronPick = function()
 
 	return model, handle
 end
+
+-- ── Display models for everything else ──────────────────────────────────────
+-- Only the three Thermal pieces and the Iron pick had models, so every other
+-- item in the shop fell through to a coloured glyph — a triangle for a hood, a
+-- star for a lamp. A shop selling shapes does not look like a shop.
+--
+-- These are deliberately plain: a few parts each, in the same style as the
+-- thermal set. They do not need to be good sculpture, they need to be
+-- recognisably the object rather than a symbol standing in for it.
+
+HELD.LampI = function()
+	local m, root = newModel("LampI")
+	piece(m, root, "Can",   Vector3.new(0.72, 0.9, 0.72), CFrame.new(0, 0.1, 0), IRON)
+	piece(m, root, "Lens",  Vector3.new(0.56, 0.5, 0.2),  CFrame.new(0, 0.18, -0.4), GLASS,
+		Enum.Material.Neon)
+	piece(m, root, "Hood",  Vector3.new(0.82, 0.18, 0.4), CFrame.new(0, 0.6, -0.26), IRON_DARK)
+	piece(m, root, "Base",  Vector3.new(0.84, 0.16, 0.84), CFrame.new(0, -0.42, 0), IRON_DARK)
+	piece(m, root, "Hoop",  Vector3.new(0.14, 0.42, 0.14), CFrame.new(0, 0.74, 0.1), BRASSY,
+		Enum.Material.Metal)
+	return m, root
+end
+
+HELD.PackI = function()
+	local m, root = newModel("PackI")
+	piece(m, root, "Body",  Vector3.new(1.1, 1.25, 0.62), CFrame.new(), CANVAS,
+		Enum.Material.Fabric)
+	piece(m, root, "Flap",  Vector3.new(1.14, 0.45, 0.68), CFrame.new(0, 0.46, 0.02),
+		CANVAS_DARK, Enum.Material.Fabric)
+	piece(m, root, "Buckle", Vector3.new(0.22, 0.18, 0.16), CFrame.new(0, 0.2, -0.36),
+		BRASSY, Enum.Material.Metal)
+	piece(m, root, "StrapL", Vector3.new(0.16, 1.2, 0.2), CFrame.new(-0.42, 0, -0.38),
+		CANVAS_DARK, Enum.Material.Fabric)
+	piece(m, root, "StrapR", Vector3.new(0.16, 1.2, 0.2), CFrame.new(0.42, 0, -0.38),
+		CANVAS_DARK, Enum.Material.Fabric)
+	return m, root
+end
+
+HELD.ScannerII = function()
+	local m, root = newModel("ScannerII")
+	piece(m, root, "Case",   Vector3.new(0.95, 0.65, 0.26), CFrame.new(), IRON_DARK)
+	piece(m, root, "Screen", Vector3.new(0.7, 0.42, 0.06),  CFrame.new(0, 0.06, -0.16),
+		Color3.fromRGB(104, 226, 188), Enum.Material.Neon)
+	piece(m, root, "Dial",   Vector3.new(0.18, 0.18, 0.12), CFrame.new(0.32, -0.22, -0.12),
+		BRASSY, Enum.Material.Metal)
+	piece(m, root, "Aerial", Vector3.new(0.07, 0.6, 0.07),  CFrame.new(0.36, 0.52, 0), IRON)
+	return m, root
+end
+
+-- Any pick without art of its own, including the one you start with. A player
+-- holding "no pickaxe model yet" still has a pickaxe in their hands.
+HELD.StarterPick = HELD.IronPick
 
 -- Returns (model, handle) for a pick with a model, or nil if it has none yet
 function ItemModels.BuildHeld(gearId)

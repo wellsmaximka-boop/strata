@@ -356,8 +356,8 @@ function UIKit.Tile(parent, spec)
 	-- a tray with something in it.
 	local slot = Instance.new("Frame")
 	slot.Name                   = "Slot"
-	slot.Size                   = UDim2.new(0, 86, 0, 76)
-	slot.Position               = UDim2.new(0.5, -43, 0, 23)
+	slot.Size                   = UDim2.new(0, 100, 0, 86)
+	slot.Position               = UDim2.new(0.5, -50, 0, 24)
 	slot.BackgroundColor3       = UIP.StoneDeep
 	slot.BackgroundTransparency = live and 0.18 or 0.42
 	slot.BorderSizePixel        = 0
@@ -388,8 +388,8 @@ function UIKit.Tile(parent, spec)
 
 	local art = Instance.new("Frame")
 	art.Name                   = "Art"
-	art.Size                   = UDim2.new(0, 78, 0, 70)
-	art.Position               = UDim2.new(0.5, -39, 0, 26)
+	art.Size                   = UDim2.new(0, 90, 0, 80)
+	art.Position               = UDim2.new(0.5, -45, 0, 27)
 	art.BackgroundTransparency = 1
 	art.ZIndex                 = 6
 	art.Parent                 = tile
@@ -456,23 +456,23 @@ function UIKit.Tile(parent, spec)
 
 	-- The name plate along the bottom
 	local plate = Instance.new("Frame")
-	plate.Size             = UDim2.new(1, 0, 0, 34)
-	plate.Position         = UDim2.new(0, 0, 1, -34)
+	plate.Size             = UDim2.new(1, 0, 0, 38)
+	plate.Position         = UDim2.new(0, 0, 1, -38)
 	plate.BackgroundColor3 = Color3.fromRGB(13, 12, 20)
 	plate.BackgroundTransparency = 0.12
 	plate.BorderSizePixel  = 0
 	plate.ZIndex           = 7
 	plate.Parent           = tile
 
-	local name = UIKit.Text(plate, spec.title or "", UDim2.new(1, -8, 0, 16),
-		UDim2.new(0, 4, 0, 2), live and UIP.Ink or UIP.Dim, 13)
+	local name = UIKit.Text(plate, spec.title or "", UDim2.new(1, -8, 0, 18),
+		UDim2.new(0, 4, 0, 1), live and UIP.Ink or UIP.Dim, 14)
 	name.TextTruncate = Enum.TextTruncate.AtEnd
 	name.ZIndex       = 8
 
 	-- The line under the name is whatever the screen wants it to be: a price in
 	-- a shop, a count in a pack, a rarity in a collection.
-	local under = UIKit.Text(plate, spec.line or rarity.name, UDim2.new(1, -8, 0, 13),
-		UDim2.new(0, 4, 0, 18), spec.lineColour or rarity.colour, 11)
+	local under = UIKit.Text(plate, spec.line or rarity.name, UDim2.new(1, -8, 0, 15),
+		UDim2.new(0, 4, 0, 20), spec.lineColour or rarity.colour, 12)
 	under.TextTruncate = Enum.TextTruncate.AtEnd
 	under.ZIndex       = 8
 
