@@ -39,15 +39,24 @@ local refreshChart
 
 local RunSvc = game:GetService("RunService")
 
--- Was 76, which is narrower than the words in it. "Magma Vents" wrapped onto
--- two lines at 11px and every depth was a cramped little number underneath,
--- so the one panel whose entire job is telling you where you may go was the
--- least readable thing on screen. The reference puts this at about three times
--- the width with room for a name, a depth and a lock, which is all it needs.
-local CHART_W  = 190
-local SEG_H    = 56
-local SEG_GAP  = 5
-local HEAD_H   = 40
+-- Was 76, which is narrower than the words in it: "Magma Vents" wrapped onto
+-- two lines at 11px and every depth was a cramped number underneath, so the
+-- one panel whose entire job is telling you where you may go was the least
+-- readable thing on screen.
+--
+-- Then it was a flat 190 with 56-tall segments, which on a smaller window came
+-- to better than two fifths of the screen height — a ladder you read before a
+-- run and never during one, taking up more room than the game. Share of the
+-- window now, clamped, with shorter rungs.
+local CH       = StrataConfig.Hud.Chart
+local VIEW     = workspace.CurrentCamera
+local CHART_W  = math.clamp(
+	math.floor(((VIEW and VIEW.ViewportSize.X or 0) > 320
+		and VIEW.ViewportSize.X or 1600) * CH.WidthShare),
+	CH.WidthMin, CH.WidthMax)
+local SEG_H    = CH.SegH
+local SEG_GAP  = CH.SegGap
+local HEAD_H   = CH.HeadH
 local CHART    = StrataConfig.DepthChart
 local CHART_H  = HEAD_H + #CHART * SEG_H + (#CHART - 1) * SEG_GAP
 
@@ -105,20 +114,27 @@ cap.ZIndex           = 2
 cap.Parent           = chart
 corner(cap, 10)
 
+-- Dusk, not noon. This was a bright daylight blue, which made the one pale
+-- block on the screen the top of a panel nobody is looking at — and it got
+-- worse when the camp went dark around it. It still reads as sky; it just is
+-- not the brightest thing in the room any more.
 local capSky = Instance.new("UIGradient", cap)
 capSky.Rotation = 90
 capSky.Color    = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(126, 186, 224)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(196, 220, 216)),
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(58, 80, 108)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(96, 110, 124)),
 })
 
 local clouds = {}
 for i = 1, 3 do
 	local c = Instance.new("Frame")
-	c.Size                   = UDim2.new(0, 26 + i * 8, 0, 5)
-	c.Position               = UDim2.new(0, -40, 0, 6 + i * 7)
+	-- Spread across whatever height the cap ended up, rather than the three
+	-- fixed offsets that fitted the taller one — the lower two fell outside
+	-- the clip and simply stopped existing.
+	c.Size                   = UDim2.new(0, 22 + i * 7, 0, 4)
+	c.Position               = UDim2.new(0, -40, 0, math.floor((HEAD_H - 6) * (i / 4)) - 2)
 	c.BackgroundColor3       = Color3.fromRGB(255, 255, 255)
-	c.BackgroundTransparency = 0.45
+	c.BackgroundTransparency = 0.62
 	c.BorderSizePixel        = 0
 	c.ZIndex                 = 3
 	c.Parent                 = cap
@@ -126,8 +142,10 @@ for i = 1, 3 do
 	clouds[i] = { frame = c, x = -40 - i * 30, speed = 5 + i * 3 }
 end
 
+-- Light on the dusk gradient. It was dark text for a daylight sky and would
+-- have disappeared into the new one.
 local capLabel = text(cap, "SURFACE", UDim2.new(1, 0, 1, 0),
-	Color3.fromRGB(28, 44, 58), 12, StrataConfig.UI.Head, Enum.TextXAlignment.Center)
+	Color3.fromRGB(226, 234, 242), 12, StrataConfig.UI.Head, Enum.TextXAlignment.Center)
 capLabel.ZIndex = 4
 
 -- ── Segments ─────────────────────────────────────────────────────────────────
@@ -169,16 +187,16 @@ for i, layer in ipairs(CHART) do
 	corner(rail, 2)
 
 	-- Stops short of the lock column on the right rather than running under it.
-	local name = text(seg, layer.name, UDim2.new(1, -56, 0, 20),
-		Color3.fromRGB(255, 255, 255), 14, StrataConfig.UI.Head)
-	name.Position       = UDim2.new(0, 17, 0, 9)
+	local name = text(seg, layer.name, UDim2.new(1, -50, 0, 18),
+		Color3.fromRGB(255, 255, 255), 13, StrataConfig.UI.Head)
+	name.Position       = UDim2.new(0, 16, 0, 6)
 	name.TextYAlignment = Enum.TextYAlignment.Top
 	name.TextTruncate   = Enum.TextTruncate.AtEnd
 	name.ZIndex         = 3
 
-	local depth = text(seg, math.floor(math.abs(layer.top)) .. "m", UDim2.new(1, -56, 0, 16),
+	local depth = text(seg, math.floor(math.abs(layer.top)) .. "m", UDim2.new(1, -50, 0, 15),
 		Color3.fromRGB(220, 228, 236), 12, StrataConfig.UI.Number)
-	depth.Position = UDim2.new(0, 17, 1, -22)
+	depth.Position = UDim2.new(0, 16, 1, -20)
 	depth.ZIndex   = 3
 
 	-- ── The padlock ──────────────────────────────────────────────────────────
@@ -189,8 +207,8 @@ for i, layer in ipairs(CHART) do
 	local lock = Instance.new("Frame")
 	lock.Name                   = "Lock"
 	lock.AnchorPoint            = Vector2.new(0.5, 0.5)
-	lock.Position               = UDim2.new(1, -21, 0.5, 0)
-	lock.Size                   = UDim2.new(0, 16, 0, 20)
+	lock.Position               = UDim2.new(1, -19, 0.5, 0)
+	lock.Size                   = UDim2.new(0, 14, 0, 18)
 	lock.BackgroundTransparency = 1
 	lock.ZIndex                 = 3
 	-- Off until the refresh says otherwise, so an unlocked layer never shows a
@@ -199,8 +217,8 @@ for i, layer in ipairs(CHART) do
 	lock.Parent                 = seg
 
 	local shackle = Instance.new("Frame")
-	shackle.Size                   = UDim2.new(0, 10, 0, 11)
-	shackle.Position               = UDim2.new(0.5, -5, 0, 0)
+	shackle.Size                   = UDim2.new(0, 9, 0, 10)
+	shackle.Position               = UDim2.new(0.5, -4.5, 0, 0)
 	shackle.BackgroundTransparency = 1
 	shackle.ZIndex                 = 3
 	shackle.Parent                 = lock
@@ -210,8 +228,8 @@ for i, layer in ipairs(CHART) do
 	shackleEdge.Thickness = 2
 
 	local body = Instance.new("Frame")
-	body.Size             = UDim2.new(1, 0, 0, 12)
-	body.Position         = UDim2.new(0, 0, 1, -12)
+	body.Size             = UDim2.new(1, 0, 0, 11)
+	body.Position         = UDim2.new(0, 0, 1, -11)
 	body.BackgroundColor3 = Color3.fromRGB(150, 160, 174)
 	body.BorderSizePixel  = 0
 	body.ZIndex           = 4

@@ -180,9 +180,19 @@ depthAhead.ZIndex      = 2
 -- Backpack and cash, second in the left-hand column. The haul is on top, and
 -- the credits get their own gold strip underneath. They used to be a dark icon
 -- and a 13px number on a dark panel, which is why they were hard to read.
-local STACK = StrataConfig.HudStack()
+-- The column is sized against the window it is actually on. Measured once, at
+-- startup: resizing the window mid-session leaves it at the old proportion,
+-- which is worth knowing and is still better than the flat pixel count it
+-- replaced, which was at the wrong proportion on every window.
+local function viewportWidth()
+	local cam = workspace.CurrentCamera
+	local w   = cam and cam.ViewportSize.X or 0
+	return w > 320 and w or 1600   -- 0 for a frame or two on some clients
+end
 
-local packPanel = panel(UDim2.new(0, StrataConfig.Hud.Width, 0, StrataConfig.Hud.Pack.H),
+local STACK = StrataConfig.HudMetrics(viewportWidth())
+
+local packPanel = panel(UDim2.new(0, STACK.Width, 0, StrataConfig.Hud.Pack.H),
 	UDim2.new(0, StrataConfig.Hud.Left, 0, STACK.Pack))
 
 label(packPanel, "PACK", UDim2.new(0, 40, 0, 20), UDim2.new(0, 12, 0, 9), DIM, 11)
@@ -298,7 +308,7 @@ local STRENGTH_ICON = "rbxassetid://15909461117"
 -- where Roblox draws its own menu and chat buttons — they covered it.
 local HUD = StrataConfig.Hud
 
-local strengthPanel = panel(UDim2.new(0, HUD.Width, 0, HUD.Strength.H),
+local strengthPanel = panel(UDim2.new(0, STACK.Width, 0, HUD.Strength.H),
 	UDim2.new(0, HUD.Left, 0, STACK.Strength))
 
 local strengthIcon = Instance.new("ImageLabel")
@@ -1323,34 +1333,46 @@ end)
 
 local UIP = StrataConfig.UI
 local CARD = HUD.Card
-local CARD_W = HUD.Width   -- the column's width; the card no longer has its own
+local CARD_W = STACK.Width   -- the column width; the card has none of its own
 
 local card = Instance.new("Frame")
 card.Name             = "PlayerCard"
 card.Size             = UDim2.new(0, CARD_W, 0, CARD.H)
 card.Position         = UDim2.new(0, HUD.Left, 0, STACK.Card)
--- Mostly transparent, and faded out towards its open edge.
+-- Dark, and with an edge again.
 --
--- This was a solid slab with a hard border — a panel, sitting permanently in
--- the corner of a game you are supposed to be looking at. A HUD is not a panel:
--- it should read as printed onto the view rather than as a window laid over it.
+-- The argument for making this nearly transparent and giving it no border was
+-- that a HUD should read as printed onto the view rather than as a window laid
+-- over it, and it was a good argument against the solid grey slab it replaced.
+-- It was also written against a camp lit like a furnace, where a dark panel
+-- stood out whatever you did to it.
 --
--- The gradient does the work. It is nearly opaque behind the portrait and the
--- name, where there is text to keep legible, and fades to nothing on the right
--- where the bars already carry their own fill. No edge at all, because an edge
--- is what makes something a box.
+-- The camp is dark now, and a 25%-transparent dark panel on dark timber is not
+-- a subtle panel, it is no panel: the portrait, the name and two bars were
+-- floating unattached over the floorboards with nothing holding them together.
+-- The reference's card is solid with a thin warm edge, and that is why you can
+-- tell at a glance that those five things are one thing.
 card.BackgroundColor3       = UIP.StoneDeep
-card.BackgroundTransparency = 0.25
+card.BackgroundTransparency = 0.06
 card.BorderSizePixel        = 0
 card.Parent                 = gui
 Instance.new("UICorner", card).CornerRadius = UDim.new(0, math.min(14, StrataConfig.UI.Corner))
 
+local cardEdge = Instance.new("UIStroke", card)
+cardEdge.Color        = UIP.Brass
+cardEdge.Thickness    = 1.5
+cardEdge.Transparency = 0.45
+
+-- Still lighter towards the open edge, but it no longer reaches nothing. A
+-- fade to fully transparent takes the right-hand third of the card away with
+-- it, which leaves the bars sitting on bare floorboards and makes the border
+-- stop halfway along a side.
 local cardFace = Instance.new("UIGradient", card)
 cardFace.Rotation     = 0
 cardFace.Transparency = NumberSequence.new({
 	NumberSequenceKeypoint.new(0, 0),
-	NumberSequenceKeypoint.new(0.55, 0.35),
-	NumberSequenceKeypoint.new(1, 1),
+	NumberSequenceKeypoint.new(0.55, 0.14),
+	NumberSequenceKeypoint.new(1, 0.3),
 })
 
 -- Granite: a scatter of pale grains, fixed so it never crawls

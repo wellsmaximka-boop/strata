@@ -715,9 +715,15 @@ end
 -- above it (3 × 58 + 2 × 8 = 190, the column width). Position comes from
 -- StrataConfig.Hud, shared with MineClient, so the column is one object even
 -- though two scripts build it.
-local HUD   = StrataConfig.Hud
-local STACK = StrataConfig.HudStack()
-local BTNC  = HUD.Button
+local HUD = StrataConfig.Hud
+
+-- Measured off the window, the same way MineClient does it, so the buttons
+-- come out the width of the panels stacked above them.
+local STACK = StrataConfig.HudMetrics(
+	(workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize.X or 0) > 320
+		and workspace.CurrentCamera.ViewportSize.X or 1600)
+
+local BTNC = STACK.Button
 local BTN_W, BTN_H, GAP = BTNC.W, BTNC.H, BTNC.Gap
 
 -- What goes inside a button is a share of its height rather than a pixel
@@ -733,9 +739,7 @@ local BEVEL_H   = math.floor(BTN_H * 0.27)
 
 local bar = Instance.new("Frame")
 bar.Name                   = "ActionBar"
-bar.Size                   = UDim2.new(
-	0, BTN_W * BTNC.Columns + GAP * (BTNC.Columns - 1),
-	0, BTN_H * BTNC.Rows    + GAP * (BTNC.Rows - 1))
+bar.Size                   = UDim2.new(0, BTNC.W_total, 0, BTNC.H_total)
 bar.Position               = UDim2.new(0, HUD.Left, 0, STACK.Grid)
 bar.BackgroundTransparency = 1
 -- Above the screens. They are fitted to clear the bar, but on a viewport too
@@ -757,9 +761,13 @@ local ICONS = {
 	SHOP  = "rbxassetid://13429538917",
 	KIT   = "rbxassetid://16181381646",
 	LIFT  = "rbxassetid://12338897538",
-	PICKS = "draw",   -- no asset for this one; drawn from frames below
 	CAMP  = "rbxassetid://13060262529",
 }
+
+-- The two with no asset behind them. Filled in further down, once the drawing
+-- functions exist; an entry here beats an emoji, which is what the fallback
+-- gives you and which does not sit with five flat white icons.
+local DRAWN = {}
 
 -- A pickaxe built from two rotated frames. Not as crisp as real icon art, but
 -- it costs no asset and sits in the same visual language as everything else.
@@ -802,6 +810,49 @@ local function drawPickaxe(parent)
 
 	return holder
 end
+
+-- RUNS was the one button with no asset behind it, so it fell through to the
+-- glyph branch and rendered a full-colour emoji clipboard next to five flat
+-- white icons. Drawn in the same 28-unit space as the pick, for the same
+-- reason: no asset id to resolve, nothing to 404.
+local function drawClipboard(parent)
+	local holder = Instance.new("Frame")
+	holder.Size                   = UDim2.new(0, 28, 0, 28)
+	holder.AnchorPoint            = Vector2.new(0.5, 0)
+	holder.Position               = UDim2.new(0.5, 0, 0, ICON_Y)
+	holder.BackgroundTransparency = 1
+	holder.ZIndex                 = 4
+	holder.Parent                 = parent
+
+	Instance.new("UIScale", holder).Scale = ICON / 28
+
+	local function piece(w, h, x, y, colour, z, radius)
+		local p = Instance.new("Frame")
+		p.Size             = UDim2.new(0, w, 0, h)
+		p.Position         = UDim2.new(0, x, 0, y)
+		p.BackgroundColor3 = colour
+		p.BorderSizePixel  = 0
+		p.ZIndex           = z
+		p.Parent           = holder
+		corner(p, radius or 2)
+		return p
+	end
+
+	local BOARD = Color3.fromRGB(198, 204, 212)
+	local CLIP  = Color3.fromRGB(150, 158, 168)
+	local LINE  = Color3.fromRGB(96, 102, 112)
+
+	piece(20, 25, 4, 3, BOARD, 4, 3)     -- the board
+	piece(10,  4, 9, 1, CLIP,  6, 2)     -- the clip across the top
+	for i = 0, 2 do
+		piece(12, 2, 8, 11 + i * 5, LINE, 5, 1)   -- three ruled lines
+	end
+
+	return holder
+end
+
+DRAWN.PICKS = drawPickaxe
+DRAWN.RUNS  = drawClipboard
 
 -- A button built the way a designed one is built: a shadow beneath, a gradient
 -- body, a highlight bevel across the top, a coloured rim, and a press that
@@ -876,8 +927,8 @@ local function barButton(order, icon, label, accent, onClick)
 	-- Icon: an uploaded image when one is configured, the glyph otherwise
 	local iconId = ICONS[label]
 	local art
-	if iconId == "draw" then
-		art = drawPickaxe(b)
+	if DRAWN[label] then
+		art = DRAWN[label](b)
 	elseif iconId and iconId ~= "" then
 		art = Instance.new("ImageLabel")
 		art.Image                  = iconId
@@ -2521,7 +2572,10 @@ refreshChart()
 ;(function()
 
 local MARGIN    = 16
-local BAND_L    = HUD.Left + HUD.Width + MARGIN   -- first pixel clear of the bar
+-- First pixel clear of the action bar. Off the measured column, not a fixed
+-- Hud.Width — that field is gone, and reading it here returned nil into an
+-- addition, which is a hard error on the line that positions every screen.
+local BAND_L    = HUD.Left + STACK.Width + MARGIN
 local MIN_SCALE = 0.55                            -- below this, text stops being text
 
 local function fit(frame, scale, w, h)

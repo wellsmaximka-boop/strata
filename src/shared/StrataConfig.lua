@@ -281,23 +281,48 @@ end
 StrataConfig.Hud = {
 	Left  = 16,
 	Top   = 46,    -- clear of the Roblox topbar
-	Width = 326,   -- every element in the column is exactly this wide
 	Gap   = 10,
 
-	Card     = { H = 104 },
-	Strength = { H = 54 },
-	Pack     = { H = 84 },
+	-- The column is a share of the window rather than a count of pixels.
+	--
+	-- At a flat 326 it was a fifth of a large screen and better than a quarter
+	-- of a small one, and a quarter of the window is far too much to spend on
+	-- something you read twice a minute. The reference holds its left column
+	-- at about an eighteenth of the width whatever size it is shown at, which
+	-- is the actual rule — the pixel count was only ever that rule solved for
+	-- one monitor.
+	--
+	-- Clamped at both ends: below the minimum the labels stop fitting, and
+	-- above the maximum a wide monitor just gets a wider slab for no reason.
+	WidthShare = 0.185,
+	WidthMin   = 208,
+	WidthMax   = 330,
 
-	-- Two across and three down, like the reference. The old grid was three
-	-- 58-pixel squares across, which left a 27-pixel icon over a 10-pixel
-	-- label: that is the row of tiny grey squares in every screenshot. These
-	-- are a little over four times the area, with room for a label you can
-	-- read without leaning in.
-	Button = { W = 158, H = 92, Gap = 10, Columns = 2, Rows = 3 },
+	Card     = { H = 96 },
+	Strength = { H = 50 },
+	Pack     = { H = 78 },
+
+	-- Two across and three down, like the reference, and sized off the column
+	-- rather than against it. Ratio is height over width: the reference's are
+	-- a little wider than they are tall.
+	Button = { Gap = 10, Columns = 2, Rows = 3, Ratio = 0.66 },
 
 	-- The run manifest inherits the corner the card left, and it suits it
 	-- better than sharing: top left is you, bottom left is this run.
 	Manifest = { Bottom = 16, W = 300, H = 56 },
+
+	-- The geology ladder on the right. Same rule as the column: a share of the
+	-- window, clamped. Its segments were 56 tall with a 40-pixel sky over
+	-- them, which came to better than two fifths of the screen height for a
+	-- panel you consult before a run and never during one.
+	Chart = {
+		WidthShare = 0.125,
+		WidthMin   = 138,
+		WidthMax   = 198,
+		SegH       = 44,
+		SegGap     = 4,
+		HeadH      = 30,
+	},
 
 	-- ── The bottom edge ──────────────────────────────────────────────────────
 	-- Six things stacked above the hotbar, built by three different scripts
@@ -343,25 +368,49 @@ function StrataConfig.HudBottom()
 	return out
 end
 
--- Where each row of the column starts. One pass, so the order in this list is
--- the order on screen and the arithmetic is never written down twice.
-function StrataConfig.HudStack()
-	local H = StrataConfig.Hud
-	local y = H.Top
-	local out = {}
+-- The column, solved for one window width: how wide everything is, how big a
+-- button comes out, and where each row starts. One pass, so the order in the
+-- list below is the order on screen and the arithmetic is never written twice.
+--
+-- The viewport is passed in rather than read from the camera, because this
+-- module is also required by the server and by the offline harnesses, and
+-- neither of those has one.
+function StrataConfig.HudMetrics(viewportWidth)
+	local H     = StrataConfig.Hud
+	local B     = H.Button
+	local width = math.clamp(
+		math.floor((viewportWidth or 1600) * H.WidthShare),
+		H.WidthMin, H.WidthMax)
 
+	local btnW  = math.floor((width - B.Gap * (B.Columns - 1)) / B.Columns)
+	local btnH  = math.floor(btnW * B.Ratio)
+	local gridH = btnH * B.Rows + B.Gap * (B.Rows - 1)
+
+	local m = {
+		Width  = width,
+		Button = {
+			W = btnW, H = btnH, Gap = B.Gap,
+			Columns = B.Columns, Rows = B.Rows,
+			-- What the grid actually occupies after the division rounds down,
+			-- which is up to a pixel short of the column.
+			W_total = btnW * B.Columns + B.Gap * (B.Columns - 1),
+			H_total = gridH,
+		},
+	}
+
+	local y = H.Top
 	for _, row in ipairs({
 		{ "Card",     H.Card.H },
 		{ "Strength", H.Strength.H },
 		{ "Pack",     H.Pack.H },
-		{ "Grid",     H.Button.H * H.Button.Rows + H.Button.Gap * (H.Button.Rows - 1) },
+		{ "Grid",     gridH },
 	}) do
-		out[row[1]] = y
+		m[row[1]] = y
 		y += row[2] + H.Gap
 	end
 
-	out.Bottom = y - H.Gap
-	return out
+	m.Bottom = y - H.Gap
+	return m
 end
 
 

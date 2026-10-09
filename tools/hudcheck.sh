@@ -22,22 +22,66 @@ LUAU="${LUAU:-$HOME/.rokit/bin/luau.exe}"
 OUT="$(mktemp -t hudcheck.XXXXXX.lua)"
 trap 'rm -f "$OUT"' EXIT
 
+# Every first-level Hud field the source actually reads, so that renaming one
+# in the config is caught here rather than by a nil landing in an addition.
+#
+# This has now happened twice. Card.X survived a move because nothing looked
+# for it, and Hud.Width survived a rename and would have shipped a hard error
+# on the line that positions every screen in the game — found by a grep that
+# happened to be run for another reason. freevars.sh cannot see these: HUD is
+# bound, and it does not know what is inside it.
+FIELDS=$(
+	sed -E 's/--.*$//' $(find src -name '*.lua') \
+		| grep -ohE '\b(HUD|StrataConfig\.Hud)\.[A-Za-z_][A-Za-z0-9_]*' \
+		| sed -E 's/.*\.//' \
+		| sort -u \
+		| tr '\n' ' '
+)
+
 {
 	cat tools/sitecheck/prelude.lua
+	echo "local USED_HUD_FIELDS = \"$FIELDS\""
 	echo
 	echo "local StrataConfig = (function()"
 	grep -v "GetService\|WaitForChild" src/shared/StrataConfig.lua
 	echo "end)()"
 	cat <<'LUA'
 
-local H     = StrataConfig.Hud
-local stack = StrataConfig.HudStack()
+local H = StrataConfig.Hud
+
+-- Checked at several window sizes, because the column is a share of the width
+-- now and the thing that went wrong last time only went wrong on a small one:
+-- a flat 326 is a fifth of a big screen and better than a quarter of a 1216,
+-- and nobody notices until they see a screenshot from the smaller machine.
+local VIEWPORTS = {
+	{ 2560, 1440 },
+	{ 1920, 1080 },
+	{ 1600,  900 },
+	{ 1366,  768 },
+	{ 1216,  970 },   -- what the screenshots are actually coming from
+	{ 1280,  720 },
+}
+
+print("")
+print("-- column width against the window --")
+print(("  %-12s %7s %7s %8s"):format("window", "column", "share", "button"))
+for _, v in ipairs(VIEWPORTS) do
+	local m = StrataConfig.HudMetrics(v[1])
+	print(("  %4dx%-7d %7d %6d%% %4dx%d"):format(
+		v[1], v[2], m.Width,
+		math.floor(m.Width / v[1] * 100 + 0.5),
+		m.Button.W, m.Button.H))
+end
+
+local stack = StrataConfig.HudMetrics(1216)
+print("")
+print("-- the rest, solved for 1216 wide --")
 
 local rows = {
 	{ "Card",     H.Card.H },
 	{ "Strength", H.Strength.H },
 	{ "Pack",     H.Pack.H },
-	{ "Grid",     H.Button.H * H.Button.Rows + H.Button.Gap * (H.Button.Rows - 1) },
+	{ "Grid",     stack.Button.H_total },
 }
 
 local bad = 0
@@ -49,7 +93,7 @@ for _, row in ipairs(rows) do
 	local name, height = row[1], row[2]
 	local top = stack[name]
 	if not top then
-		print(("  %-10s MISSING FROM HudStack"):format(name))
+		print(("  %-10s MISSING FROM HudMetrics"):format(name))
 		bad += 1
 	else
 		print(("  %-10s %6d %6d %6d"):format(name, top, height, top + height))
@@ -98,16 +142,16 @@ bad += tight
 -- The column is one width. An element that sets its own is the thing that
 -- made it look like three unrelated panels rather than a column.
 print("")
-print("-- width --")
-print(("  column %d, buttons %d across = %d"):format(
-	H.Width,
-	H.Button.Columns,
-	H.Button.W * H.Button.Columns + H.Button.Gap * (H.Button.Columns - 1)))
-local gridW = H.Button.W * H.Button.Columns + H.Button.Gap * (H.Button.Columns - 1)
-if gridW > H.Width then
-	print(("  button grid is %d wider than the column"):format(gridW - H.Width))
-	bad += 1
+print("-- width, at every size above --")
+for _, v in ipairs(VIEWPORTS) do
+	local m = StrataConfig.HudMetrics(v[1])
+	if m.Button.W_total > m.Width then
+		print(("  %dp: button grid is %d wider than the column")
+			:format(v[1], m.Button.W_total - m.Width))
+		bad += 1
+	end
 end
+print(("  grid fits the column at all %d sizes"):format(#VIEWPORTS))
 
 -- The bottom edge, built by three different scripts. Same failure, other axis.
 print("")
@@ -144,6 +188,24 @@ bad += botClashes
 --
 -- What this stack owes is restraint. It is the middle of the screen and the
 -- game is behind it.
+-- Fields the source reads that the config does not have.
+print("")
+print("-- config fields the game reads --")
+local missing = {}
+for field in USED_HUD_FIELDS:gmatch("%S+") do
+	if H[field] == nil then
+		table.insert(missing, field)
+	end
+end
+if #missing > 0 then
+	for _, field in ipairs(missing) do
+		print(("  Hud.%s is read in src/ and does not exist"):format(field))
+	end
+	bad += #missing
+else
+	print(("  all %d resolve"):format(#(USED_HUD_FIELDS:split(" ")) - 1))
+end
+
 print("")
 print("-- how much of the view the bottom edge takes --")
 for _, height in ipairs({ 1080, 720 }) do
