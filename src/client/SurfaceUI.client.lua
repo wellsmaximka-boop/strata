@@ -818,7 +818,11 @@ local function barButton(order, icon, label, accent, onClick)
 	b.Parent           = holder
 	corner(b, 16)
 
-	local FILL_TOP, FILL_BOTTOM = Color3.fromRGB(56, 66, 80), Color3.fromRGB(24, 29, 37)
+	-- Warm steel, matching the panels. These were cold blue-grey (56, 66, 80),
+	-- which was the only place in the interface still on the old palette — six
+	-- grey boxes stacked beside a warm one, which is exactly the look being
+	-- chased out.
+	local FILL_TOP, FILL_BOTTOM = UIP.Stone, UIP.StoneDeep
 
 	local fill = Instance.new("UIGradient", b)
 	fill.Rotation = 90

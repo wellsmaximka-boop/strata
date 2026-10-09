@@ -57,25 +57,46 @@ local function panel(size, position, anchor)
 	f.Size                   = size
 	f.Position               = position
 	f.AnchorPoint            = anchor or Vector2.new(0, 0)
-	f.BackgroundColor3       = StrataConfig.UI.Stone
-	f.BackgroundTransparency = 0
+	-- Every grey box in the left column comes from here.
+	--
+	-- They were solid slabs with hard borders, stacked up the side of the
+	-- screen — four opaque rectangles permanently covering a game you are meant
+	-- to be looking at. That is the "empty grey" look: not the colour, the
+	-- opacity. A readout should be printed on the view, not parked on top of it.
+	--
+	-- So: dark and mostly see-through, fading towards the right where there is
+	-- no text to protect, with a thin brass line along the top instead of a box
+	-- around the outside. One bright edge says "instrument"; four sides say
+	-- "window".
+	f.BackgroundColor3       = StrataConfig.UI.StoneDeep
+	f.BackgroundTransparency = 0.3
 	f.BorderSizePixel        = 0
 	f.Parent                 = gui
 	Instance.new("UICorner", f).CornerRadius = UDim.new(0, StrataConfig.UI.Corner)
 
-	-- Lit along the top like everything else, so a panel reads as a slab with a
-	-- light on it rather than as a flat rectangle
-	local lit = Instance.new("UIGradient", f)
-	lit.Rotation = 90
-	lit.Color    = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, StrataConfig.UI.StoneLit),
-		ColorSequenceKeypoint.new(0.3, StrataConfig.UI.Stone),
-		ColorSequenceKeypoint.new(1, StrataConfig.UI.StoneDeep),
+	local fade = Instance.new("UIGradient", f)
+	fade.Rotation     = 0
+	fade.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(0.6, 0.25),
+		NumberSequenceKeypoint.new(1, 0.8),
 	})
 
-	local stroke = Instance.new("UIStroke", f)
-	stroke.Color     = StrataConfig.UI.StoneDark
-	stroke.Thickness = StrataConfig.UI.Outline
+	local lip = Instance.new("Frame")
+	lip.Size                   = UDim2.new(1, -10, 0, 2)
+	lip.Position               = UDim2.new(0, 5, 0, 0)
+	lip.BackgroundColor3       = StrataConfig.UI.Brass
+	lip.BackgroundTransparency = 0.45
+	lip.BorderSizePixel        = 0
+	lip.ZIndex                 = 2
+	lip.Parent                 = f
+
+	local lipFade = Instance.new("UIGradient", lip)
+	lipFade.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+
 	return f
 end
 
@@ -1300,22 +1321,28 @@ card.Name             = "PlayerCard"
 card.Size             = UDim2.new(0, CARD.W, 0, CARD.H)
 card.AnchorPoint      = Vector2.new(0, 1)
 card.Position         = UDim2.new(0, CARD.X, 1, -CARD.Bottom)
-card.BackgroundColor3 = UIP.Stone
-card.BorderSizePixel  = 0
-card.Parent           = gui
+-- Mostly transparent, and faded out towards its open edge.
+--
+-- This was a solid slab with a hard border — a panel, sitting permanently in
+-- the corner of a game you are supposed to be looking at. A HUD is not a panel:
+-- it should read as printed onto the view rather than as a window laid over it.
+--
+-- The gradient does the work. It is nearly opaque behind the portrait and the
+-- name, where there is text to keep legible, and fades to nothing on the right
+-- where the bars already carry their own fill. No edge at all, because an edge
+-- is what makes something a box.
+card.BackgroundColor3       = UIP.StoneDeep
+card.BackgroundTransparency = 0.25
+card.BorderSizePixel        = 0
+card.Parent                 = gui
 Instance.new("UICorner", card).CornerRadius = UDim.new(0, math.min(14, StrataConfig.UI.Corner))
 
-local cardEdge = Instance.new("UIStroke", card)
-cardEdge.Color     = UIP.StoneDark
-cardEdge.Thickness = 3
-
--- Lit along the top like a slab catching the light
 local cardFace = Instance.new("UIGradient", card)
-cardFace.Rotation = 90
-cardFace.Color    = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, UIP.StoneLit),
-	ColorSequenceKeypoint.new(0.35, UIP.Stone),
-	ColorSequenceKeypoint.new(1, UIP.StoneDeep),
+cardFace.Rotation     = 0
+cardFace.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 0),
+	NumberSequenceKeypoint.new(0.55, 0.35),
+	NumberSequenceKeypoint.new(1, 1),
 })
 
 -- Granite: a scatter of pale grains, fixed so it never crawls
@@ -1336,7 +1363,9 @@ for i = 1, 46 do
 	fleck.Size                   = UDim2.new(0, 2, 0, 2)
 	fleck.Position               = UDim2.new(0, sx, 0, sy)
 	fleck.BackgroundColor3       = UIP.Speckle
-	fleck.BackgroundTransparency = 0.72
+	-- Granite grain on a transparent card is dust on a window. Faint enough to
+	-- read as texture where the card is solid and invisible where it is not.
+	fleck.BackgroundTransparency = 0.88
 	fleck.BorderSizePixel        = 0
 	fleck.Parent                 = grain
 end
