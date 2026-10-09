@@ -39,7 +39,12 @@ local refreshChart
 
 local RunSvc = game:GetService("RunService")
 
-local CHART_W  = 76
+-- Was 76, which is narrower than the words in it. "Magma Vents" wrapped onto
+-- two lines at 11px and every depth was a cramped little number underneath,
+-- so the one panel whose entire job is telling you where you may go was the
+-- least readable thing on screen. The reference puts this at about three times
+-- the width with room for a name, a depth and a lock, which is all it needs.
+local CHART_W  = 190
 local SEG_H    = 56
 local SEG_GAP  = 5
 local HEAD_H   = 40
@@ -155,7 +160,7 @@ for i, layer in ipairs(CHART) do
 
 	-- Colour rail down the left of each segment
 	local rail = Instance.new("Frame")
-	rail.Size             = UDim2.new(0, 4, 1, -12)
+	rail.Size             = UDim2.new(0, 5, 1, -12)
 	rail.Position         = UDim2.new(0, 5, 0, 6)
 	rail.BackgroundColor3 = layer.color
 	rail.BorderSizePixel  = 0
@@ -163,21 +168,60 @@ for i, layer in ipairs(CHART) do
 	rail.Parent           = seg
 	corner(rail, 2)
 
-	local name = text(seg, layer.name, UDim2.new(1, -18, 0, 30),
-		Color3.fromRGB(255, 255, 255), 11, StrataConfig.UI.Head)
-	name.Position       = UDim2.new(0, 14, 0, 6)
-	name.TextWrapped    = true
+	-- Stops short of the lock column on the right rather than running under it.
+	local name = text(seg, layer.name, UDim2.new(1, -56, 0, 20),
+		Color3.fromRGB(255, 255, 255), 14, StrataConfig.UI.Head)
+	name.Position       = UDim2.new(0, 17, 0, 9)
 	name.TextYAlignment = Enum.TextYAlignment.Top
+	name.TextTruncate   = Enum.TextTruncate.AtEnd
 	name.ZIndex         = 3
 
-	local depth = text(seg, math.floor(math.abs(layer.top)) .. "m", UDim2.new(1, -18, 0, 14),
-		Color3.fromRGB(220, 228, 236), 10, StrataConfig.UI.Number)
-	depth.Position = UDim2.new(0, 14, 1, -19)
+	local depth = text(seg, math.floor(math.abs(layer.top)) .. "m", UDim2.new(1, -56, 0, 16),
+		Color3.fromRGB(220, 228, 236), 12, StrataConfig.UI.Number)
+	depth.Position = UDim2.new(0, 17, 1, -22)
 	depth.ZIndex   = 3
+
+	-- ── The padlock ──────────────────────────────────────────────────────────
+	-- Two frames: a body, and a shackle that is a ring with its lower half
+	-- hidden behind the body. Drawn rather than an asset id, because an asset
+	-- id that does not resolve fails silently and leaves an empty square, and
+	-- a padlock is six lines.
+	local lock = Instance.new("Frame")
+	lock.Name                   = "Lock"
+	lock.AnchorPoint            = Vector2.new(0.5, 0.5)
+	lock.Position               = UDim2.new(1, -21, 0.5, 0)
+	lock.Size                   = UDim2.new(0, 16, 0, 20)
+	lock.BackgroundTransparency = 1
+	lock.ZIndex                 = 3
+	-- Off until the refresh says otherwise, so an unlocked layer never shows a
+	-- padlock for the frame between being built and being told what it is.
+	lock.Visible                = false
+	lock.Parent                 = seg
+
+	local shackle = Instance.new("Frame")
+	shackle.Size                   = UDim2.new(0, 10, 0, 11)
+	shackle.Position               = UDim2.new(0.5, -5, 0, 0)
+	shackle.BackgroundTransparency = 1
+	shackle.ZIndex                 = 3
+	shackle.Parent                 = lock
+	corner(shackle, 5)
+	local shackleEdge = Instance.new("UIStroke", shackle)
+	shackleEdge.Color     = Color3.fromRGB(150, 160, 174)
+	shackleEdge.Thickness = 2
+
+	local body = Instance.new("Frame")
+	body.Size             = UDim2.new(1, 0, 0, 12)
+	body.Position         = UDim2.new(0, 0, 1, -12)
+	body.BackgroundColor3 = Color3.fromRGB(150, 160, 174)
+	body.BorderSizePixel  = 0
+	body.ZIndex           = 4
+	body.Parent           = lock
+	corner(body, 3)
 
 	segments[i] = {
 		layer = layer, frame = seg, fade = fade, edge = edge,
 		rail = rail, name = name, depth = depth, y = y, lit = nil,
+		lock = lock, lockParts = { shackleEdge, body },
 	}
 end
 
@@ -321,6 +365,7 @@ function refreshChart()
 				s.depth.Text      = math.floor(math.abs(s.layer.top)) .. "m"
 				s.rail.BackgroundColor3       = s.layer.color
 				s.rail.BackgroundTransparency = 0
+				s.lock.Visible = false
 			else
 				s.fade.Color = ColorSequence.new({
 					ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 38, 46)),
@@ -333,6 +378,14 @@ function refreshChart()
 				s.depth.TextColor3 = goal and ORE or Color3.fromRGB(80, 88, 100)
 				s.rail.BackgroundColor3       = Color3.fromRGB(70, 78, 90)
 				s.rail.BackgroundTransparency = 0.3
+
+				-- The next one down is the one you are working towards, so its
+				-- lock is lit in the same gold as its requirement. The rest are
+				-- grey, because they are not the question yet.
+				s.lock.Visible = true
+				local tone = goal and ORE or Color3.fromRGB(104, 112, 124)
+				s.lockParts[1].Color           = tone
+				s.lockParts[2].BackgroundColor3 = tone
 			end
 		end
 	end

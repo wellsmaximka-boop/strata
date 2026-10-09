@@ -264,16 +264,62 @@ end
 -- here and can never drift into each other. Y values are offsets from the
 -- vertical centre of the screen, which keeps the column clear of Roblox's own
 -- buttons in the top-left corner.
+-- ── The left column ──────────────────────────────────────────────────────────
+-- One column, top down, in the order you need it: who you are, what you can
+-- break, what you are carrying, and what you can press.
+--
+-- It was four places. Three panels floating around the vertical centre and the
+-- player card alone in the opposite corner — so your name and level were at the
+-- bottom of the screen and your coins were at the top, which is two corners for
+-- one subject. Counting the rest of the screen that came to seven regions of
+-- interface; the reference everyone keeps pointing at has six, and puts all of
+-- you in one card.
+--
+-- Nothing here sets a Y. The stack below computes them from the heights, so a
+-- panel cannot be added without the ones under it moving, which is how two of
+-- them ended up overlapping the last time this was hand-numbered.
 StrataConfig.Hud = {
-	Left     = 16,
-	Width    = 190,           -- the width of a 3-wide grid of 58px buttons
-	-- Bottom left, the corner games put the player in. The run manifest stacks
-	-- directly above it, so the corner reads as you and what you are carrying.
-	Card     = { X = 16, Bottom = 16, W = 326, H = 104 },
-	Strength = { Y = -141, H = 54 },
-	Pack     = { Y = -79,  H = 84 },
-	Grid     = { Y = 17 },
+	Left  = 16,
+	Top   = 46,    -- clear of the Roblox topbar
+	Width = 326,   -- every element in the column is exactly this wide
+	Gap   = 10,
+
+	Card     = { H = 104 },
+	Strength = { H = 54 },
+	Pack     = { H = 84 },
+
+	-- Two across and three down, like the reference. The old grid was three
+	-- 58-pixel squares across, which left a 27-pixel icon over a 10-pixel
+	-- label: that is the row of tiny grey squares in every screenshot. These
+	-- are a little over four times the area, with room for a label you can
+	-- read without leaning in.
+	Button = { W = 158, H = 92, Gap = 10, Columns = 2, Rows = 3 },
+
+	-- The run manifest inherits the corner the card left, and it suits it
+	-- better than sharing: top left is you, bottom left is this run.
+	Manifest = { Bottom = 16, W = 300, H = 56 },
 }
+
+-- Where each row of the column starts. One pass, so the order in this list is
+-- the order on screen and the arithmetic is never written down twice.
+function StrataConfig.HudStack()
+	local H = StrataConfig.Hud
+	local y = H.Top
+	local out = {}
+
+	for _, row in ipairs({
+		{ "Card",     H.Card.H },
+		{ "Strength", H.Strength.H },
+		{ "Pack",     H.Pack.H },
+		{ "Grid",     H.Button.H * H.Button.Rows + H.Button.Gap * (H.Button.Rows - 1) },
+	}) do
+		out[row[1]] = y
+		y += row[2] + H.Gap
+	end
+
+	out.Bottom = y - H.Gap
+	return out
+end
 
 
 -- ── Look ─────────────────────────────────────────────────────────────────────

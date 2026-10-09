@@ -180,8 +180,10 @@ depthAhead.ZIndex      = 2
 -- Backpack and cash, second in the left-hand column. The haul is on top, and
 -- the credits get their own gold strip underneath. They used to be a dark icon
 -- and a 13px number on a dark panel, which is why they were hard to read.
+local STACK = StrataConfig.HudStack()
+
 local packPanel = panel(UDim2.new(0, StrataConfig.Hud.Width, 0, StrataConfig.Hud.Pack.H),
-	UDim2.new(0, StrataConfig.Hud.Left, 0.5, StrataConfig.Hud.Pack.Y))
+	UDim2.new(0, StrataConfig.Hud.Left, 0, STACK.Pack))
 
 label(packPanel, "PACK", UDim2.new(0, 40, 0, 20), UDim2.new(0, 12, 0, 9), DIM, 11)
 
@@ -297,7 +299,7 @@ local STRENGTH_ICON = "rbxassetid://15909461117"
 local HUD = StrataConfig.Hud
 
 local strengthPanel = panel(UDim2.new(0, HUD.Width, 0, HUD.Strength.H),
-	UDim2.new(0, HUD.Left, 0.5, HUD.Strength.Y))
+	UDim2.new(0, HUD.Left, 0, STACK.Strength))
 
 local strengthIcon = Instance.new("ImageLabel")
 strengthIcon.Image                  = STRENGTH_ICON
@@ -1305,9 +1307,12 @@ end)
 -- which has its own ceiling of 200 to stay under.
 ;(function()
 -- ── Player card ──────────────────────────────────────────────────────────────
--- Top left, under the Roblox topbar. A hexagonal portrait with your level cut
--- into the bottom of it, and beside it your name, your rank stars, your health
--- and your experience.
+-- Top left, under the Roblox topbar, at the head of the column — which is what
+-- this comment always claimed and the position never did. It sat in the bottom
+-- left for months, diagonally opposite the coins, so "you" was two corners.
+--
+-- A hexagonal portrait with your level cut into the bottom of it, and beside it
+-- your name, your rank stars, your health and your experience.
 --
 -- Roblox has no polygon, so the hexagon is three rectangles rotated sixty
 -- degrees apart. That gives a real six-sided silhouette; the portrait itself is
@@ -1315,12 +1320,12 @@ end)
 
 local UIP = StrataConfig.UI
 local CARD = HUD.Card
+local CARD_W = HUD.Width   -- the column's width; the card no longer has its own
 
 local card = Instance.new("Frame")
 card.Name             = "PlayerCard"
-card.Size             = UDim2.new(0, CARD.W, 0, CARD.H)
-card.AnchorPoint      = Vector2.new(0, 1)
-card.Position         = UDim2.new(0, CARD.X, 1, -CARD.Bottom)
+card.Size             = UDim2.new(0, CARD_W, 0, CARD.H)
+card.Position         = UDim2.new(0, HUD.Left, 0, STACK.Card)
 -- Mostly transparent, and faded out towards its open edge.
 --
 -- This was a solid slab with a hard border — a panel, sitting permanently in
@@ -1356,7 +1361,7 @@ Instance.new("UICorner", grain).CornerRadius = UDim.new(0, math.min(14, StrataCo
 local seed = 20261
 for i = 1, 46 do
 	seed = (seed * 48271) % 2147483647
-	local sx = seed % CARD.W
+	local sx = seed % CARD_W
 	seed = (seed * 48271) % 2147483647
 	local sy = seed % CARD.H
 	local fleck = Instance.new("Frame")
@@ -1449,7 +1454,7 @@ levelValue.ZIndex = 7
 local COL = 10 + HEX + 12
 
 local nameLabel = label(card, player.DisplayName or player.Name,
-	UDim2.new(0, CARD.W - COL - 12, 0, 18), UDim2.new(0, COL, 0, 9),
+	UDim2.new(0, CARD_W - COL - 12, 0, 18), UDim2.new(0, COL, 0, 9),
 	UIP.Ink, 16, StrataConfig.UI.Head)
 nameLabel.ZIndex       = 3
 nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -1467,7 +1472,7 @@ end
 
 local function bar(y, height, trackColour, fillColour)
 	local track = Instance.new("Frame")
-	track.Size             = UDim2.new(0, CARD.W - COL - 14, 0, height)
+	track.Size             = UDim2.new(0, CARD_W - COL - 14, 0, height)
 	track.Position         = UDim2.new(0, COL, 0, y)
 	track.BackgroundColor3 = trackColour
 	track.BorderSizePixel  = 0
@@ -1821,10 +1826,12 @@ end)()   -- sprint
 local manifest = Instance.new("Frame")
 manifest.Name             = "RunManifest"
 manifest.AnchorPoint      = Vector2.new(0, 1)
--- Stacked directly on top of the player card, so the whole bottom-left corner
--- is you and what you are carrying
-manifest.Position         = UDim2.new(0, HUD.Card.X, 1, -(HUD.Card.Bottom + HUD.Card.H + 10))
-manifest.Size             = UDim2.new(0, 240, 0, 56)
+-- The bottom-left corner on its own, now the player card has gone to the head
+-- of the column. It reads better for the swap: top left is who you are and
+-- does not change, bottom left is this run and disappears when you are not on
+-- one. Two corners doing one job each, instead of sharing one.
+manifest.Position         = UDim2.new(0, HUD.Left, 1, -HUD.Manifest.Bottom)
+manifest.Size             = UDim2.new(0, HUD.Manifest.W, 0, HUD.Manifest.H)
 manifest.BackgroundColor3 = UIP.Stone
 manifest.BorderSizePixel  = 0
 manifest.Visible          = false

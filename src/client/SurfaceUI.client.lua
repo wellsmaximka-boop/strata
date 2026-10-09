@@ -715,14 +715,28 @@ end
 -- above it (3 × 58 + 2 × 8 = 190, the column width). Position comes from
 -- StrataConfig.Hud, shared with MineClient, so the column is one object even
 -- though two scripts build it.
-local HUD = StrataConfig.Hud
-local BTN = 58
-local GAP = 8
+local HUD   = StrataConfig.Hud
+local STACK = StrataConfig.HudStack()
+local BTNC  = HUD.Button
+local BTN_W, BTN_H, GAP = BTNC.W, BTNC.H, BTNC.Gap
+
+-- What goes inside a button is a share of its height rather than a pixel
+-- count, so the config is the only place a size is decided. These were
+-- absolute, tuned for a 58-pixel square, which is how you end up with a
+-- 27-pixel icon and a 10-pixel caption marooned in the middle of a big button.
+local ICON      = math.floor(BTN_H * 0.40)
+local ICON_Y    = math.floor(BTN_H * 0.17)
+local NAME_H    = 18
+local NAME_Y    = math.floor(BTN_H * 0.30)
+local NAME_SIZE = 13
+local BEVEL_H   = math.floor(BTN_H * 0.27)
 
 local bar = Instance.new("Frame")
 bar.Name                   = "ActionBar"
-bar.Size                   = UDim2.new(0, BTN * 3 + GAP * 2, 0, BTN * 2 + GAP)
-bar.Position               = UDim2.new(0, HUD.Left, 0.5, HUD.Grid.Y)
+bar.Size                   = UDim2.new(
+	0, BTN_W * BTNC.Columns + GAP * (BTNC.Columns - 1),
+	0, BTN_H * BTNC.Rows    + GAP * (BTNC.Rows - 1))
+bar.Position               = UDim2.new(0, HUD.Left, 0, STACK.Grid)
 bar.BackgroundTransparency = 1
 -- Above the screens. They are fitted to clear the bar, but on a viewport too
 -- narrow to have room for both the fit gives up and takes the full width — and
@@ -731,10 +745,10 @@ bar.ZIndex                 = 8
 bar.Parent                 = gui
 
 local barLayout = Instance.new("UIGridLayout", bar)
-barLayout.CellSize    = UDim2.new(0, BTN, 0, BTN)
+barLayout.CellSize    = UDim2.new(0, BTN_W, 0, BTN_H)
 barLayout.CellPadding = UDim2.new(0, GAP, 0, GAP)
 barLayout.SortOrder   = Enum.SortOrder.LayoutOrder
-barLayout.FillDirectionMaxCells = 3
+barLayout.FillDirectionMaxCells = BTNC.Columns
 
 -- Paste Creator Store icon asset ids here and they replace the emoji glyphs
 -- automatically — nothing else has to change. Free UI packs work fine; the ids
@@ -750,12 +764,18 @@ local ICONS = {
 -- A pickaxe built from two rotated frames. Not as crisp as real icon art, but
 -- it costs no asset and sits in the same visual language as everything else.
 local function drawPickaxe(parent)
+	-- Drawn in a fixed 28-unit space and then scaled, because the four pieces
+	-- below are placed by hand and a pick that is one pixel out at this size
+	-- stops looking like a pick. UIScale takes the whole drawing with it.
 	local holder = Instance.new("Frame")
 	holder.Size                   = UDim2.new(0, 28, 0, 28)
-	holder.Position               = UDim2.new(0.5, -14, 0, 10)
+	holder.AnchorPoint            = Vector2.new(0.5, 0)
+	holder.Position               = UDim2.new(0.5, 0, 0, ICON_Y)
 	holder.BackgroundTransparency = 1
 	holder.ZIndex                 = 4
 	holder.Parent                 = parent
+
+	Instance.new("UIScale", holder).Scale = ICON / 28
 
 	local function piece(w, h, x, y, rot, colour, z)
 		local p = Instance.new("Frame")
@@ -839,7 +859,7 @@ local function barButton(order, icon, label, accent, onClick)
 
 	-- Glossy bevel across the top half
 	local bevel = Instance.new("Frame")
-	bevel.Size                   = UDim2.new(1, -10, 0, 22)
+	bevel.Size                   = UDim2.new(1, -10, 0, BEVEL_H)
 	bevel.Position               = UDim2.new(0, 5, 0, 4)
 	bevel.BackgroundColor3       = Color3.fromRGB(255, 255, 255)
 	bevel.BorderSizePixel        = 0
@@ -863,20 +883,21 @@ local function barButton(order, icon, label, accent, onClick)
 		art.Image                  = iconId
 		art.ScaleType              = Enum.ScaleType.Fit
 		art.BackgroundTransparency = 1
-		art.Size                   = UDim2.new(0, 27, 0, 27)
-		art.Position               = UDim2.new(0.5, -13.5, 0, 7)
+		art.AnchorPoint            = Vector2.new(0.5, 0)
+		art.Size                   = UDim2.new(0, ICON, 0, ICON)
+		art.Position               = UDim2.new(0.5, 0, 0, ICON_Y)
 		art.ZIndex                 = 4
 		art.Parent                 = b
 	else
-		art = text(b, icon, UDim2.new(1, 0, 0, 27), INK, 21,
+		art = text(b, icon, UDim2.new(1, 0, 0, ICON), INK, math.floor(ICON * 0.78),
 			StrataConfig.UI.Head, Enum.TextXAlignment.Center)
-		art.Position = UDim2.new(0, 0, 0, 7)
+		art.Position = UDim2.new(0, 0, 0, ICON_Y)
 		art.ZIndex   = 4
 	end
 
-	local name = text(b, label, UDim2.new(1, 0, 0, 12), DIM, 10,
+	local name = text(b, label, UDim2.new(1, 0, 0, NAME_H), DIM, NAME_SIZE,
 		StrataConfig.UI.Head, Enum.TextXAlignment.Center)
-	name.Position = UDim2.new(0, 0, 1, -17)
+	name.Position = UDim2.new(0, 0, 1, -NAME_Y)
 	name.ZIndex   = 4
 
 	local QUICK = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
