@@ -784,7 +784,11 @@ StrataConfig.Grapple = {
 	ReelIn  = Enum.KeyCode.W,   -- travel up the cable, toward the anchor
 	ReelOut = Enum.KeyCode.S,   -- and pay it back out
 
-	Range    = 190,   -- how far the hook reaches
+	-- How far the hook reaches. 190 sounded long and is not: the master
+	-- cavern is 480 across, so from the middle of one you could not reach any
+	-- of its walls, and a traversal tool that cannot cross the room you are
+	-- standing in reads as broken rather than as limited.
+	Range    = 360,
 	MinDepth = 8,     -- underground only, like the flares
 
 	-- Short, because the whole point is chaining. Anything above a second and
@@ -797,7 +801,7 @@ StrataConfig.Grapple = {
 	-- which is what a rope is. You fall until it goes taut and then you swing,
 	-- and the swing is Roblox's solver rather than anything written here.
 	MinLength = 10,
-	MaxLength = 220,
+	MaxLength = 400,   -- has to clear Range, or the rope stops short of the hook
 
 	-- Reeling is a force, never a shortening. Winching Length down below where
 	-- the player actually is yanks them, and that yank is the jitter every
@@ -876,8 +880,12 @@ StrataConfig.Grapple = {
 	-- you can go there, and if it is not you cannot.
 	Reticle = {
 		Size = 22,
-		Good = Color3.fromRGB(120, 240, 170),
-		Bad  = Color3.fromRGB(150, 150, 164),
+		-- Blue for reachable, red for not. It was green and grey, and grey is
+		-- not a refusal, it is an absence — you could not tell a surface out of
+		-- range from no surface at all. These are the two states the crosshair
+		-- has, so they get the two colours everyone already reads as yes and no.
+		Good = Color3.fromRGB(96, 186, 255),
+		Bad  = Color3.fromRGB(236, 88, 88),
 	},
 }
 

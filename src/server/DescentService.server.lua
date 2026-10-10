@@ -674,6 +674,37 @@ local function stepOut(player, deck)
 	end
 end
 
+-- ── Leaving it there ─────────────────────────────────────────────────────────
+-- The cage used to fade out and delete itself the moment you stepped off, so
+-- the thing the whole run points at — "objective complete, get back to the
+-- cage" — was a marker floating over an empty patch of rock. You cannot walk
+-- back into something that was taken away behind you.
+--
+-- So the one that brought you down stays down, standing open at the deck,
+-- until you ride it back up or start another run. One per player, because
+-- leaving a cage behind on every descent is a mine slowly filling with lifts.
+local parked = {}
+
+local function unpark(player)
+	local old = parked[player]
+	parked[player] = nil
+	if old and old.Parent then old:Destroy() end
+end
+
+local function park(player, cage)
+	unpark(player)
+	parked[player] = cage
+	-- The floor has to carry you again: boarding turned collision off so the
+	-- ride would not catch on the bore wall.
+	for _, p in ipairs(cage:GetDescendants()) do
+		if p:IsA("BasePart") and p.Name == "Floor" then
+			p.CanCollide = true
+		end
+	end
+end
+
+Players.PlayerRemoving:Connect(unpark)
+
 local function dismiss(cage)
 	task.spawn(function()
 		for _, p in ipairs(cage:GetDescendants()) do
@@ -789,7 +820,7 @@ function Descent.Descend(player, stratum, contract, onArrive)
 		task.wait(D.Park)
 		stepOut(player, stop)
 		task.wait(0.25)
-		dismiss(cage)
+		park(player, cage)
 		closeGates()
 	end)
 
@@ -811,6 +842,11 @@ function Descent.Ascend(player, onTop)
 
 	local hrp = rig(player)
 	if not hrp then return false end
+
+	-- The one that brought you down goes first. This builds a fresh cage at
+	-- wherever you are standing, and two of them in the same shaft is one
+	-- too many.
+	unpark(player)
 
 	local floorY = (_G.StrataBoreFloor or 0) + 8
 	local from   = math.clamp(hrp.Position.Y - 3.2, floorY, DECK_Y - 20)

@@ -790,7 +790,6 @@ cursor.Color        = SIGNAL
 cursor.Transparency = 0.82
 cursor.Parent       = workspace
 
-local OUT_OF_REACH = StrataConfig.UI.Warning
 local TOO_HARD     = Color3.fromRGB(214, 158, 60)
 
 local CURSOR_ROCK = Vector3.new(1, 1, 1) * StrataConfig.Dig.Radius * 2
@@ -809,16 +808,30 @@ RunService.RenderStepped:Connect(function()
 	-- obvious you are about to swing at ore rather than at the wall. A contract
 	-- deposit gets the same treatment in its own colour, because missing one of
 	-- those costs you the run rather than a lump of rock.
+	-- Out of reach, the cursor stops existing rather than turning red.
+	--
+	-- It used to put a red ball wherever you happened to be looking, which is
+	-- most of the time a long way off, so the middle of the screen carried a
+	-- permanent red mark that meant nothing except "that is far away" — and
+	-- it sat directly behind the grapple crosshair, which is the thing you
+	-- actually aim at distance with, saying the opposite in a louder colour.
+	-- A dig cursor's job is to say where the pick will land. At this range
+	-- there is no answer, and no answer should look like nothing.
+	if not inReach then
+		cursor.Transparency = 1
+		return
+	end
+
 	if isDeposit then
 		cursor.Size         = CURSOR_NODE
-		cursor.Transparency = inReach and 0.62 or 0.9
-		cursor.Color        = inReach and Color3.fromRGB(255, 208, 120) or OUT_OF_REACH
+		cursor.Transparency = 0.62
+		cursor.Color        = Color3.fromRGB(255, 208, 120)
 		return
 	elseif node then
 		cursor.Size         = CURSOR_NODE
-		cursor.Transparency = inReach and 0.7 or 0.92
+		cursor.Transparency = 0.7
 		local ore = StrataConfig.GetOre(node:GetAttribute("OreId"))
-		cursor.Color = inReach and (ore and ore.color or SIGNAL) or OUT_OF_REACH
+		cursor.Color = ore and ore.color or SIGNAL
 		return
 	end
 
@@ -826,10 +839,7 @@ RunService.RenderStepped:Connect(function()
 
 	local hardEnough = miningPower >= (StrataConfig.GetStratum(target.Y).hardness or 1)
 
-	if not inReach then
-		cursor.Transparency = 0.93
-		cursor.Color        = OUT_OF_REACH
-	elseif not hardEnough then
+	if not hardEnough then
 		-- Amber rather than red: you can get here, you just can't break it yet
 		cursor.Transparency = 0.88
 		cursor.Color        = TOO_HARD
