@@ -57,6 +57,7 @@ local CHART_W  = math.clamp(
 local SEG_H    = CH.SegH
 local SEG_GAP  = CH.SegGap
 local HEAD_H   = CH.HeadH
+local SWATCH   = CH.Swatch
 local CHART    = StrataConfig.DepthChart
 local CHART_H  = HEAD_H + #CHART * SEG_H + (#CHART - 1) * SEG_GAP
 
@@ -102,51 +103,59 @@ chartShadow.ZIndex                 = 0
 chartShadow.Parent                 = chart
 corner(chartShadow, 18)
 
--- ── Surface cap, with drifting cloud bands ───────────────────────────────────
+-- ── Header ───────────────────────────────────────────────────────────────────
+-- This was a strip of sky with drifting clouds and the word SURFACE on it,
+-- which was a nice thing and the wrong thing: it labelled the panel with the
+-- name of its first row, so the panel itself had no name, and a lit sky sat at
+-- the top of a dark column looking like something you were supposed to click.
+-- A title tells you what the thing is, which is all the top of a panel owes.
 
-local cap = Instance.new("Frame")
-cap.Size             = UDim2.new(1, -8, 0, HEAD_H - 6)
-cap.Position         = UDim2.new(0, 4, 0, 4)
-cap.BackgroundColor3 = Color3.new(1, 1, 1)
-cap.BorderSizePixel  = 0
-cap.ClipsDescendants = true
-cap.ZIndex           = 2
-cap.Parent           = chart
-corner(cap, 10)
+local head = Instance.new("Frame")
+head.Size                   = UDim2.new(1, -8, 0, HEAD_H - 6)
+head.Position               = UDim2.new(0, 4, 0, 4)
+head.BackgroundTransparency = 1
+head.ZIndex                 = 2
+head.Parent                 = chart
 
--- Dusk, not noon. This was a bright daylight blue, which made the one pale
--- block on the screen the top of a panel nobody is looking at — and it got
--- worse when the camp went dark around it. It still reads as sky; it just is
--- not the brightest thing in the room any more.
-local capSky = Instance.new("UIGradient", cap)
-capSky.Rotation = 90
-capSky.Color    = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(58, 80, 108)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(96, 110, 124)),
-})
+-- Strata, drawn: three bands offset like a cut bank. Same reasoning as the
+-- pickaxe and the clipboard — no asset id to resolve and nothing to go missing.
+local strataMark = Instance.new("Frame")
+strataMark.AnchorPoint            = Vector2.new(0, 0.5)
+strataMark.Position               = UDim2.new(0, 2, 0.5, 0)
+strataMark.Size                   = UDim2.new(0, 16, 0, 14)
+strataMark.BackgroundTransparency = 1
+strataMark.ZIndex                 = 3
+strataMark.Parent                 = head
 
-local clouds = {}
-for i = 1, 3 do
-	local c = Instance.new("Frame")
-	-- Spread across whatever height the cap ended up, rather than the three
-	-- fixed offsets that fitted the taller one — the lower two fell outside
-	-- the clip and simply stopped existing.
-	c.Size                   = UDim2.new(0, 22 + i * 7, 0, 4)
-	c.Position               = UDim2.new(0, -40, 0, math.floor((HEAD_H - 6) * (i / 4)) - 2)
-	c.BackgroundColor3       = Color3.fromRGB(255, 255, 255)
-	c.BackgroundTransparency = 0.62
-	c.BorderSizePixel        = 0
-	c.ZIndex                 = 3
-	c.Parent                 = cap
-	corner(c, 3)
-	clouds[i] = { frame = c, x = -40 - i * 30, speed = 5 + i * 3 }
+for i, band in ipairs({
+	{ Color3.fromRGB(176, 150, 104), 0 },
+	{ Color3.fromRGB(132, 138, 148), 5 },
+	{ Color3.fromRGB( 96, 100, 110), 10 },
+}) do
+	local b = Instance.new("Frame")
+	b.Size             = UDim2.new(1, -(i - 1) * 3, 0, 3)
+	b.Position         = UDim2.new(0, (i - 1) * 2, 0, band[2])
+	b.BackgroundColor3 = band[1]
+	b.BorderSizePixel  = 0
+	b.ZIndex           = 3
+	b.Parent           = strataMark
+	corner(b, 1)
 end
 
--- Light on the dusk gradient. It was dark text for a daylight sky and would
--- have disappeared into the new one.
-local capLabel = text(cap, "SURFACE", UDim2.new(1, 0, 1, 0),
-	Color3.fromRGB(226, 234, 242), 12, StrataConfig.UI.Head, Enum.TextXAlignment.Center)
-capLabel.ZIndex = 4
+local headLabel = text(head, "GEOLOGY", UDim2.new(1, -24, 1, 0),
+	StrataConfig.UI.Ink, 13, StrataConfig.UI.Head)
+headLabel.Position       = UDim2.new(0, 24, 0, 0)
+headLabel.TextYAlignment = Enum.TextYAlignment.Center
+headLabel.ZIndex         = 3
+
+local headRule = Instance.new("Frame")
+headRule.Size                   = UDim2.new(1, -8, 0, 1)
+headRule.Position               = UDim2.new(0, 4, 0, HEAD_H - 3)
+headRule.BackgroundColor3       = StrataConfig.UI.Brass
+headRule.BackgroundTransparency = 0.6
+headRule.BorderSizePixel        = 0
+headRule.ZIndex                 = 3
+headRule.Parent                 = chart
 
 -- ── Segments ─────────────────────────────────────────────────────────────────
 
@@ -176,28 +185,100 @@ for i, layer in ipairs(CHART) do
 	edge.Thickness    = 2
 	edge.Transparency = 0.2
 
-	-- Colour rail down the left of each segment
+	-- ── The swatch ───────────────────────────────────────────────────────────
+	-- A real piece of the rock, not a coloured square: a part wearing the
+	-- layer's own terrain material, rendered live in a ViewportFrame. The same
+	-- trick ItemModels uses for the kit, and for the same reason — there is no
+	-- image to upload, so the picture cannot go stale when the material does.
+	--
+	-- Only the built layers have a stratum to read a material off. The rest
+	-- get a padlock where this would be, which is what the concept does too.
+	local stratum = StrataConfig.GetStratumById
+		and StrataConfig.GetStratumById(layer.id) or nil
+
+	local swatch = Instance.new("ViewportFrame")
+	swatch.AnchorPoint            = Vector2.new(0, 0.5)
+	swatch.Position               = UDim2.new(0, 7, 0.5, 0)
+	swatch.Size                   = UDim2.new(0, SWATCH, 0, SWATCH)
+	swatch.BackgroundColor3       = Color3.fromRGB(16, 18, 22)
+	swatch.BorderSizePixel        = 0
+	swatch.Ambient                = Color3.fromRGB(150, 150, 158)
+	swatch.LightColor             = Color3.fromRGB(255, 244, 226)
+	swatch.LightDirection         = Vector3.new(-0.6, -1, -0.4)
+	swatch.ZIndex                 = 3
+	swatch.Parent                 = seg
+	corner(swatch, 5)
+
+	local swatchEdge = Instance.new("UIStroke", swatch)
+	swatchEdge.Color        = StrataConfig.UI.StoneDark
+	swatchEdge.Thickness    = 1.5
+	swatchEdge.Transparency = 0.2
+
+	do
+		-- Turned off-axis so the light catches two faces. Flat on, a rock
+		-- material is one even tone and reads as paint.
+		local rock = Instance.new("Part")
+		rock.Size     = Vector3.new(2, 2, 2)
+		rock.Material = (stratum and stratum.material) or Enum.Material.Rock
+		rock.Color    = layer.color
+		rock.CFrame   = CFrame.new(0, 0, 0) * CFrame.Angles(math.rad(-18), math.rad(32), 0)
+		rock.Parent   = swatch
+
+		local cam = Instance.new("Camera")
+		cam.FieldOfView = 28
+		cam.CFrame      = CFrame.lookAt(Vector3.new(0, 0, 7), Vector3.zero)
+		cam.Parent      = swatch
+		swatch.CurrentCamera = cam
+	end
+
+	-- Colour rail, now a thin stripe down the very edge rather than a bar in
+	-- the middle of the row: the swatch carries the layer's identity and two
+	-- things doing that competed.
 	local rail = Instance.new("Frame")
-	rail.Size             = UDim2.new(0, 5, 1, -12)
-	rail.Position         = UDim2.new(0, 5, 0, 6)
+	rail.Size             = UDim2.new(0, 3, 1, -14)
+	rail.Position         = UDim2.new(0, 1, 0, 7)
 	rail.BackgroundColor3 = layer.color
 	rail.BorderSizePixel  = 0
 	rail.ZIndex           = 3
 	rail.Parent           = seg
 	corner(rail, 2)
 
-	-- Stops short of the lock column on the right rather than running under it.
-	local name = text(seg, layer.name, UDim2.new(1, -50, 0, 18),
+	local TEXT_X = 7 + SWATCH + 8
+
+	local name = text(seg, layer.name, UDim2.new(1, -(TEXT_X + 8), 0, 17),
 		Color3.fromRGB(255, 255, 255), 13, StrataConfig.UI.Head)
-	name.Position       = UDim2.new(0, 16, 0, 6)
+	name.Position       = UDim2.new(0, TEXT_X, 0, 7)
 	name.TextYAlignment = Enum.TextYAlignment.Top
 	name.TextTruncate   = Enum.TextTruncate.AtEnd
 	name.ZIndex         = 3
 
-	local depth = text(seg, math.floor(math.abs(layer.top)) .. "m", UDim2.new(1, -50, 0, 15),
-		Color3.fromRGB(220, 228, 236), 12, StrataConfig.UI.Number)
-	depth.Position = UDim2.new(0, 16, 1, -20)
-	depth.ZIndex   = 3
+	-- The band, not just its top edge. "260m" told you where a layer starts
+	-- and nothing about how far it runs, which is the question the panel is
+	-- being asked.
+	local nextLayer = CHART[i + 1]
+	local band = nextLayer
+		and ("%d - %dm"):format(math.abs(layer.top), math.abs(nextLayer.top))
+		or  ("%dm+"):format(math.abs(layer.top))
+
+	local depth = text(seg, band, UDim2.new(1, -(TEXT_X + 8), 0, 14),
+		Color3.fromRGB(206, 214, 224), 11, StrataConfig.UI.Number)
+	depth.Position     = UDim2.new(0, TEXT_X, 1, -20)
+	depth.TextTruncate = Enum.TextTruncate.AtEnd
+	depth.ZIndex       = 3
+
+	-- Where you are, as a chip. Shown instead of the padlock, since the two
+	-- can never both be true.
+	local chip = Instance.new("Frame")
+	chip.Name             = "Current"
+	chip.AnchorPoint      = Vector2.new(1, 0.5)
+	chip.Position         = UDim2.new(1, -6, 0.5, 0)
+	chip.Size             = UDim2.new(0, 10, 0, 10)
+	chip.BackgroundColor3 = StrataConfig.UI.Brass
+	chip.BorderSizePixel  = 0
+	chip.Visible          = false
+	chip.ZIndex           = 4
+	chip.Parent           = seg
+	corner(chip, 5)
 
 	-- ── The padlock ──────────────────────────────────────────────────────────
 	-- Two frames: a body, and a shackle that is a ring with its lower half
@@ -207,8 +288,8 @@ for i, layer in ipairs(CHART) do
 	local lock = Instance.new("Frame")
 	lock.Name                   = "Lock"
 	lock.AnchorPoint            = Vector2.new(0.5, 0.5)
-	lock.Position               = UDim2.new(1, -19, 0.5, 0)
-	lock.Size                   = UDim2.new(0, 14, 0, 18)
+	lock.Position               = UDim2.new(0, 7 + SWATCH / 2, 0.5, 0)
+	lock.Size                   = UDim2.new(0, 15, 0, 19)
 	lock.BackgroundTransparency = 1
 	lock.ZIndex                 = 3
 	-- Off until the refresh says otherwise, so an unlocked layer never shows a
@@ -240,6 +321,7 @@ for i, layer in ipairs(CHART) do
 		layer = layer, frame = seg, fade = fade, edge = edge,
 		rail = rail, name = name, depth = depth, y = y, lit = nil,
 		lock = lock, lockParts = { shackleEdge, body },
+		swatch = swatch, chip = chip, band = band,
 	}
 end
 
@@ -378,12 +460,14 @@ function refreshChart()
 					ColorSequenceKeypoint.new(0, base:Lerp(Color3.new(0, 0, 0), 0.32)),
 					ColorSequenceKeypoint.new(1, base:Lerp(Color3.new(0, 0, 0), 0.62)),
 				})
-				s.name.Text       = s.layer.name
-				s.name.TextColor3 = Color3.fromRGB(255, 255, 255)
-				s.depth.Text      = math.floor(math.abs(s.layer.top)) .. "m"
+				s.name.Text        = s.layer.name
+				s.name.TextColor3  = Color3.fromRGB(255, 255, 255)
+				s.depth.Text       = s.band
+				s.depth.TextColor3 = Color3.fromRGB(206, 214, 224)
 				s.rail.BackgroundColor3       = s.layer.color
 				s.rail.BackgroundTransparency = 0
-				s.lock.Visible = false
+				s.lock.Visible   = false
+				s.swatch.Visible = true
 			else
 				s.fade.Color = ColorSequence.new({
 					ColorSequenceKeypoint.new(0, Color3.fromRGB(34, 38, 46)),
@@ -392,15 +476,20 @@ function refreshChart()
 				s.name.Text       = goal and s.layer.name or "???"
 				s.name.TextColor3 = goal and Color3.fromRGB(210, 216, 224)
 					or Color3.fromRGB(96, 104, 116)
-				s.depth.Text      = goal and (s.layer.requires or (math.floor(math.abs(s.layer.top)) .. "m")) or "?"
-				s.depth.TextColor3 = goal and ORE or Color3.fromRGB(80, 88, 100)
+				-- The goal layer says what it wants from you; the ones past it
+				-- still give away their depth, because how far down a thing is
+				-- is not a secret and "?" told you nothing twice.
+				s.depth.Text       = goal and (s.layer.requires or s.band) or s.band
+				s.depth.TextColor3 = goal and ORE or Color3.fromRGB(104, 112, 124)
 				s.rail.BackgroundColor3       = Color3.fromRGB(70, 78, 90)
 				s.rail.BackgroundTransparency = 0.3
 
-				-- The next one down is the one you are working towards, so its
-				-- lock is lit in the same gold as its requirement. The rest are
-				-- grey, because they are not the question yet.
-				s.lock.Visible = true
+				-- The padlock takes the swatch's place rather than sitting
+				-- beside it. You have not seen this rock, so there is no
+				-- picture of it to show — which is the honest version of the
+				-- concept's locked row, and leaves the right side clear.
+				s.swatch.Visible = false
+				s.lock.Visible   = true
 				local tone = goal and ORE or Color3.fromRGB(104, 112, 124)
 				s.lockParts[1].Color           = tone
 				s.lockParts[2].BackgroundColor3 = tone
@@ -411,20 +500,11 @@ end
 
 -- ── Live marker + idle animation ─────────────────────────────────────────────
 
-local markerY   = HEAD_H
-local pulse     = 0
-local cloudTime = 0
+local markerY = HEAD_H
+local pulse   = 0
 
 RunSvc.RenderStepped:Connect(function(dt)
-	pulse     += dt
-	cloudTime += dt
-
-	-- Clouds drift across the surface cap and wrap around
-	for _, c in ipairs(clouds) do
-		c.x += dt * c.speed
-		if c.x > CHART_W then c.x = -50 end
-		c.frame.Position = UDim2.new(0, c.x, 0, c.frame.Position.Y.Offset)
-	end
+	pulse += dt
 
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if not root then return end
@@ -450,9 +530,15 @@ RunSvc.RenderStepped:Connect(function(dt)
 	markerLine.Position  = UDim2.new(0, 4, 0, markerY)
 	markerArrow.Position = UDim2.new(1, 2, 0, markerY)
 
-	-- The layer you're standing in breathes so it reads as "you are here"
+	-- The layer you're standing in breathes so it reads as "you are here", and
+	-- carries the chip. This loop is the only thing that knows which layer
+	-- that is, so it is the right place to set it — the refresh runs on state
+	-- changes and would be a frame behind the arrow beside it.
 	for i, s in ipairs(segments) do
-		if i == index and s.lit then
+		-- Compared rather than just anded: lit is nil until the first refresh,
+		-- and assigning nil to Visible is an error rather than a false.
+		local here = (i == index) and s.lit == true
+		if here then
 			s.edge.Color        = s.layer.color
 			s.edge.Transparency = 0.15 + math.sin(pulse * 3) * 0.15
 			s.edge.Thickness    = 2.6
@@ -461,6 +547,7 @@ RunSvc.RenderStepped:Connect(function(dt)
 			s.edge.Transparency = 0.2
 			s.edge.Thickness    = 2
 		end
+		if s.chip.Visible ~= here then s.chip.Visible = here end
 	end
 end)
 

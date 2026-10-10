@@ -343,13 +343,17 @@ StrataConfig.Hud = {
 	-- window, clamped. Its segments were 56 tall with a 40-pixel sky over
 	-- them, which came to better than two fifths of the screen height for a
 	-- panel you consult before a run and never during one.
+	-- A little wider and a little taller per rung than it was, because each one
+	-- now carries a rock swatch as well as a name and a depth band. Still a
+	-- share of the window, still clamped well clear of where the ratio lands.
 	Chart = {
-		WidthShare = 0.125,
-		WidthMin   = 100,   -- same story as the column's: 138 was winning
-		WidthMax   = 198,
-		SegH       = 44,
+		WidthShare = 0.142,
+		WidthMin   = 112,
+		WidthMax   = 214,
+		SegH       = 48,
 		SegGap     = 4,
-		HeadH      = 30,
+		HeadH      = 32,
+		Swatch     = 30,
 	},
 
 	-- ── The bottom edge ──────────────────────────────────────────────────────
