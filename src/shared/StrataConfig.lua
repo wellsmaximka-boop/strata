@@ -304,9 +304,9 @@ StrataConfig.Hud = {
 	WidthMin   = 150,
 	WidthMax   = 330,
 
-	Card     = { H = 92 },
-	Strength = { H = 48 },
-	Pack     = { H = 74 },
+	Card     = { H = 80 },
+	Strength = { H = 40 },
+	Pack     = { H = 64 },
 
 	-- ── The nav ──────────────────────────────────────────────────────────────
 	-- A list, not a grid. Six rows: an icon in a small plate, the name, and a
@@ -322,17 +322,17 @@ StrataConfig.Hud = {
 	-- The height is not fixed. It is whatever is left after the card, the two
 	-- readouts and the corner the manifest sits in, because the thing that
 	-- keeps going wrong here is a number that was right on one window.
+	-- Six full-width rows came to 224 by 300 of solid plate, which is a great
+	-- deal of screen to spend on six words you learn once. The references all
+	-- answer this the same way: icons, small, with the name arriving only when
+	-- you ask for it. So the labels move to a tooltip on hover and the rows
+	-- become tiles — 114 by 174 instead, and the game behind gets the rest.
 	Nav = {
-		Rows    = 6,
-		Gap     = 7,
-		RowMin  = 34,
-		-- Held back from the budget so the list never ends one pixel above the
-		-- manifest. Filling the space exactly is arithmetically correct and
-		-- looks like a mistake.
-		Slack   = 26,
-		RowMax  = 58,
-		Icon    = 28,     -- the plate on the left of a row
-		Chevron = 12,
+		Cols = 2,
+		Rows = 3,
+		Tile = 54,
+		Gap  = 6,
+		Icon = 28,
 	},
 
 	-- The run manifest inherits the corner the card left, and it suits it
@@ -368,10 +368,10 @@ StrataConfig.Hud = {
 		WidthShare = 0.142,
 		WidthMin   = 112,
 		WidthMax   = 214,
-		SegH       = 48,
+		SegH       = 42,
 		SegGap     = 4,
 		HeadH      = 32,
-		Swatch     = 30,
+		Swatch     = 26,
 	},
 
 	-- ── The bottom edge ──────────────────────────────────────────────────────
@@ -433,29 +433,24 @@ function StrataConfig.HudMetrics(viewportWidth, viewportHeight)
 
 	local width = math.clamp(math.floor(vw * H.WidthShare), H.WidthMin, H.WidthMax)
 
-	-- What the nav has left once everything with a fixed height has taken its
-	-- share, including the corner the run manifest needs below it. Solving for
-	-- the row height rather than asserting one means a short window gets a
-	-- tighter list instead of a column running off the bottom of the screen.
+	-- The nav is a fixed grid of tiles now rather than a list solved against
+	-- whatever height was left, so there is nothing to compute — but the fit
+	-- still has to be checked, because a short window can run the column into
+	-- the corner the run manifest needs.
+	local navW = N.Tile * N.Cols + N.Gap * (N.Cols - 1)
+	local navH = N.Tile * N.Rows + N.Gap * (N.Rows - 1)
+
 	local fixed  = H.Top + H.Card.H + H.Strength.H + H.Pack.H + H.Gap * 3
 	local corner = H.Manifest.Bottom + H.Manifest.H + H.Gap
-	local budget = vh - fixed - corner - N.Slack
-
-	local rowH = math.clamp(
-		math.floor((budget - N.Gap * (N.Rows - 1)) / N.Rows),
-		N.RowMin, N.RowMax)
-
-	local navH = rowH * N.Rows + N.Gap * (N.Rows - 1)
 
 	local m = {
 		Width = width,
 		Nav   = {
-			RowH = rowH, Gap = N.Gap, Rows = N.Rows,
-			Icon = N.Icon, Chevron = N.Chevron,
+			Tile = N.Tile, Gap = N.Gap, Cols = N.Cols, Rows = N.Rows,
+			Icon = N.Icon,
+			W_total = navW,
 			H_total = navH,
-			-- True when even the shortest rows do not fit, which is the one
-			-- case the caller cannot style its way out of.
-			Cramped = navH > budget,
+			Cramped = (fixed + navH + corner) > vh,
 		},
 	}
 

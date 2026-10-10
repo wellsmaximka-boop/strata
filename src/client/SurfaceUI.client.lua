@@ -728,20 +728,13 @@ end
 
 local STACK = StrataConfig.HudMetrics(viewport())
 
-local NAV   = STACK.Nav
-local ROW_H = NAV.RowH
-local ICON  = NAV.Icon
-
--- The row, left to right: an icon plate, the name, a chevron. Derived, because
--- every absolute number in this file has eventually been one tuned for a size
--- it no longer was.
-local PAD       = math.max(8, math.floor(ROW_H * 0.18))
-local TEXT_X    = PAD + ICON + 10
-local NAME_SIZE = 14
+local NAV  = STACK.Nav
+local TILE = NAV.Tile
+local ICON = NAV.Icon
 
 local bar = Instance.new("Frame")
 bar.Name                   = "ActionBar"
-bar.Size                   = UDim2.new(0, STACK.Width, 0, NAV.H_total)
+bar.Size                   = UDim2.new(0, NAV.W_total, 0, NAV.H_total)
 bar.Position               = UDim2.new(0, HUD.Left, 0, STACK.NavY)
 bar.BackgroundTransparency = 1
 -- Above the screens. They are fitted to clear the bar, but on a viewport too
@@ -750,10 +743,53 @@ bar.BackgroundTransparency = 1
 bar.ZIndex                 = 8
 bar.Parent                 = gui
 
-local barLayout = Instance.new("UIListLayout", bar)
-barLayout.FillDirection = Enum.FillDirection.Vertical
-barLayout.Padding       = UDim.new(0, NAV.Gap)
-barLayout.SortOrder     = Enum.SortOrder.LayoutOrder
+local barLayout = Instance.new("UIGridLayout", bar)
+barLayout.CellSize              = UDim2.new(0, TILE, 0, TILE)
+barLayout.CellPadding           = UDim2.new(0, NAV.Gap, 0, NAV.Gap)
+barLayout.FillDirectionMaxCells = NAV.Cols
+barLayout.SortOrder             = Enum.SortOrder.LayoutOrder
+
+-- ── The name, on request ─────────────────────────────────────────────────────
+-- One plate, moved to whichever tile the mouse is over, rather than six labels
+-- permanently taking up the width of the word CAMP. This is the whole reason
+-- the nav could shrink: the names were never needed at rest, only findable.
+local tip = Instance.new("Frame")
+tip.Name                   = "NavTip"
+tip.AnchorPoint            = Vector2.new(0, 0.5)
+tip.Size                   = UDim2.new(0, 0, 0, 26)
+tip.AutomaticSize          = Enum.AutomaticSize.X
+tip.BackgroundColor3       = UIP.StoneDeep
+tip.BackgroundTransparency = 0.08
+tip.BorderSizePixel        = 0
+tip.Visible                = false
+tip.ZIndex                 = 20
+tip.Parent                 = gui
+corner(tip, 6)
+
+local tipEdge = stroked(tip, UIP.Brass, 1, 0.45)
+
+local tipPad = Instance.new("UIPadding", tip)
+tipPad.PaddingLeft  = UDim.new(0, 10)
+tipPad.PaddingRight = UDim.new(0, 10)
+
+local tipText = text(tip, "", UDim2.new(0, 0, 1, 0), UIP.Ink, 13,
+	StrataConfig.UI.Head)
+tipText.AutomaticSize = Enum.AutomaticSize.X
+tipText.ZIndex        = 21
+
+local function showTip(tile, label, accent)
+	tipText.Text      = label
+	tipText.TextColor3 = accent
+	tipEdge.Color     = accent
+	tip.Visible       = true
+	tip.Position      = UDim2.new(
+		0, tile.AbsolutePosition.X + tile.AbsoluteSize.X + 10,
+		0, tile.AbsolutePosition.Y + tile.AbsoluteSize.Y / 2)
+end
+
+local function hideTip()
+	tip.Visible = false
+end
 
 -- Paste Creator Store icon asset ids here and they replace the emoji glyphs
 -- automatically — nothing else has to change. Free UI packs work fine; the ids
@@ -864,10 +900,9 @@ DRAWN.RUNS  = drawClipboard
 -- body, a highlight bevel across the top, a coloured rim, and a press that
 -- actually moves. No image required, though one drops straight in.
 local function barButton(order, icon, label, accent, onClick)
-	-- The list layout owns the position; the row owns its own height.
+	-- The grid layout owns both position and size, so the holder sets neither.
 	local holder = Instance.new("Frame")
 	holder.Name                   = label
-	holder.Size                   = UDim2.new(1, 0, 0, ROW_H)
 	holder.BackgroundTransparency = 1
 	holder.LayoutOrder            = order
 	holder.Parent                 = bar
@@ -917,7 +952,7 @@ local function barButton(order, icon, label, accent, onClick)
 
 	-- Glossy bevel across the top half
 	local bevel = Instance.new("Frame")
-	bevel.Size                   = UDim2.new(1, -10, 0, math.floor(ROW_H * 0.42))
+	bevel.Size                   = UDim2.new(1, -10, 0, math.floor(TILE * 0.38))
 	bevel.Position               = UDim2.new(0, 5, 0, 4)
 	bevel.BackgroundColor3       = Color3.fromRGB(255, 255, 255)
 	bevel.BorderSizePixel        = 0
@@ -931,19 +966,18 @@ local function barButton(order, icon, label, accent, onClick)
 		NumberSequenceKeypoint.new(1, 1),
 	})
 
-	-- The icon sits in its own recessed plate on the left, which is what stops
-	-- six different icons at six different weights from looking like six
-	-- different sizes.
+	-- The icon is the whole tile now. A plate behind it stops six icons at six
+	-- different weights from reading as six different sizes.
 	local plate = Instance.new("Frame")
-	plate.AnchorPoint      = Vector2.new(0, 0.5)
-	plate.Position         = UDim2.new(0, PAD, 0.5, 0)
-	plate.Size             = UDim2.new(0, ICON, 0, ICON)
-	plate.BackgroundColor3 = UIP.StoneDark
-	plate.BackgroundTransparency = 0.25
-	plate.BorderSizePixel  = 0
-	plate.ZIndex           = 3
-	plate.Parent           = b
-	corner(plate, 7)
+	plate.AnchorPoint            = Vector2.new(0.5, 0.5)
+	plate.Position               = UDim2.new(0.5, 0, 0.5, 0)
+	plate.Size                   = UDim2.new(0, ICON + 8, 0, ICON + 8)
+	plate.BackgroundColor3       = UIP.StoneDark
+	plate.BackgroundTransparency = 0.4
+	plate.BorderSizePixel        = 0
+	plate.ZIndex                 = 3
+	plate.Parent                 = b
+	corner(plate, 8)
 
 	local iconId = ICONS[label]
 	local art
@@ -954,76 +988,42 @@ local function barButton(order, icon, label, accent, onClick)
 		art.Image                  = iconId
 		art.ScaleType              = Enum.ScaleType.Fit
 		art.BackgroundTransparency = 1
-		art.Size                   = UDim2.new(1, -7, 1, -7)
-		art.Position               = UDim2.new(0, 3.5, 0, 3.5)
+		art.AnchorPoint            = Vector2.new(0.5, 0.5)
+		art.Size                   = UDim2.new(0, ICON, 0, ICON)
+		art.Position               = UDim2.new(0.5, 0, 0.5, 0)
 		art.ZIndex                 = 4
 		art.Parent                 = plate
 	else
 		art = text(plate, icon, UDim2.new(1, 0, 1, 0), INK,
-			math.floor(ICON * 0.6), StrataConfig.UI.Head, Enum.TextXAlignment.Center)
+			math.floor(ICON * 0.66), StrataConfig.UI.Head, Enum.TextXAlignment.Center)
 		art.ZIndex = 4
 	end
 
-	local name = text(b, label, UDim2.new(1, -(TEXT_X + PAD + NAV.Chevron + 6), 1, 0),
-		INK, NAME_SIZE, StrataConfig.UI.Head)
-	name.Position       = UDim2.new(0, TEXT_X, 0, 0)
-	name.TextYAlignment = Enum.TextYAlignment.Center
-	name.ZIndex         = 4
-
-	-- The chevron, drawn from two bars. A ">" in a text label is at the mercy
-	-- of whichever face it lands in, and this one has to be a thin stroke in
-	-- all six rows or it reads as punctuation.
-	local chev = Instance.new("Frame")
-	chev.AnchorPoint            = Vector2.new(1, 0.5)
-	chev.Position               = UDim2.new(1, -PAD, 0.5, 0)
-	chev.Size                   = UDim2.new(0, NAV.Chevron, 0, NAV.Chevron)
-	chev.BackgroundTransparency = 1
-	chev.ZIndex                 = 4
-	chev.Parent                 = b
-
-	local chevBars = {}
-	for i, spec in ipairs({ { -45, 0 }, { 45, NAV.Chevron / 2 } }) do
-		local arm = Instance.new("Frame")
-		arm.AnchorPoint      = Vector2.new(0.5, 0.5)
-		arm.Size             = UDim2.new(0, 2, 0, NAV.Chevron * 0.72)
-		arm.Position         = UDim2.new(0.5, 0, 0, spec[2] + NAV.Chevron / 4)
-		arm.Rotation         = spec[1]
-		arm.BackgroundColor3 = UIP.Dim
-		arm.BorderSizePixel  = 0
-		arm.ZIndex           = 4
-		arm.Parent           = chev
-		corner(arm, 1)
-		chevBars[i] = arm
-	end
 
 	local QUICK = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 	-- ── Open, hovered, resting ───────────────────────────────────────────────
-	-- The open row fills with its own accent and its text goes dark, which is
-	-- the one piece of this that tells you where you are without being read.
+	-- The open tile fills with its own accent, which is the one piece of this
+	-- that tells you where you are without being read. It matters more now
+	-- than it did as a list: with the names gone, this is the only thing left
+	-- saying which screen you are looking at.
 	local WHITE  = Color3.new(1, 1, 1)
 	local active = false
 
 	local function paint(hovered)
 		if active then
 			setFill(accent:Lerp(WHITE, 0.2), accent)
-			name.TextColor3 = UIP.StoneDeep
-			for _, arm in ipairs(chevBars) do arm.BackgroundColor3 = UIP.StoneDeep end
-			plate.BackgroundTransparency = 0.6
+			plate.BackgroundTransparency = 0.7
 			TweenService:Create(rim, QUICK, { Transparency = 0, Thickness = 2.5 }):Play()
 			return
 		end
 
-		local lift = hovered and 0.16 or 0
+		local lift = hovered and 0.18 or 0
 		setFill(FILL_TOP:Lerp(WHITE, lift), FILL_BOTTOM:Lerp(WHITE, lift))
-		name.TextColor3 = hovered and accent or INK
-		for _, arm in ipairs(chevBars) do
-			arm.BackgroundColor3 = hovered and accent or UIP.Dim
-		end
-		plate.BackgroundTransparency = 0.25
+		plate.BackgroundTransparency = hovered and 0.25 or 0.4
 		TweenService:Create(rim, QUICK, {
-			Transparency = hovered and 0 or 0.3,
-			Thickness    = hovered and 2.5 or 2,
+			Transparency = hovered and 0 or 0.45,
+			Thickness    = hovered and 2.5 or 1.5,
 		}):Play()
 	end
 
@@ -1035,8 +1035,14 @@ local function barButton(order, icon, label, accent, onClick)
 		paint(false)
 	end
 
-	b.MouseEnter:Connect(function() paint(true) end)
-	b.MouseLeave:Connect(function() paint(false) end)
+	b.MouseEnter:Connect(function()
+		paint(true)
+		showTip(holder, label, accent)
+	end)
+	b.MouseLeave:Connect(function()
+		paint(false)
+		hideTip()
+	end)
 
 	-- Press: sink into the shadow, then spring back
 	b.MouseButton1Down:Connect(function()

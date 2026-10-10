@@ -70,13 +70,13 @@ local VIEWPORTS = {
 
 print("")
 print("-- column width against the window --")
-print(("  %-12s %7s %7s %8s"):format("window", "column", "share", "nav row"))
+print(("  %-12s %7s %7s %8s"):format("window", "column", "share", "nav"))
 for _, v in ipairs(VIEWPORTS) do
 	local m = StrataConfig.HudMetrics(v[1], v[2])
-	print(("  %4dx%-7d %7d %6d%% %4d (list %d)"):format(
+	print(("  %4dx%-7d %7d %6d%% %3dx%d"):format(
 		v[1], v[2], m.Width,
 		math.floor(m.Width / v[1] * 100 + 0.5),
-		m.Nav.RowH, m.Nav.H_total))
+		m.Nav.W_total, m.Nav.H_total))
 end
 local stack = StrataConfig.HudMetrics(1216, 970)
 -- A floor that is reached on a window people actually use is not a floor, it
@@ -174,15 +174,17 @@ bad += tight
 -- The column is one width. An element that sets its own is the thing that
 -- made it look like three unrelated panels rather than a column.
 print("")
-print("-- nav rows stay usable --")
+print("-- nav tiles stay usable --")
 local squashed = 0
 for _, v in ipairs(VIEWPORTS) do
 	local m = StrataConfig.HudMetrics(v[1], v[2])
 	-- A row has to hold an icon plate with air around it. Below that the list
 	-- stops being a list of buttons and becomes a stack of lines.
-	if m.Nav.RowH < m.Nav.Icon + 6 then
-		print(("  %dx%d: rows are %d tall for a %d icon")
-			:format(v[1], v[2], m.Nav.RowH, m.Nav.Icon))
+	-- A tile has to hold its icon with air around it. Below that it stops
+	-- being a button and becomes a sprite you are expected to hit.
+	if m.Nav.Tile < m.Nav.Icon + 14 then
+		print(("  %dx%d: tiles are %d for a %d icon")
+			:format(v[1], v[2], m.Nav.Tile, m.Nav.Icon))
 		squashed += 1
 	end
 end

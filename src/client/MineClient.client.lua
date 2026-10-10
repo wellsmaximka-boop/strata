@@ -71,7 +71,7 @@ local function panel(size, position, anchor)
 	-- around the outside. One bright edge says "instrument"; four sides say
 	-- "window".
 	f.BackgroundColor3       = StrataConfig.UI.StoneDeep
-	f.BackgroundTransparency = 0.3
+	f.BackgroundTransparency = 0.45
 	f.BorderSizePixel        = 0
 	f.Parent                 = gui
 	Instance.new("UICorner", f).CornerRadius = UDim.new(0, StrataConfig.UI.Corner)
