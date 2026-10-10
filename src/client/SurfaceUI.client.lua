@@ -67,7 +67,6 @@ local function commas(n)
 	return (out:gsub("^,", ""))
 end
 
-
 -- The requested radius is a suggestion; the config decides.
 --
 -- There were 78 places setting a corner by hand across the interface, using
@@ -749,9 +748,47 @@ barLayout.CellPadding           = UDim2.new(0, NAV.Gap, 0, NAV.Gap)
 barLayout.FillDirectionMaxCells = NAV.Cols
 barLayout.SortOrder             = Enum.SortOrder.LayoutOrder
 
--- The hover tooltip that stood in for the labels is gone with them. A name
--- you have to go looking for is not the same as a name, and the tiles have
--- room for one at this size.
+-- ── The name, on request ─────────────────────────────────────────────────────
+-- The tiles are icons only at this size, and an icon you cannot name is a
+-- guess. One plate, moved to whichever tile the mouse is over — the names stay
+-- reachable without six captions taking up the width of the word CAMP.
+local tip = Instance.new("Frame")
+tip.Name                   = "NavTip"
+tip.AnchorPoint            = Vector2.new(0, 0.5)
+tip.Size                   = UDim2.new(0, 0, 0, 24)
+tip.AutomaticSize          = Enum.AutomaticSize.X
+tip.BackgroundColor3       = UIP.StoneDeep
+tip.BackgroundTransparency = 0.08
+tip.BorderSizePixel        = 0
+tip.Visible                = false
+tip.ZIndex                 = 20
+tip.Parent                 = gui
+corner(tip, 6)
+
+local tipEdge = stroked(tip, UIP.Brass, 1.4, 0.2)
+
+local tipPad = Instance.new("UIPadding", tip)
+tipPad.PaddingLeft  = UDim.new(0, 9)
+tipPad.PaddingRight = UDim.new(0, 9)
+
+local tipText = text(tip, "", UDim2.new(0, 0, 1, 0), UIP.Ink, 12,
+	StrataConfig.UI.Head)
+tipText.AutomaticSize = Enum.AutomaticSize.X
+tipText.ZIndex        = 21
+
+local function showTip(tile, label, accent)
+	tipText.Text       = label
+	tipText.TextColor3 = accent
+	tipEdge.Color      = accent
+	tip.Visible        = true
+	tip.Position       = UDim2.new(
+		0, tile.AbsolutePosition.X + tile.AbsoluteSize.X + 9,
+		0, tile.AbsolutePosition.Y + tile.AbsoluteSize.Y / 2)
+end
+
+local function hideTip()
+	tip.Visible = false
+end
 
 -- Paste Creator Store icon asset ids here and they replace the emoji glyphs
 -- automatically — nothing else has to change. Free UI packs work fine; the ids
@@ -935,8 +972,8 @@ local function barButton(order, icon, label, accent, onClick)
 	-- Icon above, name under it. The plate behind the icon stops six icons at
 	-- six different weights from reading as six different sizes.
 	local plate = Instance.new("Frame")
-	plate.AnchorPoint            = Vector2.new(0.5, 0)
-	plate.Position               = UDim2.new(0.5, 0, 0, math.floor(TILE * 0.16))
+	plate.AnchorPoint            = Vector2.new(0.5, 0.5)
+	plate.Position               = UDim2.new(0.5, 0, 0.5, 0)
 	plate.Size                   = UDim2.new(0, ICON + 6, 0, ICON + 6)
 	plate.BackgroundColor3       = UIP.StoneDark
 	plate.BackgroundTransparency = 0.4
@@ -965,12 +1002,6 @@ local function barButton(order, icon, label, accent, onClick)
 		art.ZIndex = 4
 	end
 
-	local name = text(b, label, UDim2.new(1, -6, 0, NAV.Label + 4),
-		INK, NAV.Label, StrataConfig.UI.Head, Enum.TextXAlignment.Center)
-	name.Position = UDim2.new(0, 3, 1, -(NAV.Label + 10))
-	name.ZIndex   = 4
-
-
 	local QUICK = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 	-- ── Open, hovered, resting ───────────────────────────────────────────────
@@ -985,7 +1016,7 @@ local function barButton(order, icon, label, accent, onClick)
 		if active then
 			setFill(accent:Lerp(WHITE, 0.2), accent)
 			plate.BackgroundTransparency = 0.7
-			name.TextColor3 = UIP.StoneDeep
+
 			rim.Color = accent
 			TweenService:Create(rim, QUICK, { Transparency = 0, Thickness = 2.5 }):Play()
 			return
@@ -994,7 +1025,7 @@ local function barButton(order, icon, label, accent, onClick)
 		local lift = hovered and 0.18 or 0
 		setFill(FILL_TOP:Lerp(WHITE, lift), FILL_BOTTOM:Lerp(WHITE, lift))
 		plate.BackgroundTransparency = hovered and 0.25 or 0.4
-		name.TextColor3 = hovered and accent or INK
+
 		rim.Color = hovered and accent or UIP.Brass
 		TweenService:Create(rim, QUICK, {
 			Transparency = hovered and 0 or 0.2,
@@ -1010,8 +1041,14 @@ local function barButton(order, icon, label, accent, onClick)
 		paint(false)
 	end
 
-	b.MouseEnter:Connect(function() paint(true) end)
-	b.MouseLeave:Connect(function() paint(false) end)
+	b.MouseEnter:Connect(function()
+		paint(true)
+		showTip(holder, label, accent)
+	end)
+	b.MouseLeave:Connect(function()
+		paint(false)
+		hideTip()
+	end)
 
 	-- Press: sink into the shadow, then spring back
 	b.MouseButton1Down:Connect(function()
@@ -1168,7 +1205,6 @@ panelFoot.ZIndex   = 2
 
 local openTab = nil   -- "shop" | "bag" | "lift" | nil
 
-
 -- ── Panel action ─────────────────────────────────────────────────────────────
 -- One big button along the bottom for the panels that have a single obvious
 -- thing to do. It lives outside the scrolling body so it cannot be scrolled
@@ -1214,7 +1250,6 @@ local function showAction(label, colour, onClick, enabled)
 	actionHandler       = onClick
 	panelBody.Size      = UDim2.new(1, -36, 1, -178)
 end
-
 
 -- ── Choice strip ─────────────────────────────────────────────────────────────
 -- A row of buttons along the bottom instead of one, for when the panel is
@@ -1311,7 +1346,6 @@ local function showPicker(options)
 	panelPicker.Visible = true
 	panelBody.Size      = UDim2.new(1, -36, 1, -196)
 end
-
 
 -- ── The detail pane ──────────────────────────────────────────────────────────
 -- The right-hand column every inventory screen in the references has: whatever
@@ -1820,7 +1854,6 @@ end
 -- where the money is, and it is bought with clock rather than with anything you
 -- own, so it is a bet on how fast you are.
 
-
 local contracts = {}
 local boardIn   = 0
 local picked    = nil    -- index of the contract being looked at
@@ -2124,8 +2157,6 @@ function buildRuns()
 	-- times a second — and a card destroyed between your mouse-down and your
 	-- mouse-up never fires. openTabNamed asks once, when the tab opens.
 
-
-
 	if S.run then
 		panelFoot.Text = "you are out on one — get back to the shaft"
 	elseif picked and contracts[picked] then
@@ -2218,12 +2249,9 @@ local openKit    = Kit.open
 local closeKit   = Kit.close
 local refreshKit = Kit.refresh
 
-
-
 -- ── Depot ────────────────────────────────────────────────────────────────────
 -- What the Depot's ring opens: everything in the pack, what each lot fetches,
 -- and one button to sell the lot.
-
 
 local function buildSell()
 	clearBody()
@@ -2483,7 +2511,6 @@ task.spawn(function()
 		end
 	end
 end)
-
 
 -- ── Zone rings ───────────────────────────────────────────────────────────────
 -- The rings breathe, slowly. A static circle on a wooden floor gets read as

@@ -269,48 +269,53 @@ profileEdge.Transparency = 0.15
 
 -- Column 2 of the card: everything right of the portrait. The portrait itself
 -- is drawn by the wrapper further down, which owns the hexagon.
-local PCOL = 10 + 58 + 10
+-- Every row's top comes from StrataConfig.Hud.CardRow. The last version of
+-- this put them in by hand, then the card's height changed underneath them,
+-- and four things ended up drawn through each other.
+local ROW  = HUD.CardRow
+local PCOL = ROW.Pad + ROW.Hex + 10
 
 local GOLD      = Color3.fromRGB(255, 204, 92)
 local GOLD_DEEP = Color3.fromRGB(150, 102, 28)
 
--- Power, as a chip on the name line. It was a 24px numeral in a panel of its
--- own, which is a lot of furniture for a number between five and a few
--- hundred.
-local powerTag = label(profile, "POWER", UDim2.new(0, 46, 0, 12),
-	UDim2.new(1, -12, 0, 9), DIM, 10, nil, Enum.TextXAlignment.Right)
-powerTag.AnchorPoint = Vector2.new(1, 0)
+-- ── The stats row ────────────────────────────────────────────────────────────
+-- Power, pack and what the pack is worth, on one line across the bottom of
+-- the card. They were three stacked panels; they are three readings, and
+-- three readings are a row.
+local statY = ROW.Stats
 
-local strengthValue = label(profile, "5", UDim2.new(0, 60, 0, 18),
-	UDim2.new(1, -12, 0, 20), ORE, 17, StrataConfig.UI.Head, Enum.TextXAlignment.Right)
-strengthValue.AnchorPoint = Vector2.new(1, 0)
+local powerTag = label(profile, "POWER", UDim2.new(0, 42, 0, 14),
+	UDim2.new(0, ROW.Pad, 0, statY), DIM, 10)
+
+local strengthValue = label(profile, "5", UDim2.new(0, 34, 0, 16),
+	UDim2.new(0, ROW.Pad + 44, 0, statY - 1), ORE, 14, StrataConfig.UI.Head)
 
 -- Kept because two handlers write to it, and because strength is the part of
--- power you earn rather than buy. Off to one side at the bottom, small.
-local strengthSub = label(profile, "STRENGTH 5", UDim2.new(0, 110, 0, 12),
-	UDim2.new(0, 12, 1, -16), DIM, 10)
-strengthSub.AnchorPoint = Vector2.new(0, 1)
+-- power you earn rather than buy. It is the same number as power until gear
+-- is involved, so it goes in the tooltip position: present, not shouting.
+local strengthSub = label(profile, "STRENGTH 5", UDim2.new(0, 90, 0, 12),
+	UDim2.new(0, ROW.Pad, 0, statY + 15), DIM, 9)
 
--- Pack, under the health bar
-label(profile, "PACK", UDim2.new(0, 34, 0, 14), UDim2.new(0, PCOL, 0, 64), DIM, 10)
+label(profile, "PACK", UDim2.new(0, 32, 0, 14),
+	UDim2.new(0, PCOL + 42, 0, statY), DIM, 10)
 
 local packValue = label(profile, "0 / " .. StrataConfig.Player.BackpackSlots,
-	UDim2.new(0, 70, 0, 16), UDim2.new(0, PCOL + 34, 0, 62), INK, 14)
+	UDim2.new(0, 58, 0, 16), UDim2.new(0, PCOL + 76, 0, statY - 1), INK, 13)
 
 -- What the haul would fetch at the Depot, so digging visibly earns something
-local haulWorth = label(profile, "", UDim2.new(0, 70, 0, 14),
-	UDim2.new(1, -12, 0, 63), ORE, 11, nil, Enum.TextXAlignment.Right)
+local haulWorth = label(profile, "", UDim2.new(0, 72, 0, 14),
+	UDim2.new(1, -ROW.Pad, 0, statY), ORE, 11, nil, Enum.TextXAlignment.Right)
 haulWorth.AnchorPoint = Vector2.new(1, 0)
 
 -- ── Cash ─────────────────────────────────────────────────────────────────────
 
 local cashStrip = Instance.new("Frame")
-cashStrip.Size             = UDim2.new(1, -20, 0, 30)
-cashStrip.Position         = UDim2.new(0, 10, 1, -40)
+cashStrip.Size             = UDim2.new(1, -(PCOL + ROW.Pad), 0, 22)
+cashStrip.Position         = UDim2.new(0, PCOL, 0, ROW.Cash)
 cashStrip.BackgroundColor3 = Color3.fromRGB(56, 42, 18)
 cashStrip.BorderSizePixel  = 0
 cashStrip.Parent           = profile
-Instance.new("UICorner", cashStrip).CornerRadius = UDim.new(0, math.min(8, StrataConfig.UI.Corner))
+Instance.new("UICorner", cashStrip).CornerRadius = UDim.new(0, math.min(7, StrataConfig.UI.Corner))
 
 local stripEdge = Instance.new("UIStroke", cashStrip)
 stripEdge.Color     = GOLD_DEEP
@@ -319,9 +324,9 @@ stripEdge.Thickness = 1.5
 -- A coin drawn from frames: face, rim, inner ring and a glint. Reads on any
 -- background, which the icon asset did not.
 local coin = Instance.new("Frame")
-coin.Size             = UDim2.new(0, 20, 0, 20)
+coin.Size             = UDim2.new(0, 16, 0, 16)
 coin.AnchorPoint      = Vector2.new(0, 0.5)
-coin.Position         = UDim2.new(0, 7, 0.5, 0)
+coin.Position         = UDim2.new(0, 6, 0.5, 0)
 coin.BackgroundColor3 = GOLD
 coin.BorderSizePixel  = 0
 coin.Parent           = cashStrip
@@ -332,7 +337,7 @@ coinRim.Color     = GOLD_DEEP
 coinRim.Thickness = 2
 
 local coinInner = Instance.new("Frame")
-coinInner.Size                   = UDim2.new(0, 11, 0, 11)
+coinInner.Size                   = UDim2.new(0, 9, 0, 9)
 coinInner.AnchorPoint            = Vector2.new(0.5, 0.5)
 coinInner.Position               = UDim2.fromScale(0.5, 0.5)
 coinInner.BackgroundTransparency = 1
@@ -344,7 +349,7 @@ innerRing.Color     = Color3.fromRGB(214, 150, 44)
 innerRing.Thickness = 1.5
 
 local glint = Instance.new("Frame")
-glint.Size                   = UDim2.new(0, 5, 0, 3)
+glint.Size                   = UDim2.new(0, 4, 0, 3)
 glint.Position               = UDim2.new(0, 4, 0, 3)
 glint.BackgroundColor3       = Color3.fromRGB(255, 255, 255)
 glint.BackgroundTransparency = 0.35
@@ -352,8 +357,8 @@ glint.BorderSizePixel        = 0
 glint.Parent                 = coin
 Instance.new("UICorner", glint).CornerRadius = UDim.new(0.5, 0)
 
-local cashValue = label(cashStrip, "0", UDim2.new(1, -42, 1, 0),
-	UDim2.new(0, 34, 0, 0), GOLD, 18, StrataConfig.UI.Head)
+local cashValue = label(cashStrip, "0", UDim2.new(1, -34, 1, 0),
+	UDim2.new(0, 28, 0, 0), GOLD, 15, StrataConfig.UI.Head)
 
 -- Thousands separators: 14,250 rather than 14250
 local function commas(n)
@@ -409,7 +414,7 @@ local SCN = StrataConfig.Hud.Scanner
 local SCAN_W = math.clamp(math.floor(VW * SCN.WidthShare), SCN.WidthMin, SCN.WidthMax)
 
 local scanPanel = panel(UDim2.new(0, SCAN_W, 0, SCN.H),
-	UDim2.new(1, -16, 1, -18), Vector2.new(1, 1))
+	UDim2.new(1, -StrataConfig.Hud.Right, 1, -18), Vector2.new(1, 1))
 scanPanel.BackgroundTransparency = 0.15
 
 -- Header. Three rising bars for a signal mark, then the name.
@@ -1672,7 +1677,7 @@ end
 -- Smaller than it was. The portrait no longer has a whole card to itself —
 -- it shares one with a name, a rank, a health bar, a power reading, a pack
 -- count and a purse, and at 74 it was taking a third of the height.
-local HEX = 58
+local HEX = HUD.CardRow.Hex
 
 local function hexPlate(parent, size, colour, z)
 	local hub = Instance.new("Frame")
@@ -1698,7 +1703,7 @@ end
 
 local hexHolder = Instance.new("Frame")
 hexHolder.Size                   = UDim2.new(0, HEX, 0, HEX)
-hexHolder.Position               = UDim2.new(0, 10, 0, 8)
+hexHolder.Position               = UDim2.new(0, HUD.CardRow.Pad, 0, HUD.CardRow.Pad - 2)
 hexHolder.BackgroundTransparency = 1
 hexHolder.ZIndex                 = 2
 hexHolder.Parent                 = card
@@ -1729,7 +1734,7 @@ end)
 local levelPlate = Instance.new("Frame")
 levelPlate.Size             = UDim2.new(0, 46, 0, 20)
 levelPlate.AnchorPoint      = Vector2.new(0.5, 0)
-levelPlate.Position         = UDim2.new(0, 10 + HEX / 2, 0, 8 + HEX - 11)
+levelPlate.Position         = UDim2.new(0, HUD.CardRow.Pad + HEX / 2, 0, HUD.CardRow.Pad - 2 + HEX - 11)
 levelPlate.BackgroundColor3 = UIP.StoneDark
 levelPlate.BorderSizePixel  = 0
 levelPlate.ZIndex           = 6
@@ -1746,10 +1751,10 @@ levelValue.ZIndex = 7
 
 -- ── Name, stars, bars ────────────────────────────────────────────────────────
 
-local COL = 10 + HEX + 10
+local COL = HUD.CardRow.Pad + HEX + 10
 
 local nameLabel = label(card, player.DisplayName or player.Name,
-	UDim2.new(0, CARD_W - COL - 58, 0, 17), UDim2.new(0, COL, 0, 6),
+	UDim2.new(0, CARD_W - COL - 12, 0, 17), UDim2.new(0, COL, 0, HUD.CardRow.Name),
 	UIP.Ink, 16, StrataConfig.UI.Head)
 nameLabel.ZIndex       = 3
 nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -1761,10 +1766,10 @@ nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
 -- the same thing as the badge on the portrait, twice, in a row eighteen
 -- pixels tall. The reference puts a job title there instead, which is one
 -- line, costs nothing and is at least true.
-local rankLabel = label(card, "Miner",
-	UDim2.new(0, CARD_W - COL - 58, 0, 13), UDim2.new(0, COL, 0, 22),
-	UIP.Dim, 12)
-rankLabel.ZIndex = 3
+-- The job title went with them. It was the reference's answer when the card
+-- held four things; this one holds a name, a level, health, experience, a
+-- purse, power, strength, a pack count and what the pack is worth, and the
+-- line that says you are a Miner is the one of those nobody needs.
 
 local function bar(y, height, trackColour, fillColour)
 	local track = Instance.new("Frame")
@@ -1798,15 +1803,18 @@ local function bar(y, height, trackColour, fillColour)
 	return track, fill
 end
 
-local healthTrack, healthFill = bar(30, 13, UIP.StoneDeep, UIP.Moss)
+local healthTrack, healthFill = bar(HUD.CardRow.Health, 13, UIP.StoneDeep, UIP.Moss)
 local healthText = label(healthTrack, "100 / 100", UDim2.new(1, -8, 1, 0), UDim2.new(0, 4, 0, 0),
 	Color3.fromRGB(22, 30, 22), 11, StrataConfig.UI.Head, Enum.TextXAlignment.Right)
 healthText.ZIndex = 5
 
-local xpTrack, xpFill = bar(46, 9, UIP.StoneDeep, UIP.Ore)
+local xpTrack, xpFill = bar(HUD.CardRow.Xp, 5, UIP.StoneDeep, UIP.Ore)
 local xpText = label(xpTrack, "0 / 120", UDim2.new(1, -8, 1, 0), UDim2.new(0, 4, 0, 0),
 	Color3.fromRGB(34, 26, 12), 10, StrataConfig.UI.Head, Enum.TextXAlignment.Right)
-xpText.ZIndex = 5
+xpText.ZIndex  = 5
+-- The bar is five pixels tall now: a progress line, not a readout. The number
+-- had nowhere to sit and the badge on the portrait already says the level.
+xpText.Visible = false
 
 -- ── Keeping it current ───────────────────────────────────────────────────────
 
@@ -1886,10 +1894,10 @@ local function notice(title, body, iconId)
 	local card = Instance.new("Frame")
 	card.Name             = "Notice"
 	card.AnchorPoint      = Vector2.new(0, 1)
-	card.Position         = UDim2.new(0, -NOTICE.W, 1, -noticeAt)   -- off, then in
+	card.Position         = UDim2.new(0, StrataConfig.Hud.Left, 1, -noticeAt)
 	card.Size             = UDim2.new(0, NOTICE.W, 0, NOTICE.H)
 	card.BackgroundColor3 = UIP.StoneDeep
-	card.BackgroundTransparency = 0.08
+	card.BackgroundTransparency = 1   -- faded up below
 	card.BorderSizePixel  = 0
 	card.Parent           = gui
 	Instance.new("UICorner", card).CornerRadius = UDim.new(0, math.min(10, UIP.Corner))
@@ -1914,16 +1922,31 @@ local function notice(title, body, iconId)
 		DIM, 11)
 	sub.TextTruncate = Enum.TextTruncate.AtEnd
 
-	-- In from the left, wait, out again. The slide is what stops it reading as
-	-- a thing that was always there and you simply had not noticed.
-	card:TweenPosition(UDim2.new(0, StrataConfig.Hud.Left, 1, -noticeAt),
-		Enum.EasingDirection.Out, Enum.EasingStyle.Quint, 0.45, true)
+	-- Fades rather than slides, and sits where it will end up from the first
+	-- frame. The slide came in from off the left edge, which means that for
+	-- half a second the notice is a box hanging off the side of the screen
+	-- with its text cut in half — and that is exactly the half-second a
+	-- screenshot taken on spawn catches. An animation that is wrong while it
+	-- runs is wrong, however briefly.
+	card.Position = UDim2.new(0, StrataConfig.Hud.Left, 1, -noticeAt)
+
+	local fade = Instance.new("CanvasGroup")
+	fade.Size                   = UDim2.fromScale(1, 1)
+	fade.BackgroundTransparency = 1
+	fade.GroupTransparency      = 1
+	fade.Parent                 = card
+	for _, kid in ipairs(card:GetChildren()) do
+		if kid ~= fade and kid:IsA("GuiObject") then kid.Parent = fade end
+	end
+
+	TweenService:Create(fade, TweenInfo.new(0.35), { GroupTransparency = 0 }):Play()
+	TweenService:Create(card, TweenInfo.new(0.35), { BackgroundTransparency = 0.08 }):Play()
 
 	task.delay(NOTICE.Hold, function()
 		if not card.Parent then return end
-		card:TweenPosition(UDim2.new(0, -NOTICE.W, 1, -noticeAt),
-			Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.35, true)
-		task.delay(0.4, function()
+		TweenService:Create(fade, TweenInfo.new(0.4), { GroupTransparency = 1 }):Play()
+		TweenService:Create(card, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play()
+		task.delay(0.5, function()
 			if card.Parent then card:Destroy() end
 		end)
 	end)

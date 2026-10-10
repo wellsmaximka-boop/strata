@@ -65,7 +65,10 @@ local chart = Instance.new("Frame")
 chart.Name                   = "DepthChart"
 chart.Size                   = UDim2.new(0, CHART_W, 0, CHART_H)
 chart.AnchorPoint            = Vector2.new(1, 0.5)
-chart.Position               = UDim2.new(1, -14, 0.5, 20)
+-- Right margin from the shared config, so this and the scanner below it sit
+-- on the same line. It was 14 here and 16 there, which is a two-pixel step
+-- nobody can name but everybody can see.
+chart.Position               = UDim2.new(1, -StrataConfig.Hud.Right, 0.5, 20)
 chart.BackgroundColor3       = Color3.fromRGB(20, 24, 30)
 chart.BorderSizePixel        = 0
 chart.Parent                 = gui

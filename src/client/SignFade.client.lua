@@ -19,7 +19,8 @@ local RunService = game:GetService("RunService")
 -- CanvasGroup — fading twelve descendants individually would cost more than
 -- the signs do.
 
-local NEAR  = 34    -- fully solid inside this
+local AT    = 9     -- close enough that you are there; the label stands down
+local NEAR  = 34    -- fully solid between AT and here
 local FAR   = 150   -- gone by here
 local FLOOR = 0.86  -- how faint a distant sign gets, never quite nothing
 local EVERY = 0.12  -- seconds between passes; they do not move
@@ -80,11 +81,23 @@ RunService.Heartbeat:Connect(function(dt)
 			local at  = gui.Adornee or gui.Parent
 			if at and at:IsA("BasePart") then
 				local d = (at.Position - here).Magnitude
-				local t = math.clamp((d - NEAR) / (FAR - NEAR), 0, 1)
-				-- Squared, so the fade holds on near the sign and falls away
-				-- quickly once you have left it. Linear reads as every sign
-				-- being half there at once, which is the thing being fixed.
-				fade.GroupTransparency = t * t * FLOOR
+
+				if d < AT then
+					-- Standing at it. A BillboardGui is measured in studs, so
+					-- the closer you get the bigger it draws — at arm's
+					-- length PICK WORKS is a banner across the top third of
+					-- the screen, clipped by two edges, telling you the name
+					-- of the thing you are already standing in front of.
+					-- Nothing is lost by standing it down.
+					fade.GroupTransparency = 1 - math.clamp(d / AT, 0, 1)
+				else
+					local t = math.clamp((d - NEAR) / (FAR - NEAR), 0, 1)
+					-- Squared, so the fade holds on near the sign and falls
+					-- away quickly once you have left it. Linear reads as
+					-- every sign being half there at once, which is the thing
+					-- being fixed.
+					fade.GroupTransparency = t * t * FLOOR
+				end
 			end
 		end
 	end

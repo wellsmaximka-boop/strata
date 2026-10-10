@@ -279,9 +279,35 @@ end
 -- panel cannot be added without the ones under it moving, which is how two of
 -- them ended up overlapping the last time this was hand-numbered.
 StrataConfig.Hud = {
-	Left  = 16,
-	Top   = 46,    -- clear of the Roblox topbar
-	Gap   = 10,
+	-- ── Margins ──────────────────────────────────────────────────────────────
+	-- One set of edges for the whole interface. Every panel used to carry its
+	-- own: the column sat 16 from the left, the ladder 14 from the right, the
+	-- scanner 16, the bottom edge 18. Four numbers for one idea, which is
+	-- exactly how two panels down the same side end up not lining up with
+	-- each other and nobody can say why.
+	Left   = 16,
+	Right  = 16,
+	Top    = 46,    -- clear of the Roblox topbar
+	Gap    = 10,
+
+	-- ── Rows inside the profile card ─────────────────────────────────────────
+	-- Written down because they were not. The card's contents were positioned
+	-- by hand against a height that then changed, so the rank ran through the
+	-- health bar, the bar ran through the power reading and the strength line
+	-- ran through the purse. Four overlaps, none of them visible in the code,
+	-- because the numbers that had to agree were forty lines apart.
+	--
+	-- Every Y below is the top of that row. Keep them in order and the card
+	-- cannot overlap itself.
+	CardRow = {
+		Pad    = 10,
+		Hex    = 52,   -- the portrait
+		Name   = 8,
+		Health = 28,   -- 13 tall
+		Xp     = 45,   -- 5 tall, unlabelled; the badge carries the level
+		Cash   = 54,   -- 22 tall
+		Stats  = 82,   -- 16 tall: power, pack, haul
+	},
 
 	-- The column is a share of the window rather than a count of pixels.
 	--
@@ -304,7 +330,7 @@ StrataConfig.Hud = {
 	WidthMin   = 150,
 	WidthMax   = 330,
 
-	Card     = { H = 118 },
+	Card     = { H = 114 },
 
 	-- ── The nav ──────────────────────────────────────────────────────────────
 	-- A list, not a grid. Six rows: an icon in a small plate, the name, and a
@@ -326,21 +352,25 @@ StrataConfig.Hud = {
 	-- you ask for it. So the labels move to a tooltip on hover and the rows
 	-- become tiles — 114 by 174 instead, and the game behind gets the rest.
 	Nav = {
-		Cols = 2,
-		Rows = 3,
+		Cols = 3,
+		Rows = 2,
 		Gap  = 6,
 
-		-- A share of the width, like everything else, measured off the
-		-- reference: its tiles sit at about a sixteenth of the window each.
+		-- Three across and two down, small, icons only.
 		--
-		-- The labels are back. Taking them off was the wrong read of what the
-		-- references were doing — the mobile one has a caption under every
-		-- icon, and it is compact because the tiles are small, not because
-		-- they are anonymous. Six unlabelled squares ask you to remember that
-		-- the triangle is the lift.
-		TileShare = 0.062,
-		TileMin   = 54,
-		TileMax   = 104,
+		-- This has now been both: two big labelled rows, which ate 224 by 300
+		-- of the screen, and six anonymous tiles, which made you hover to
+		-- learn what anything was. The brief and the reference both land on
+		-- the same answer and it is the small one — six icon buttons at about
+		-- a twenty-eighth of the width each, the whole block narrower than
+		-- the card above it.
+		--
+		-- The names come back as a tooltip rather than as nothing. An icon
+		-- you cannot name is a guess, and the cost of keeping the name
+		-- reachable is one plate that only exists while you are pointing.
+		TileShare = 0.036,
+		TileMin   = 40,
+		TileMax   = 66,
 	},
 
 	-- The run manifest inherits the corner the card left, and it suits it

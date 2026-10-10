@@ -254,6 +254,50 @@ bad += botClashes
 -- game is behind it.
 -- Fields the source reads that the config does not have.
 print("")
+
+-- The card's own rows. This is the check that did not exist when the rank ran
+-- through the health bar, the bar ran through the power reading and the
+-- strength line ran through the purse — three overlaps in one 118-pixel box,
+-- none of them visible in the code, because the numbers that had to agree
+-- were forty lines apart in a different file from the height they agreed to.
+print("")
+print("-- rows inside the profile card --")
+local R = H.CardRow
+local cardRows = {
+	{ "Name",    R.Name,   17 },
+	{ "Health",  R.Health, 13 },
+	{ "Xp",      R.Xp,      5 },
+	{ "Cash",    R.Cash,   22 },
+	{ "Stats",   R.Stats,  28 },   -- two lines: power/pack, then strength
+}
+print(("  %-10s %6s %6s %6s"):format("row", "top", "height", "bottom"))
+local cardBad = 0
+for i, row in ipairs(cardRows) do
+	print(("  %-10s %6d %6d %6d"):format(row[1], row[2], row[3], row[2] + row[3]))
+	if i > 1 then
+		local above = cardRows[i - 1]
+		if row[2] < above[2] + above[3] then
+			print(("    %s starts %d inside %s")
+				:format(row[1], above[2] + above[3] - row[2], above[1]))
+			cardBad += 1
+		end
+	end
+end
+
+local portraitEnd = R.Pad - 2 + R.Hex
+local last = cardRows[#cardRows]
+print(("  %-10s %6d %6d %6d"):format("portrait", R.Pad - 2, R.Hex, portraitEnd))
+if last[2] + last[3] > H.Card.H then
+	print(("    the rows run %d past the card's %d")
+		:format(last[2] + last[3] - H.Card.H, H.Card.H))
+	cardBad += 1
+end
+if portraitEnd > H.Card.H then
+	print("    the portrait runs past the bottom of the card")
+	cardBad += 1
+end
+print(("  %d overlaps, card is %d tall"):format(cardBad, H.Card.H))
+bad += cardBad
 print("-- fields the game reads --")
 
 -- Known-good names that are not fields of the thing they look like they are
