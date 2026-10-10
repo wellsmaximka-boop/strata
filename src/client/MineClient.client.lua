@@ -1799,11 +1799,6 @@ xpText.ZIndex = 5
 
 local shownLevel = 1
 
-local function setStars(n)
-	for i, s in ipairs(stars) do
-		s.TextColor3 = i <= n and UIP.Ore or UIP.StoneLit
-	end
-end
 
 stateChanged.OnClientEvent:Connect(function(s)
 	local level  = s.level or 1
@@ -1815,9 +1810,6 @@ stateChanged.OnClientEvent:Connect(function(s)
 
 	TweenService:Create(xpFill, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 		{ Size = UDim2.new(math.clamp(xp / needed, 0, 1), 0, 1, 0) }):Play()
-
-	-- Placeholder until the star system exists: one star per twelve levels
-	setStars(s.stars or math.min(math.floor(level / 12), 5))
 
 	if level > shownLevel then
 		shownLevel = level
@@ -1859,6 +1851,71 @@ player.CharacterAdded:Connect(watchHealth)
 end)()   -- player card
 
 -- Wrapped for the same reason as the card above: its locals stay its own.
+-- Out here rather than inside the hotbar's wrapper below.
+--
+-- It was declared inside that IIFE and called from the bottom of the file, so
+-- the call saw a nil and threw — the fourth outage in two days from a name
+-- that does not resolve where it is read, and the second from scope rather
+-- than from spelling. Nothing in here belongs to the hotbar; it only happened
+-- to be typed next to it.
+-- ── Notices ──────────────────────────────────────────────────────────────────
+-- The quiet channel. floatingWarning already owns the middle of the screen for
+-- things you have to act on — a full pack, rock you cannot break — and it is
+-- loud on purpose. Putting "welcome to the mine" through that same channel is
+-- how a channel stops meaning anything, so this is the other one: bottom left,
+-- above the run manifest, gone on its own.
+
+local NOTICE = StrataConfig.Hud.Notice
+local noticeAt = StrataConfig.Hud.Manifest.Bottom + StrataConfig.Hud.Manifest.H
+	+ StrataConfig.Hud.Gap
+
+local function notice(title, body, iconId)
+	local card = Instance.new("Frame")
+	card.Name             = "Notice"
+	card.AnchorPoint      = Vector2.new(0, 1)
+	card.Position         = UDim2.new(0, -NOTICE.W, 1, -noticeAt)   -- off, then in
+	card.Size             = UDim2.new(0, NOTICE.W, 0, NOTICE.H)
+	card.BackgroundColor3 = UIP.StoneDeep
+	card.BackgroundTransparency = 0.08
+	card.BorderSizePixel  = 0
+	card.Parent           = gui
+	Instance.new("UICorner", card).CornerRadius = UDim.new(0, math.min(10, UIP.Corner))
+
+	local edge = Instance.new("UIStroke", card)
+	edge.Color        = UIP.Brass
+	edge.Thickness    = 1.5
+	edge.Transparency = 0.45
+
+	local art = Instance.new("Frame")
+	art.AnchorPoint            = Vector2.new(0, 0.5)
+	art.Position               = UDim2.new(0, 10, 0.5, 0)
+	art.Size                   = UDim2.new(0, 30, 0, 30)
+	art.BackgroundTransparency = 1
+	art.Parent                 = card
+
+	if iconId then ItemModels.Icon(iconId, art, 30, UDim2.new()) end
+
+	label(card, title, UDim2.new(1, -58, 0, 15), UDim2.new(0, 48, 0, 10),
+		UIP.Ink, 13, StrataConfig.UI.Head)
+	local sub = label(card, body, UDim2.new(1, -58, 0, 14), UDim2.new(0, 48, 0, 27),
+		DIM, 11)
+	sub.TextTruncate = Enum.TextTruncate.AtEnd
+
+	-- In from the left, wait, out again. The slide is what stops it reading as
+	-- a thing that was always there and you simply had not noticed.
+	card:TweenPosition(UDim2.new(0, StrataConfig.Hud.Left, 1, -noticeAt),
+		Enum.EasingDirection.Out, Enum.EasingStyle.Quint, 0.45, true)
+
+	task.delay(NOTICE.Hold, function()
+		if not card.Parent then return end
+		card:TweenPosition(UDim2.new(0, -NOTICE.W, 1, -noticeAt),
+			Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.35, true)
+		task.delay(0.4, function()
+			if card.Parent then card:Destroy() end
+		end)
+	end)
+end
+
 ;(function()
 -- ── Hotbar ───────────────────────────────────────────────────────────────────
 -- Only what you actually carry. One slot for the pick in your hand — the best
@@ -1965,63 +2022,6 @@ local function slotFor(order, spec)
 	end
 end
 
--- ── Notices ──────────────────────────────────────────────────────────────────
--- The quiet channel. floatingWarning already owns the middle of the screen for
--- things you have to act on — a full pack, rock you cannot break — and it is
--- loud on purpose. Putting "welcome to the mine" through that same channel is
--- how a channel stops meaning anything, so this is the other one: bottom left,
--- above the run manifest, gone on its own.
-
-local NOTICE = StrataConfig.Hud.Notice
-local noticeAt = StrataConfig.Hud.Manifest.Bottom + StrataConfig.Hud.Manifest.H
-	+ StrataConfig.Hud.Gap
-
-local function notice(title, body, iconId)
-	local card = Instance.new("Frame")
-	card.Name             = "Notice"
-	card.AnchorPoint      = Vector2.new(0, 1)
-	card.Position         = UDim2.new(0, -NOTICE.W, 1, -noticeAt)   -- off, then in
-	card.Size             = UDim2.new(0, NOTICE.W, 0, NOTICE.H)
-	card.BackgroundColor3 = UIP.StoneDeep
-	card.BackgroundTransparency = 0.08
-	card.BorderSizePixel  = 0
-	card.Parent           = gui
-	Instance.new("UICorner", card).CornerRadius = UDim.new(0, math.min(10, UIP.Corner))
-
-	local edge = Instance.new("UIStroke", card)
-	edge.Color        = UIP.Brass
-	edge.Thickness    = 1.5
-	edge.Transparency = 0.45
-
-	local art = Instance.new("Frame")
-	art.AnchorPoint            = Vector2.new(0, 0.5)
-	art.Position               = UDim2.new(0, 10, 0.5, 0)
-	art.Size                   = UDim2.new(0, 30, 0, 30)
-	art.BackgroundTransparency = 1
-	art.Parent                 = card
-
-	if iconId then ItemModels.Icon(iconId, art, 30, UDim2.new()) end
-
-	label(card, title, UDim2.new(1, -58, 0, 15), UDim2.new(0, 48, 0, 10),
-		UIP.Ink, 13, StrataConfig.UI.Head)
-	local sub = label(card, body, UDim2.new(1, -58, 0, 14), UDim2.new(0, 48, 0, 27),
-		DIM, 11)
-	sub.TextTruncate = Enum.TextTruncate.AtEnd
-
-	-- In from the left, wait, out again. The slide is what stops it reading as
-	-- a thing that was always there and you simply had not noticed.
-	card:TweenPosition(UDim2.new(0, StrataConfig.Hud.Left, 1, -noticeAt),
-		Enum.EasingDirection.Out, Enum.EasingStyle.Quint, 0.45, true)
-
-	task.delay(NOTICE.Hold, function()
-		if not card.Parent then return end
-		card:TweenPosition(UDim2.new(0, -NOTICE.W, 1, -noticeAt),
-			Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.35, true)
-		task.delay(0.4, function()
-			if card.Parent then card:Destroy() end
-		end)
-	end)
-end
 
 local function refreshHotbar(state)
 	local owned = state.owned or {}

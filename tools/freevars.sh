@@ -27,7 +27,10 @@ status=0
 
 TARGETS=("$@")
 if [ ${#TARGETS[@]} -eq 0 ]; then
-	TARGETS=(src/client/ui/*.lua src/client/movement/*.lua)
+	# Everything. The default used to be the two module folders, which is how
+	# two shared modules spent weeks reporting their own parameters as
+	# undefined with nobody running the check that would have said so.
+	TARGETS=($(find src -name "*.lua"))
 fi
 
 for module in "${TARGETS[@]}"; do
@@ -44,7 +47,18 @@ for module in "${TARGETS[@]}"; do
 		s/[0-9]+[eE][+-]?[0-9]+/0/g
 	' "$module")
 
-	used=$(printf '%s\n' "$code" | grep -oE '[A-Za-z_][A-Za-z0-9_]*' | sort -u)
+	# Fields and methods come out before anything is counted as used, rather
+	# than being added to the bound list afterwards to cancel out.
+	#
+	# Those are not the same thing, and the difference hid a real one: adding
+	# every field name to `bound` means any local that happens to share a name
+	# with a field somewhere in the file can be deleted and never reported.
+	# `stars` went that way — the table was removed, a loop over it was left
+	# behind, and `s.stars` four lines further on was enough to call the file
+	# clean.
+	used=$(printf '%s\n' "$code" \
+		| sed -E 's/[.:][A-Za-z_][A-Za-z0-9_]*/ /g' \
+		| grep -oE '[A-Za-z_][A-Za-z0-9_]*' | sort -u)
 
 	bound=$(
 		# A grep that matches nothing exits 1, and this file is nothing but
@@ -73,12 +87,17 @@ for module in "${TARGETS[@]}"; do
 			# function name(...)
 			printf '%s\n' "$code" | grep -oE 'function +[A-Za-z_][A-Za-z0-9_]*' \
 				| sed -E 's/function +//'
+			# The character class carries digits. Without them this pattern
+			# missed every function whose name has a number in it — hash01
+			# and friends — so none of their parameters counted as declared,
+			# and two shared modules have been quietly reporting their own
+			# arguments as undefined.
 			# parameters of any function, including anonymous ones
-			printf '%s\n' "$code" | grep -oE 'function *[A-Za-z_.:]*\([^)]*\)' \
+			printf '%s\n' "$code" | grep -oE 'function *[A-Za-z_.:0-9]*\([^)]*\)' \
 				| sed -E 's/.*\(//; s/\)//' | tr ',' '\n'
-			# anything used as a field, method or assignment target
-			printf '%s\n' "$code" | grep -oE '\.[A-Za-z_][A-Za-z0-9_]*' | sed 's/^\.//'
-			printf '%s\n' "$code" | grep -oE ':[A-Za-z_][A-Za-z0-9_]*' | sed 's/^://'
+			# anything used as an assignment target or a table key. Fields
+			# and methods are no longer collected here; they are stripped out
+			# of `used` instead, which is where they actually belong.
 			printf '%s\n' "$code" | grep -oE '[A-Za-z_][A-Za-z0-9_]* *=' | sed -E 's/ *=//'
 			# loop variables
 			printf '%s\n' "$code" | grep -oE 'for +[A-Za-z_][A-Za-z0-9_, ]* +in' \
@@ -112,12 +131,26 @@ for module in "${TARGETS[@]}"; do
 	# global of the same name.
 	early=$(printf '%s\n' "$code" | awk '
 		function note(name, ln) {
-			if (name != "" && !(name in firstLocal)) { firstLocal[name] = ln }
+			if (name == "") { return }
+			if (!(name in firstLocal)) { firstLocal[name] = ln }
+			# Which wrapper, if any, the declaration sits in. A name declared
+			# anywhere at the top level is reachable from anywhere, so one
+			# such declaration clears it for good.
+			if (!(name in declWrap)) { declWrap[name] = curWrap }
+			else if (curWrap == 0)   { declWrap[name] = 0 }
 		}
 		function noteList(s, ln,   n, parts, i) {
 			n = split(s, parts, /[, \t]+/)
 			for (i = 1; i <= n; i++) { note(parts[i], ln) }
 		}
+
+		# Top-level wrappers: `;(function()` at column zero, closed by
+		# `end)()` at column zero. The file uses them to keep a section s
+		# locals out of the chunk s 200-name budget, which also keeps them
+		# out of sight of everything else.
+		/^;\(function\(\)/ { wrapId++; curWrap = wrapId; next }
+		/^end\)\(\)/       { curWrap = 0; next }
+
 		{
 			line = $0
 
@@ -131,11 +164,11 @@ for module in "${TARGETS[@]}"; do
 				noteList(s, NR)
 			}
 
-			# Parameters and loop variables are declarations too, and the first
-			# cut of this check did not know that — so it reported every
-			# parameter that shared a name with a local somewhere further down
-			# the file, which in a file this size is most of them.
-			if (match(line, /function[ \t]*[A-Za-z_.:]*\([^)]*\)/)) {
+			# Parameters and loop variables are declarations too, and the
+			# first cut of this check did not know that — so it reported every
+			# parameter that shared a name with a local further down the file,
+			# which in a file this size is most of them.
+			if (match(line, /function[ \t]*[A-Za-z_.:0-9]*\([^)]*\)/)) {
 				s = substr(line, RSTART, RLENGTH)
 				sub(/.*\(/, "", s)
 				sub(/\).*/, "", s)
@@ -169,14 +202,30 @@ for module in "${TARGETS[@]}"; do
 			while (match(rest, /[A-Za-z_][A-Za-z0-9_]*/)) {
 				id = substr(rest, RSTART, RLENGTH)
 				if (!(id in firstUse)) { firstUse[id] = NR }
+				# Remember one read from outside every wrapper, for the scope
+				# check below.
+				if (curWrap == 0 && !(id in useTop)) { useTop[id] = NR }
 				rest = substr(rest, RSTART + RLENGTH)
 			}
 		}
+
 		END {
 			for (name in firstLocal) {
 				if ((name in firstUse) && firstUse[name] < firstLocal[name]) {
-					printf "%s (read at line %d, declared at %d)\n",
+					printf "TOO EARLY: %s (read at line %d, declared at %d)\n",
 						name, firstUse[name], firstLocal[name]
+				}
+			}
+
+			# Declared only inside a wrapper, read outside every wrapper.
+			# `notice` went exactly this way: defined inside the hotbar s
+			# wrapper and called from the bottom of the file. Both checks
+			# above said clean, because it is certainly declared and
+			# certainly before the call — just not anywhere the call sees.
+			for (name in declWrap) {
+				if (declWrap[name] > 0 && (name in useTop)) {
+					printf "OUT OF SCOPE: %s (declared inside a wrapper, read at line %d from outside it)\n",
+						name, useTop[name]
 				}
 			}
 		}
@@ -185,7 +234,7 @@ for module in "${TARGETS[@]}"; do
 	if [ -n "$free" ] || [ -n "$early" ]; then
 		echo "$module"
 		[ -n "$free" ]  && printf '%s\n' "$free"  | sed 's/^/    UNBOUND: /'
-		[ -n "$early" ] && printf '%s\n' "$early" | sed 's/^/    TOO EARLY: /'
+		[ -n "$early" ] && printf '%s\n' "$early" | sed "s/^/    /"
 		status=1
 	else
 		echo "$module: clean"

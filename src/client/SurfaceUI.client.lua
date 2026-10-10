@@ -2190,8 +2190,14 @@ end)
 -- six names.
 local Kit = require(
 	script.Parent:WaitForChild("ui"):WaitForChild("KitScreen"))({
+	-- No UIKit here. There are three `local UIKit` in this file and every one
+	-- of them is inside a wrapper, so out at this line the name is a nil
+	-- global and always has been — ctx.UIKit has been nil since the kit was
+	-- split out. Harmless only because KitScreen requires UIKit itself and
+	-- says so in a comment; the nil was a trap set for whoever read ctx.UIKit
+	-- next and believed it.
 	gui = gui, state = S, player = player,
-	UIKit = UIKit, StrataConfig = StrataConfig,
+	StrataConfig = StrataConfig,
 	text = text, corner = corner, stroked = stroked,
 	pressable = pressable, popIn = popIn, popOut = popOut, scaler = scaler,
 	panel = panel, closePanel = closePanel, equipRequest = equipRequest,
