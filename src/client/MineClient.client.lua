@@ -30,6 +30,7 @@ local DIM    = StrataConfig.UI.Dim
 local ORE    = StrataConfig.UI.Ore
 local SIGNAL = StrataConfig.UI.Crystal
 local CRIT   = StrataConfig.UI.Warning
+local UIP    = StrataConfig.UI
 local PANEL  = StrataConfig.UI.StoneDeep
 
 -- ── Mirrored server values ───────────────────────────────────────────────────
@@ -1565,7 +1566,6 @@ end)
 -- degrees apart. That gives a real six-sided silhouette; the portrait itself is
 -- the round headshot Roblox serves, sitting inside it.
 
-local UIP = StrataConfig.UI
 local CARD = HUD.Card
 local CARD_W = STACK.Width   -- the column width; the card has none of its own
 
@@ -1841,7 +1841,6 @@ end)()   -- player card
 -- empty slot shows nothing, because an empty slot is a promise the UI has no
 -- business making.
 
-local UIP = StrataConfig.UI
 
 local hotbar = Instance.new("Frame")
 hotbar.Name                   = "Hotbar"
@@ -2047,7 +2046,6 @@ stateChanged.OnClientEvent:Connect(refreshHotbar)
 -- you start spending stamina and fades out again once it is full, so it is not
 -- one more thing sitting on screen while you mine.
 
-local UIP = StrataConfig.UI
 local SP  = StrataConfig.Sprint
 
 local stamina   = SP.Max

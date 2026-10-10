@@ -99,9 +99,93 @@ for module in "${TARGETS[@]}"; do
 			$0 != "" && !($0 in seen) { print }
 		' | grep -vE "$KEYWORDS" | grep -vE "$GLOBALS" || true)
 
-	if [ -n "$free" ]; then
+	# ── Used before it exists ────────────────────────────────────────────────
+	# The check above asks whether a name is bound anywhere in the file. That
+	# is not the same question as whether it is bound *yet*, and the gap
+	# between the two shipped a blank player card: UIP was declared a thousand
+	# lines below the first line that read it, so up there it was a nil global
+	# and the first index of it took out everything after it in the file. The
+	# check said clean, because UIP is certainly a local — later.
+	#
+	# In Lua this is always a bug and never a style, which is what makes it
+	# checkable: a reference above the `local` does not see it, it sees a
+	# global of the same name.
+	early=$(printf '%s\n' "$code" | awk '
+		function note(name, ln) {
+			if (name != "" && !(name in firstLocal)) { firstLocal[name] = ln }
+		}
+		function noteList(s, ln,   n, parts, i) {
+			n = split(s, parts, /[, \t]+/)
+			for (i = 1; i <= n; i++) { note(parts[i], ln) }
+		}
+		{
+			line = $0
+
+			if (match(line, /local[ \t]+function[ \t]+[A-Za-z_][A-Za-z0-9_]*/)) {
+				s = substr(line, RSTART, RLENGTH)
+				sub(/local[ \t]+function[ \t]+/, "", s)
+				note(s, NR)
+			} else if (match(line, /local[ \t]+[A-Za-z_][A-Za-z0-9_, \t]*/)) {
+				s = substr(line, RSTART, RLENGTH)
+				sub(/local[ \t]+/, "", s)
+				noteList(s, NR)
+			}
+
+			# Parameters and loop variables are declarations too, and the first
+			# cut of this check did not know that — so it reported every
+			# parameter that shared a name with a local somewhere further down
+			# the file, which in a file this size is most of them.
+			if (match(line, /function[ \t]*[A-Za-z_.:]*\([^)]*\)/)) {
+				s = substr(line, RSTART, RLENGTH)
+				sub(/.*\(/, "", s)
+				sub(/\).*/, "", s)
+				noteList(s, NR)
+			}
+			if (match(line, /for[ \t]+[A-Za-z_][A-Za-z0-9_, \t]*[ \t]+in[ \t]/)) {
+				s = substr(line, RSTART, RLENGTH)
+				sub(/for[ \t]+/, "", s)
+				sub(/[ \t]+in[ \t]*$/, "", s)
+				noteList(s, NR)
+			}
+			if (match(line, /for[ \t]+[A-Za-z_][A-Za-z0-9_]*[ \t]*=/)) {
+				s = substr(line, RSTART, RLENGTH)
+				sub(/for[ \t]+/, "", s)
+				sub(/[ \t]*=.*/, "", s)
+				note(s, NR)
+			}
+
+			# What counts as reading a name, and what does not.
+			#
+			# Fields and methods are not references to a local of that name.
+			# Neither is the left side of an assignment, which matters more
+			# than it sounds: a table constructor is a page of `id = ...`,
+			# `name = ...`, `colour = ...`, and counting those as reads made
+			# this check accuse every key of being a local used too early.
+			# Equality is protected first, or `x == y` loses its x.
+			rest = line
+			gsub(/==/, " @@ ", rest)
+			gsub(/[.:][A-Za-z_][A-Za-z0-9_]*/, " ", rest)
+			gsub(/[A-Za-z_][A-Za-z0-9_]*[ \t]*=/, " ", rest)
+			while (match(rest, /[A-Za-z_][A-Za-z0-9_]*/)) {
+				id = substr(rest, RSTART, RLENGTH)
+				if (!(id in firstUse)) { firstUse[id] = NR }
+				rest = substr(rest, RSTART + RLENGTH)
+			}
+		}
+		END {
+			for (name in firstLocal) {
+				if ((name in firstUse) && firstUse[name] < firstLocal[name]) {
+					printf "%s (read at line %d, declared at %d)\n",
+						name, firstUse[name], firstLocal[name]
+				}
+			}
+		}
+	' | grep -vE "$KEYWORDS" | sort || true)
+
+	if [ -n "$free" ] || [ -n "$early" ]; then
 		echo "$module"
-		printf '%s\n' "$free" | sed 's/^/    UNBOUND: /'
+		[ -n "$free" ]  && printf '%s\n' "$free"  | sed 's/^/    UNBOUND: /'
+		[ -n "$early" ] && printf '%s\n' "$early" | sed 's/^/    TOO EARLY: /'
 		status=1
 	else
 		echo "$module: clean"
