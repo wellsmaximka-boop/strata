@@ -46,6 +46,29 @@ local Y = S.PlatformY
 
 -- ── Primitives ───────────────────────────────────────────────────────────────
 
+-- How much of the room each material gives back.
+--
+-- This is the part of the reference that is not lighting and not modelling:
+-- its lamps are not brighter than ours, they are landing on surfaces that
+-- return something. Stone and metal catch a highlight and throw a streak
+-- along the floor; raw timber does not, which is why the timber is left at
+-- zero. Small numbers on purpose. Reflectance is a mirror, not a varnish, and
+-- past about a tenth a part stops being made of anything and starts being
+-- made of the skybox.
+-- Kept low for a second reason as well: Roblox reflectance samples the sky
+-- whether or not there is a roof in the way, so a shiny part indoors is lit
+-- by a sky it cannot see. At these values that reads as a sheen. Doubled, it
+-- would read as a hole in the ceiling. Set the table to zero to switch the
+-- whole idea off.
+local SHEEN = {
+	[Enum.Material.Metal]        = 0.08,
+	[Enum.Material.DiamondPlate] = 0.08,
+	[Enum.Material.Slate]        = 0.05,
+	[Enum.Material.Marble]       = 0.06,
+	[Enum.Material.Concrete]     = 0.035,
+	[Enum.Material.Rock]         = 0.025,
+}
+
 local function part(name, size, cf, colour, material, parent)
 	local p = Instance.new("Part")
 	p.Name          = name
@@ -53,6 +76,7 @@ local function part(name, size, cf, colour, material, parent)
 	p.CFrame        = cf
 	p.Color         = colour
 	p.Material      = material or Enum.Material.WoodPlanks
+	p.Reflectance   = SHEEN[p.Material] or 0
 	p.Anchored      = true
 	p.CanCollide    = true
 	p.TopSurface    = Enum.SurfaceType.Smooth
@@ -122,7 +146,12 @@ local function billboard(adornee, title, blurb, accent, height, width)
 	gui.Name           = "Sign"
 	gui.Size           = UDim2.new(width, 0, width * 0.28, 0)
 	gui.StudsOffset    = Vector3.new(0, height or 6, 0)
-	gui.MaxDistance    = 150
+	gui.MaxDistance    = 95   -- see the note below
+	-- Station signs used to carry 150 studs, which is most of the camp: you
+	-- could stand at the depot and read the forge, the pick works and the lift
+	-- all at once, so the deck was permanently papered with labels for places
+	-- you were not at. Ninety-five is about the distance at which you have
+	-- decided to walk somewhere.
 	gui.LightInfluence = 0
 	gui.Adornee        = adornee
 	gui.Parent         = adornee

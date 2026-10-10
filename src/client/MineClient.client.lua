@@ -173,9 +173,28 @@ local depthName = label(depthBanner, "SURFACE", UDim2.new(1, -36, 0, 18),
 	UDim2.new(0, 26, 0, 38), DIM, 14)
 depthName.ZIndex = 2
 
--- Right-hand hint: what is below, and whether it will hurt
-local depthAhead = label(depthBanner, "", UDim2.new(0, 132, 0, 36),
-	UDim2.new(1, -14, 0, 13), DIM, 11, StrataConfig.UI.Number, Enum.TextXAlignment.Right)
+-- ── What is below ────────────────────────────────────────────────────────────
+-- Two readings, so they get two halves and a rule between them. It was one
+-- banner with a big number at one end and a two-line string at the other,
+-- which reads as one fact that ran out of room rather than as two.
+
+local depthSplit = Instance.new("Frame")
+depthSplit.AnchorPoint            = Vector2.new(0, 0.5)
+depthSplit.Position               = UDim2.new(0, 158, 0.5, 0)
+depthSplit.Size                   = UDim2.new(0, 1, 0, 30)
+depthSplit.BackgroundColor3       = StrataConfig.UI.Brass
+depthSplit.BackgroundTransparency = 0.6
+depthSplit.BorderSizePixel        = 0
+depthSplit.ZIndex                 = 2
+depthSplit.Parent                 = depthBanner
+
+local aheadTag = label(depthBanner, "NEXT LAYER", UDim2.new(0, 120, 0, 13),
+	UDim2.new(1, -14, 0, 13), DIM, 10, StrataConfig.UI.Head, Enum.TextXAlignment.Right)
+aheadTag.AnchorPoint = Vector2.new(1, 0)
+aheadTag.ZIndex      = 2
+
+local depthAhead = label(depthBanner, "", UDim2.new(0, 132, 0, 20),
+	UDim2.new(1, -14, 0, 28), DIM, 12, StrataConfig.UI.Number, Enum.TextXAlignment.Right)
 depthAhead.AnchorPoint = Vector2.new(1, 0)
 depthAhead.ZIndex      = 2
 
@@ -648,11 +667,15 @@ RunService.RenderStepped:Connect(function()
 
 	local ahead = nextStratum(y)
 	if not ahead then
-		depthAhead.Text = ""
+		depthAhead.Text  = ""
+		aheadTag.Visible = false
 	else
 		local metres  = math.floor(y - ahead.top)
 		local canMine = miningPower >= (ahead.hardness or 1)
-		depthAhead.Text = string.format("%s\n%dm below", string.upper(ahead.name), metres)
+		aheadTag.Visible = true
+		-- One line. The name sat above "13m below" on its own row, which left
+		-- the banner reading as four stacked things rather than two.
+		depthAhead.Text = string.format("%s · %dm", string.upper(ahead.name), metres)
 		depthAhead.TextColor3 = canMine and DIM or Color3.fromRGB(214, 158, 60)
 	end
 end)
