@@ -749,47 +749,9 @@ barLayout.CellPadding           = UDim2.new(0, NAV.Gap, 0, NAV.Gap)
 barLayout.FillDirectionMaxCells = NAV.Cols
 barLayout.SortOrder             = Enum.SortOrder.LayoutOrder
 
--- ── The name, on request ─────────────────────────────────────────────────────
--- One plate, moved to whichever tile the mouse is over, rather than six labels
--- permanently taking up the width of the word CAMP. This is the whole reason
--- the nav could shrink: the names were never needed at rest, only findable.
-local tip = Instance.new("Frame")
-tip.Name                   = "NavTip"
-tip.AnchorPoint            = Vector2.new(0, 0.5)
-tip.Size                   = UDim2.new(0, 0, 0, 26)
-tip.AutomaticSize          = Enum.AutomaticSize.X
-tip.BackgroundColor3       = UIP.StoneDeep
-tip.BackgroundTransparency = 0.08
-tip.BorderSizePixel        = 0
-tip.Visible                = false
-tip.ZIndex                 = 20
-tip.Parent                 = gui
-corner(tip, 6)
-
-local tipEdge = stroked(tip, UIP.Brass, 1, 0.45)
-
-local tipPad = Instance.new("UIPadding", tip)
-tipPad.PaddingLeft  = UDim.new(0, 10)
-tipPad.PaddingRight = UDim.new(0, 10)
-
-local tipText = text(tip, "", UDim2.new(0, 0, 1, 0), UIP.Ink, 13,
-	StrataConfig.UI.Head)
-tipText.AutomaticSize = Enum.AutomaticSize.X
-tipText.ZIndex        = 21
-
-local function showTip(tile, label, accent)
-	tipText.Text      = label
-	tipText.TextColor3 = accent
-	tipEdge.Color     = accent
-	tip.Visible       = true
-	tip.Position      = UDim2.new(
-		0, tile.AbsolutePosition.X + tile.AbsoluteSize.X + 10,
-		0, tile.AbsolutePosition.Y + tile.AbsoluteSize.Y / 2)
-end
-
-local function hideTip()
-	tip.Visible = false
-end
+-- The hover tooltip that stood in for the labels is gone with them. A name
+-- you have to go looking for is not the same as a name, and the tiles have
+-- room for one at this size.
 
 -- Paste Creator Store icon asset ids here and they replace the emoji glyphs
 -- automatically — nothing else has to change. Free UI packs work fine; the ids
@@ -966,18 +928,18 @@ local function barButton(order, icon, label, accent, onClick)
 		NumberSequenceKeypoint.new(1, 1),
 	})
 
-	-- The icon is the whole tile now. A plate behind it stops six icons at six
-	-- different weights from reading as six different sizes.
+	-- Icon above, name under it. The plate behind the icon stops six icons at
+	-- six different weights from reading as six different sizes.
 	local plate = Instance.new("Frame")
-	plate.AnchorPoint            = Vector2.new(0.5, 0.5)
-	plate.Position               = UDim2.new(0.5, 0, 0.5, 0)
-	plate.Size                   = UDim2.new(0, ICON + 8, 0, ICON + 8)
+	plate.AnchorPoint            = Vector2.new(0.5, 0)
+	plate.Position               = UDim2.new(0.5, 0, 0, math.floor(TILE * 0.16))
+	plate.Size                   = UDim2.new(0, ICON + 6, 0, ICON + 6)
 	plate.BackgroundColor3       = UIP.StoneDark
 	plate.BackgroundTransparency = 0.4
 	plate.BorderSizePixel        = 0
 	plate.ZIndex                 = 3
 	plate.Parent                 = b
-	corner(plate, 8)
+	corner(plate, 7)
 
 	local iconId = ICONS[label]
 	local art
@@ -999,6 +961,11 @@ local function barButton(order, icon, label, accent, onClick)
 		art.ZIndex = 4
 	end
 
+	local name = text(b, label, UDim2.new(1, -6, 0, NAV.Label + 4),
+		INK, NAV.Label, StrataConfig.UI.Head, Enum.TextXAlignment.Center)
+	name.Position = UDim2.new(0, 3, 1, -(NAV.Label + 10))
+	name.ZIndex   = 4
+
 
 	local QUICK = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
@@ -1014,6 +981,7 @@ local function barButton(order, icon, label, accent, onClick)
 		if active then
 			setFill(accent:Lerp(WHITE, 0.2), accent)
 			plate.BackgroundTransparency = 0.7
+			name.TextColor3 = UIP.StoneDeep
 			TweenService:Create(rim, QUICK, { Transparency = 0, Thickness = 2.5 }):Play()
 			return
 		end
@@ -1021,6 +989,7 @@ local function barButton(order, icon, label, accent, onClick)
 		local lift = hovered and 0.18 or 0
 		setFill(FILL_TOP:Lerp(WHITE, lift), FILL_BOTTOM:Lerp(WHITE, lift))
 		plate.BackgroundTransparency = hovered and 0.25 or 0.4
+		name.TextColor3 = hovered and accent or INK
 		TweenService:Create(rim, QUICK, {
 			Transparency = hovered and 0 or 0.45,
 			Thickness    = hovered and 2.5 or 1.5,
@@ -1035,14 +1004,8 @@ local function barButton(order, icon, label, accent, onClick)
 		paint(false)
 	end
 
-	b.MouseEnter:Connect(function()
-		paint(true)
-		showTip(holder, label, accent)
-	end)
-	b.MouseLeave:Connect(function()
-		paint(false)
-		hideTip()
-	end)
+	b.MouseEnter:Connect(function() paint(true) end)
+	b.MouseLeave:Connect(function() paint(false) end)
 
 	-- Press: sink into the shadow, then spring back
 	b.MouseButton1Down:Connect(function()

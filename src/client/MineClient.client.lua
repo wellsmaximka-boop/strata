@@ -1736,21 +1736,22 @@ levelValue.ZIndex = 7
 local COL = 10 + HEX + 12
 
 local nameLabel = label(card, player.DisplayName or player.Name,
-	UDim2.new(0, CARD_W - COL - 12, 0, 18), UDim2.new(0, COL, 0, 9),
+	UDim2.new(0, CARD_W - COL - 12, 0, 18), UDim2.new(0, COL, 0, 7),
 	UIP.Ink, 16, StrataConfig.UI.Head)
 nameLabel.ZIndex       = 3
 nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
 
--- Rank stars. Driven off level for now; when the star system proper arrives it
--- reads S.stars instead and nothing else here changes.
-local stars = {}
-for i = 1, 5 do
-	local s = label(card, "*", UDim2.new(0, 13, 0, 16),
-		UDim2.new(0, COL + (i - 1) * 14, 0, 28), UIP.StoneLit, 20,
-		StrataConfig.UI.Head, Enum.TextXAlignment.Center)
-	s.ZIndex = 3
-	stars[i] = s
-end
+-- A rank, where five asterisks used to sit.
+--
+-- They were a placeholder for a star system that does not exist, drawn off
+-- the level because there was nothing else to draw them off — so they said
+-- the same thing as the badge on the portrait, twice, in a row eighteen
+-- pixels tall. The reference puts a job title there instead, which is one
+-- line, costs nothing and is at least true.
+local rankLabel = label(card, "Miner",
+	UDim2.new(0, CARD_W - COL - 12, 0, 14), UDim2.new(0, COL, 0, 25),
+	UIP.Dim, 12)
+rankLabel.ZIndex = 3
 
 local function bar(y, height, trackColour, fillColour)
 	local track = Instance.new("Frame")
@@ -1784,12 +1785,12 @@ local function bar(y, height, trackColour, fillColour)
 	return track, fill
 end
 
-local healthTrack, healthFill = bar(50, 15, UIP.StoneDeep, UIP.Moss)
-local healthText = label(healthTrack, "100", UDim2.new(1, -8, 1, 0), UDim2.new(0, 4, 0, 0),
+local healthTrack, healthFill = bar(44, 14, UIP.StoneDeep, UIP.Moss)
+local healthText = label(healthTrack, "100 / 100", UDim2.new(1, -8, 1, 0), UDim2.new(0, 4, 0, 0),
 	Color3.fromRGB(22, 30, 22), 11, StrataConfig.UI.Head, Enum.TextXAlignment.Right)
 healthText.ZIndex = 5
 
-local xpTrack, xpFill = bar(72, 12, UIP.StoneDeep, UIP.Ore)
+local xpTrack, xpFill = bar(63, 11, UIP.StoneDeep, UIP.Ore)
 local xpText = label(xpTrack, "0 / 120", UDim2.new(1, -8, 1, 0), UDim2.new(0, 4, 0, 0),
 	Color3.fromRGB(34, 26, 12), 10, StrataConfig.UI.Head, Enum.TextXAlignment.Right)
 xpText.ZIndex = 5
@@ -1839,7 +1840,11 @@ local function watchHealth(character)
 	local function draw()
 		local share = math.clamp(humanoid.Health / math.max(humanoid.MaxHealth, 1), 0, 1)
 		TweenService:Create(healthFill, TweenInfo.new(0.2), { Size = UDim2.new(share, 0, 1, 0) }):Play()
-		healthText.Text = tostring(math.ceil(humanoid.Health))
+		-- Out of what. A bare "100" is only a number until you know the
+		-- ceiling, and the ceiling is the half that changes when you buy
+		-- armour.
+		healthText.Text = ("%d / %d"):format(
+			math.ceil(humanoid.Health), math.ceil(humanoid.MaxHealth))
 		healthFill.BackgroundColor3 = share < 0.3 and UIP.Warning
 			or (share < 0.6 and UIP.Ore or UIP.Moss)
 	end

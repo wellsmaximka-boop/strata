@@ -330,9 +330,19 @@ StrataConfig.Hud = {
 	Nav = {
 		Cols = 2,
 		Rows = 3,
-		Tile = 54,
 		Gap  = 6,
-		Icon = 28,
+
+		-- A share of the width, like everything else, measured off the
+		-- reference: its tiles sit at about a sixteenth of the window each.
+		--
+		-- The labels are back. Taking them off was the wrong read of what the
+		-- references were doing — the mobile one has a caption under every
+		-- icon, and it is compact because the tiles are small, not because
+		-- they are anonymous. Six unlabelled squares ask you to remember that
+		-- the triangle is the lift.
+		TileShare = 0.062,
+		TileMin   = 54,
+		TileMax   = 104,
 	},
 
 	-- The run manifest inherits the corner the card left, and it suits it
@@ -353,7 +363,7 @@ StrataConfig.Hud = {
 	-- flat 300 was a fifth of a wide monitor and better than a third of a
 	-- small window, which is a lot of the view for something you glance at.
 	Scanner = {
-		WidthShare = 0.2,
+		WidthShare = 0.172,
 		WidthMin   = 196,
 		WidthMax   = 318,
 		H          = 108,
@@ -365,7 +375,7 @@ StrataConfig.Hud = {
 	-- now carries a rock swatch as well as a name and a depth band. Still a
 	-- share of the window, still clamped well clear of where the ratio lands.
 	Chart = {
-		WidthShare = 0.142,
+		WidthShare = 0.126,
 		WidthMin   = 112,
 		WidthMax   = 214,
 		SegH       = 42,
@@ -437,8 +447,9 @@ function StrataConfig.HudMetrics(viewportWidth, viewportHeight)
 	-- whatever height was left, so there is nothing to compute — but the fit
 	-- still has to be checked, because a short window can run the column into
 	-- the corner the run manifest needs.
-	local navW = N.Tile * N.Cols + N.Gap * (N.Cols - 1)
-	local navH = N.Tile * N.Rows + N.Gap * (N.Rows - 1)
+	local tile = math.clamp(math.floor(vw * N.TileShare), N.TileMin, N.TileMax)
+	local navW = tile * N.Cols + N.Gap * (N.Cols - 1)
+	local navH = tile * N.Rows + N.Gap * (N.Rows - 1)
 
 	local fixed  = H.Top + H.Card.H + H.Strength.H + H.Pack.H + H.Gap * 3
 	local corner = H.Manifest.Bottom + H.Manifest.H + H.Gap
@@ -446,8 +457,11 @@ function StrataConfig.HudMetrics(viewportWidth, viewportHeight)
 	local m = {
 		Width = width,
 		Nav   = {
-			Tile = N.Tile, Gap = N.Gap, Cols = N.Cols, Rows = N.Rows,
-			Icon = N.Icon,
+			Tile = tile, Gap = N.Gap, Cols = N.Cols, Rows = N.Rows,
+			-- Everything inside a tile is a share of it, so the one number
+			-- above decides the whole thing.
+			Icon    = math.floor(tile * 0.38),
+			Label   = math.clamp(math.floor(tile * 0.17), 10, 13),
 			W_total = navW,
 			H_total = navH,
 			Cramped = (fixed + navH + corner) > vh,
