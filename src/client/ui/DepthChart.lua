@@ -90,8 +90,9 @@ task.spawn(function()
 end)
 
 local chartEdge = Instance.new("UIStroke", chart)
-chartEdge.Color     = OUTLINE
-chartEdge.Thickness = 3
+chartEdge.Color        = StrataConfig.UI.Brass
+chartEdge.Thickness    = 1.6
+chartEdge.Transparency = 0.15
 
 local chartShadow = Instance.new("Frame")
 chartShadow.Size                   = UDim2.new(1, 14, 1, 14)

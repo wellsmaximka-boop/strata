@@ -136,11 +136,9 @@ print("-- the rest, solved for 1216 wide --")
 -- table where the number was meant is how this check first fell over.
 local rows = {
 	{ "Card",     "Card",     H.Card.H },
-	{ "Strength", "Strength", H.Strength.H },
-	{ "Pack",     "Pack",     H.Pack.H },
+
 	{ "Nav",      "NavY",     stack.Nav.H_total },
 }
-
 
 print("")
 print("-- left column --")

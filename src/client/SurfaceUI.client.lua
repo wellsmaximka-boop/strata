@@ -910,7 +910,11 @@ local function barButton(order, icon, label, accent, onClick)
 	end
 	setFill(FILL_TOP, FILL_BOTTOM)
 
-	local rim = stroked(b, accent, 2, 0.3)
+	-- Brass at rest on every tile, the accent only on hover and when open.
+	-- Six tiles wearing six different rim colours is six things competing to
+	-- be the one you are meant to look at; one metal lets the open tile be
+	-- the only coloured thing in the column, which is what it is for.
+	local rim = stroked(b, UIP.Brass, 1.6, 0.2)
 
 	-- Glossy bevel across the top half
 	local bevel = Instance.new("Frame")
@@ -982,6 +986,7 @@ local function barButton(order, icon, label, accent, onClick)
 			setFill(accent:Lerp(WHITE, 0.2), accent)
 			plate.BackgroundTransparency = 0.7
 			name.TextColor3 = UIP.StoneDeep
+			rim.Color = accent
 			TweenService:Create(rim, QUICK, { Transparency = 0, Thickness = 2.5 }):Play()
 			return
 		end
@@ -990,9 +995,10 @@ local function barButton(order, icon, label, accent, onClick)
 		setFill(FILL_TOP:Lerp(WHITE, lift), FILL_BOTTOM:Lerp(WHITE, lift))
 		plate.BackgroundTransparency = hovered and 0.25 or 0.4
 		name.TextColor3 = hovered and accent or INK
+		rim.Color = hovered and accent or UIP.Brass
 		TweenService:Create(rim, QUICK, {
-			Transparency = hovered and 0 or 0.45,
-			Thickness    = hovered and 2.5 or 1.5,
+			Transparency = hovered and 0 or 0.2,
+			Thickness    = hovered and 2.5 or 1.6,
 		}):Play()
 	end
 

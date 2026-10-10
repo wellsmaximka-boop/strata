@@ -304,9 +304,7 @@ StrataConfig.Hud = {
 	WidthMin   = 150,
 	WidthMax   = 330,
 
-	Card     = { H = 80 },
-	Strength = { H = 40 },
-	Pack     = { H = 64 },
+	Card     = { H = 118 },
 
 	-- ── The nav ──────────────────────────────────────────────────────────────
 	-- A list, not a grid. Six rows: an icon in a small plate, the name, and a
@@ -451,7 +449,7 @@ function StrataConfig.HudMetrics(viewportWidth, viewportHeight)
 	local navW = tile * N.Cols + N.Gap * (N.Cols - 1)
 	local navH = tile * N.Rows + N.Gap * (N.Rows - 1)
 
-	local fixed  = H.Top + H.Card.H + H.Strength.H + H.Pack.H + H.Gap * 3
+	local fixed  = H.Top + H.Card.H + H.Gap
 	local corner = H.Manifest.Bottom + H.Manifest.H + H.Gap
 
 	local m = {
@@ -471,8 +469,6 @@ function StrataConfig.HudMetrics(viewportWidth, viewportHeight)
 	local y = H.Top
 	for _, row in ipairs({
 		{ "Card",     H.Card.H },
-		{ "Strength", H.Strength.H },
-		{ "Pack",     H.Pack.H },
 		{ "Nav",      navH },
 	}) do
 		m[row[1] == "Nav" and "NavY" or row[1]] = y

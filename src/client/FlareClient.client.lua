@@ -143,7 +143,7 @@ slot.Parent           = gui
 Instance.new("UICorner", slot).CornerRadius = UDim.new(0, math.min(10, UIP.Corner))
 
 local slotEdge = Instance.new("UIStroke", slot)
-slotEdge.Color     = UIP.StoneDark
+slotEdge.Color     = UIP.Brass
 slotEdge.Thickness = 2.5
 
 local slotFace = Instance.new("UIGradient", slot)
@@ -261,7 +261,7 @@ local function paint()
 		pip.BackgroundTransparency = i <= charges and 0 or 0.82
 	end
 	name.TextColor3 = charges > 0 and UIP.Ink or UIP.StoneLit
-	slotEdge.Color  = charging and CFG.Colour or UIP.StoneDark
+	slotEdge.Color  = charging and CFG.Colour or UIP.Brass
 end
 
 flareState.OnClientEvent:Connect(function(info)

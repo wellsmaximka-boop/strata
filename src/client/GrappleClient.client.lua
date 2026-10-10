@@ -367,7 +367,7 @@ slot.Parent           = gui
 Instance.new("UICorner", slot).CornerRadius = UDim.new(0, math.min(10, UIP.Corner))
 
 local slotEdge = Instance.new("UIStroke", slot)
-slotEdge.Color     = UIP.StoneDark
+slotEdge.Color     = UIP.Brass
 slotEdge.Thickness = 2.5
 
 local keyPlate = Instance.new("Frame")

@@ -142,8 +142,14 @@ depthBanner.Parent           = gui
 Instance.new("UICorner", depthBanner).CornerRadius = UDim.new(0, math.min(16, StrataConfig.UI.Corner))
 
 local bannerEdge = Instance.new("UIStroke", depthBanner)
-bannerEdge.Color     = OUTLINE
-bannerEdge.Thickness = 3
+-- Gold, like every other block. A bright thin edge reads as machined; a dark
+-- thick one reads as a hole cut in the screen, which is what all of these
+-- were. Same treatment on the ladder, the scanner, the slots and the tiles —
+-- one metal across the whole interface is most of why the reference looks
+-- finished rather than assembled.
+bannerEdge.Color        = StrataConfig.UI.Brass
+bannerEdge.Thickness    = 1.6
+bannerEdge.Transparency = 0.15
 
 local bannerShadow = Instance.new("Frame")
 bannerShadow.Size                   = UDim2.new(1, 14, 1, 12)
@@ -226,29 +232,85 @@ print(("[HUD] viewport %dx%d · column %d (%.1f%%) · nav tile %d%s")
 	:format(VW, VH, STACK.Width, STACK.Width / VW * 100, STACK.Nav.Tile,
 		STACK.Nav.Cramped and " · CRAMPED" or ""))
 
-local packPanel = panel(UDim2.new(0, STACK.Width, 0, StrataConfig.Hud.Pack.H),
-	UDim2.new(0, StrataConfig.Hud.Left, 0, STACK.Pack))
+-- ── The profile ──────────────────────────────────────────────────────────────
+-- One card. Who you are, how hard you hit, what you are carrying and what it
+-- is worth, in the corner games put the player.
+--
+-- It was four: a card, a power panel, a pack panel and a cash strip, each with
+-- its own outline and its own gutter, stacked down the left. Four frames to
+-- say one thing about one person, and most of their height was the space
+-- between them. The reference holds the lot in a single bordered block, which
+-- is both smaller and easier to read, because a border means "these belong
+-- together" and four borders mean the opposite.
+--
+-- Built here at the top level rather than inside the card's own wrapper below:
+-- the labels in it are updated from half a dozen handlers further down the
+-- file, and a local declared inside that wrapper is invisible to every one of
+-- them. That is the mistake this file has made four times in two days.
+local HUD = StrataConfig.Hud
 
-label(packPanel, "PACK", UDim2.new(0, 40, 0, 20), UDim2.new(0, 12, 0, 9), DIM, 11)
+local profile = Instance.new("Frame")
+profile.Name             = "Profile"
+profile.Size             = UDim2.new(0, STACK.Width, 0, HUD.Card.H)
+profile.Position         = UDim2.new(0, HUD.Left, 0, STACK.Card)
+profile.BackgroundColor3 = UIP.StoneDeep
+profile.BackgroundTransparency = 0.08
+profile.BorderSizePixel  = 0
+profile.Parent           = gui
+Instance.new("UICorner", profile).CornerRadius = UDim.new(0, math.min(12, UIP.Corner))
 
-local packValue = label(packPanel, "0 / " .. StrataConfig.Player.BackpackSlots,
-	UDim2.new(0, 80, 0, 22), UDim2.new(0, 50, 0, 8), INK, 18)
+-- The gold. Every block in the reference wears one of these and it is most of
+-- why that interface looks finished: a bright thin edge reads as machined,
+-- where a dark thick one reads as a hole.
+local profileEdge = Instance.new("UIStroke", profile)
+profileEdge.Color        = UIP.Brass
+profileEdge.Thickness    = 1.6
+profileEdge.Transparency = 0.15
 
--- What the haul would fetch at the Depot, so digging visibly earns something
-local haulWorth = label(packPanel, "", UDim2.new(0, 70, 0, 20),
-	UDim2.new(1, -12, 0, 9), ORE, 12, nil, Enum.TextXAlignment.Right)
-haulWorth.AnchorPoint = Vector2.new(1, 0)
+-- Column 2 of the card: everything right of the portrait. The portrait itself
+-- is drawn by the wrapper further down, which owns the hexagon.
+local PCOL = 10 + 58 + 10
 
 local GOLD      = Color3.fromRGB(255, 204, 92)
 local GOLD_DEEP = Color3.fromRGB(150, 102, 28)
 
+-- Power, as a chip on the name line. It was a 24px numeral in a panel of its
+-- own, which is a lot of furniture for a number between five and a few
+-- hundred.
+local powerTag = label(profile, "POWER", UDim2.new(0, 46, 0, 12),
+	UDim2.new(1, -12, 0, 9), DIM, 10, nil, Enum.TextXAlignment.Right)
+powerTag.AnchorPoint = Vector2.new(1, 0)
+
+local strengthValue = label(profile, "5", UDim2.new(0, 60, 0, 18),
+	UDim2.new(1, -12, 0, 20), ORE, 17, StrataConfig.UI.Head, Enum.TextXAlignment.Right)
+strengthValue.AnchorPoint = Vector2.new(1, 0)
+
+-- Kept because two handlers write to it, and because strength is the part of
+-- power you earn rather than buy. Off to one side at the bottom, small.
+local strengthSub = label(profile, "STRENGTH 5", UDim2.new(0, 110, 0, 12),
+	UDim2.new(0, 12, 1, -16), DIM, 10)
+strengthSub.AnchorPoint = Vector2.new(0, 1)
+
+-- Pack, under the health bar
+label(profile, "PACK", UDim2.new(0, 34, 0, 14), UDim2.new(0, PCOL, 0, 64), DIM, 10)
+
+local packValue = label(profile, "0 / " .. StrataConfig.Player.BackpackSlots,
+	UDim2.new(0, 70, 0, 16), UDim2.new(0, PCOL + 34, 0, 62), INK, 14)
+
+-- What the haul would fetch at the Depot, so digging visibly earns something
+local haulWorth = label(profile, "", UDim2.new(0, 70, 0, 14),
+	UDim2.new(1, -12, 0, 63), ORE, 11, nil, Enum.TextXAlignment.Right)
+haulWorth.AnchorPoint = Vector2.new(1, 0)
+
+-- ── Cash ─────────────────────────────────────────────────────────────────────
+
 local cashStrip = Instance.new("Frame")
-cashStrip.Size             = UDim2.new(1, -16, 0, 38)
-cashStrip.Position         = UDim2.new(0, 8, 0, 38)
+cashStrip.Size             = UDim2.new(1, -20, 0, 30)
+cashStrip.Position         = UDim2.new(0, 10, 1, -40)
 cashStrip.BackgroundColor3 = Color3.fromRGB(56, 42, 18)
 cashStrip.BorderSizePixel  = 0
-cashStrip.Parent           = packPanel
-Instance.new("UICorner", cashStrip).CornerRadius = UDim.new(0, math.min(9, StrataConfig.UI.Corner))
+cashStrip.Parent           = profile
+Instance.new("UICorner", cashStrip).CornerRadius = UDim.new(0, math.min(8, StrataConfig.UI.Corner))
 
 local stripEdge = Instance.new("UIStroke", cashStrip)
 stripEdge.Color     = GOLD_DEEP
@@ -257,9 +319,9 @@ stripEdge.Thickness = 1.5
 -- A coin drawn from frames: face, rim, inner ring and a glint. Reads on any
 -- background, which the icon asset did not.
 local coin = Instance.new("Frame")
-coin.Size             = UDim2.new(0, 24, 0, 24)
+coin.Size             = UDim2.new(0, 20, 0, 20)
 coin.AnchorPoint      = Vector2.new(0, 0.5)
-coin.Position         = UDim2.new(0, 8, 0.5, 0)
+coin.Position         = UDim2.new(0, 7, 0.5, 0)
 coin.BackgroundColor3 = GOLD
 coin.BorderSizePixel  = 0
 coin.Parent           = cashStrip
@@ -270,7 +332,7 @@ coinRim.Color     = GOLD_DEEP
 coinRim.Thickness = 2
 
 local coinInner = Instance.new("Frame")
-coinInner.Size                   = UDim2.new(0, 13, 0, 13)
+coinInner.Size                   = UDim2.new(0, 11, 0, 11)
 coinInner.AnchorPoint            = Vector2.new(0.5, 0.5)
 coinInner.Position               = UDim2.fromScale(0.5, 0.5)
 coinInner.BackgroundTransparency = 1
@@ -282,16 +344,16 @@ innerRing.Color     = Color3.fromRGB(214, 150, 44)
 innerRing.Thickness = 1.5
 
 local glint = Instance.new("Frame")
-glint.Size                   = UDim2.new(0, 6, 0, 4)
-glint.Position               = UDim2.new(0, 5, 0, 4)
+glint.Size                   = UDim2.new(0, 5, 0, 3)
+glint.Position               = UDim2.new(0, 4, 0, 3)
 glint.BackgroundColor3       = Color3.fromRGB(255, 255, 255)
 glint.BackgroundTransparency = 0.35
 glint.BorderSizePixel        = 0
 glint.Parent                 = coin
 Instance.new("UICorner", glint).CornerRadius = UDim.new(0.5, 0)
 
-local cashValue = label(cashStrip, "0", UDim2.new(1, -48, 1, 0),
-	UDim2.new(0, 40, 0, 0), GOLD, 22, StrataConfig.UI.Head)
+local cashValue = label(cashStrip, "0", UDim2.new(1, -42, 1, 0),
+	UDim2.new(0, 34, 0, 0), GOLD, 18, StrataConfig.UI.Head)
 
 -- Thousands separators: 14,250 rather than 14250
 local function commas(n)
@@ -304,7 +366,7 @@ end
 local shownCash = 0
 local cashTween = nil
 local cashNum   = Instance.new("NumberValue")
-cashNum.Parent  = packPanel
+cashNum.Parent  = profile
 cashNum.Changed:Connect(function(v)
 	cashValue.Text = commas(v)
 end)
@@ -333,38 +395,6 @@ local function setHaul(amount)
 	haulTotal = amount
 	haulWorth.Text = amount > 0 and ("≈ " .. commas(amount)) or ""
 end
-
--- Strength, under the depth readout. Mining power is what actually breaks
--- rock — strength is the part of it you earn rather than buy.
-local STRENGTH_ICON = "rbxassetid://15909461117"
-
--- Top of the left-hand column. It used to sit in the top-left corner, which is
--- where Roblox draws its own menu and chat buttons — they covered it.
-local HUD = StrataConfig.Hud
-
-local strengthPanel = panel(UDim2.new(0, STACK.Width, 0, HUD.Strength.H),
-	UDim2.new(0, HUD.Left, 0, STACK.Strength))
-
-local strengthIcon = Instance.new("ImageLabel")
-strengthIcon.Image                  = STRENGTH_ICON
-strengthIcon.ScaleType              = Enum.ScaleType.Fit
-strengthIcon.BackgroundTransparency = 1
-strengthIcon.Size                   = UDim2.new(0, 32, 0, 32)
-strengthIcon.Position               = UDim2.new(0, 10, 0, 11)
-strengthIcon.Parent                 = strengthPanel
-
--- Mining power is the headline, because it is the number that decides what
--- breaks. Strength — the part of it you earn — sits underneath.
-local strengthValue = label(strengthPanel, "5", UDim2.new(0, 80, 0, 26),
-	UDim2.new(0, 50, 0, 5), ORE, 24)
-
-local powerTag = label(strengthPanel, "POWER", UDim2.new(0, 60, 0, 14),
-	UDim2.new(1, -12, 0, 10), DIM, 11, nil, Enum.TextXAlignment.Right)
-powerTag.AnchorPoint = Vector2.new(1, 0)
-
-local strengthSub = label(strengthPanel, "STRENGTH 5", UDim2.new(1, -60, 0, 16),
-	UDim2.new(0, 50, 0, 31), DIM, 12)
-
 -- ── Scanner ──────────────────────────────────────────────────────────────────
 -- Bottom right, out of the way of the hotbar in the middle. The sweep is a
 -- thing you glance at, not a thing you read, so a corner suits it.
@@ -1592,34 +1622,14 @@ end)
 local CARD = HUD.Card
 local CARD_W = STACK.Width   -- the column width; the card has none of its own
 
-local card = Instance.new("Frame")
-card.Name             = "PlayerCard"
-card.Size             = UDim2.new(0, CARD_W, 0, CARD.H)
-card.Position         = UDim2.new(0, HUD.Left, 0, STACK.Card)
--- Dark, and with an edge again.
+-- The frame already exists. It is built at the top of this file as `profile`,
+-- alongside the power, pack and cash readouts that used to be three separate
+-- panels under it — they all belong to one card now, and the labels in them
+-- are written to from handlers out there, which cannot see in here.
 --
--- The argument for making this nearly transparent and giving it no border was
--- that a HUD should read as printed onto the view rather than as a window laid
--- over it, and it was a good argument against the solid grey slab it replaced.
--- It was also written against a camp lit like a furnace, where a dark panel
--- stood out whatever you did to it.
---
--- The camp is dark now, and a 25%-transparent dark panel on dark timber is not
--- a subtle panel, it is no panel: the portrait, the name and two bars were
--- floating unattached over the floorboards with nothing holding them together.
--- The reference's card is solid with a thin warm edge, and that is why you can
--- tell at a glance that those five things are one thing.
-card.BackgroundColor3       = UIP.StoneDeep
-card.BackgroundTransparency = 0.06
-card.BorderSizePixel        = 0
-card.Parent                 = gui
-Instance.new("UICorner", card).CornerRadius = UDim.new(0, math.min(14, StrataConfig.UI.Corner))
-
-local cardEdge = Instance.new("UIStroke", card)
-cardEdge.Color        = UIP.Brass
-cardEdge.Thickness    = 1.5
-cardEdge.Transparency = 0.45
-
+-- What this wrapper still owns is the hexagon and the bars, which between them
+-- declare about thirty locals that the chunk cannot spare.
+local card = profile
 -- Still lighter towards the open edge, but it no longer reaches nothing. A
 -- fade to fully transparent takes the right-hand third of the card away with
 -- it, which leaves the bars sitting on bare floorboards and makes the border
@@ -1659,7 +1669,10 @@ end
 
 -- ── The hexagon ──────────────────────────────────────────────────────────────
 
-local HEX = 74
+-- Smaller than it was. The portrait no longer has a whole card to itself —
+-- it shares one with a name, a rank, a health bar, a power reading, a pack
+-- count and a purse, and at 74 it was taking a third of the height.
+local HEX = 58
 
 local function hexPlate(parent, size, colour, z)
 	local hub = Instance.new("Frame")
@@ -1733,10 +1746,10 @@ levelValue.ZIndex = 7
 
 -- ── Name, stars, bars ────────────────────────────────────────────────────────
 
-local COL = 10 + HEX + 12
+local COL = 10 + HEX + 10
 
 local nameLabel = label(card, player.DisplayName or player.Name,
-	UDim2.new(0, CARD_W - COL - 12, 0, 18), UDim2.new(0, COL, 0, 7),
+	UDim2.new(0, CARD_W - COL - 58, 0, 17), UDim2.new(0, COL, 0, 6),
 	UIP.Ink, 16, StrataConfig.UI.Head)
 nameLabel.ZIndex       = 3
 nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -1749,7 +1762,7 @@ nameLabel.TextTruncate = Enum.TextTruncate.AtEnd
 -- pixels tall. The reference puts a job title there instead, which is one
 -- line, costs nothing and is at least true.
 local rankLabel = label(card, "Miner",
-	UDim2.new(0, CARD_W - COL - 12, 0, 14), UDim2.new(0, COL, 0, 25),
+	UDim2.new(0, CARD_W - COL - 58, 0, 13), UDim2.new(0, COL, 0, 22),
 	UIP.Dim, 12)
 rankLabel.ZIndex = 3
 
@@ -1785,12 +1798,12 @@ local function bar(y, height, trackColour, fillColour)
 	return track, fill
 end
 
-local healthTrack, healthFill = bar(44, 14, UIP.StoneDeep, UIP.Moss)
+local healthTrack, healthFill = bar(30, 13, UIP.StoneDeep, UIP.Moss)
 local healthText = label(healthTrack, "100 / 100", UDim2.new(1, -8, 1, 0), UDim2.new(0, 4, 0, 0),
 	Color3.fromRGB(22, 30, 22), 11, StrataConfig.UI.Head, Enum.TextXAlignment.Right)
 healthText.ZIndex = 5
 
-local xpTrack, xpFill = bar(63, 11, UIP.StoneDeep, UIP.Ore)
+local xpTrack, xpFill = bar(46, 9, UIP.StoneDeep, UIP.Ore)
 local xpText = label(xpTrack, "0 / 120", UDim2.new(1, -8, 1, 0), UDim2.new(0, 4, 0, 0),
 	Color3.fromRGB(34, 26, 12), 10, StrataConfig.UI.Head, Enum.TextXAlignment.Right)
 xpText.ZIndex = 5
@@ -1960,7 +1973,7 @@ local function slotFor(order, spec)
 	Instance.new("UICorner", slot).CornerRadius = UDim.new(0, math.min(10, StrataConfig.UI.Corner))
 
 	local edge = Instance.new("UIStroke", slot)
-	edge.Color     = spec.active and UIP.Ore or UIP.StoneDark
+	edge.Color     = spec.active and UIP.Ore or UIP.Brass
 	edge.Thickness = spec.active and 3 or 2.5
 
 	local face = Instance.new("UIGradient", slot)
