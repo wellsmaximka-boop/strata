@@ -146,22 +146,35 @@ local function billboard(adornee, title, blurb, accent, height, width)
 	gui.Name           = "Sign"
 	gui.Size           = UDim2.new(width, 0, width * 0.28, 0)
 	gui.StudsOffset    = Vector3.new(0, height or 6, 0)
-	gui.MaxDistance    = 95   -- see the note below
-	-- Station signs used to carry 150 studs, which is most of the camp: you
-	-- could stand at the depot and read the forge, the pick works and the lift
-	-- all at once, so the deck was permanently papered with labels for places
-	-- you were not at. Ninety-five is about the distance at which you have
-	-- decided to walk somewhere.
+	-- Back up where it was. Cutting this to 95 was the wrong lever: it traded
+	-- the clutter for the signs no longer doing their job, since finding the
+	-- depot from across the camp is the only reason the depot has a sign.
+	-- SignFade on the client quiets the far ones instead, so they can stay
+	-- drawn and stay out of the way at the same time.
+	gui.MaxDistance    = 150
 	gui.LightInfluence = 0
 	gui.Adornee        = adornee
 	gui.Parent         = adornee
+
+	-- Everything hangs off a CanvasGroup so one number can fade the whole
+	-- sign. Distance is the problem these have: stand anywhere near the
+	-- middle of the camp and the depot, the forge, the pick works and the
+	-- lift are all within range at once, so the deck wears four labels for
+	-- places you are not at and two of them land on the HUD. SignFade on the
+	-- client drives this; see the note there.
+	local fade = Instance.new("CanvasGroup")
+	fade.Name                   = "Fade"
+	fade.Size                   = UDim2.fromScale(1, 1)
+	fade.BackgroundTransparency = 1
+	fade.BorderSizePixel        = 0
+	fade.Parent                 = gui
 
 	local card = Instance.new("Frame")
 	card.Size                   = UDim2.fromScale(1, 1)
 	card.BackgroundColor3       = Color3.fromRGB(30, 24, 20)
 	card.BackgroundTransparency = 0.1
 	card.BorderSizePixel        = 0
-	card.Parent                 = gui
+	card.Parent                 = fade
 	Instance.new("UICorner", card).CornerRadius = UDim.new(0.16, 0)
 
 	local stroke = Instance.new("UIStroke", card)
@@ -1489,12 +1502,19 @@ local function hut(cf, spec)
 	sign.LightInfluence  = 0
 	sign.Parent          = anchor
 
+	local signFade = Instance.new("CanvasGroup")
+	signFade.Name                   = "Fade"
+	signFade.Size                   = UDim2.fromScale(1, 1)
+	signFade.BackgroundTransparency = 1
+	signFade.BorderSizePixel        = 0
+	signFade.Parent                 = sign
+
 	local plate = Instance.new("Frame")
 	plate.Size                   = UDim2.fromScale(1, 1)
 	plate.BackgroundColor3       = Color3.fromRGB(20, 24, 31)
 	plate.BackgroundTransparency = 0.06
 	plate.BorderSizePixel        = 0
-	plate.Parent                 = sign
+	plate.Parent                 = signFade
 	Instance.new("UICorner", plate).CornerRadius = UDim.new(0, 10)
 
 	local edge = Instance.new("UIStroke", plate)
