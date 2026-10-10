@@ -1283,9 +1283,16 @@ local function lanternBox(at, drop, range, lit)
 	ldecor("Cap", Vector3.new(3.4, 0.5, 3.4), CFrame.new(at.X, at.Y - drop, at.Z),
 		IRON, Enum.Material.Metal)
 
-	local glass = ldecor("Glass", Vector3.new(2.6, 2.8, 2.6),
+	-- A quarter of the glass it had. At 2.6 by 2.8 this was a glowing cube the
+	-- size of a torso, and the frame bars below — which carry a comment about
+	-- making it read as a lantern rather than a glowing cube — never stood a
+	-- chance against it. In the reference a lantern is a few inches of lit
+	-- glass inside a metal cage; this was the cage inside the glass. Making the
+	-- colour saturated did not make these bigger, it only stopped the white
+	-- hiding them against a bright room.
+	local glass = ldecor("Glass", Vector3.new(1.3, 1.5, 1.3),
 		CFrame.new(at.X, at.Y - drop - 1.6, at.Z), GLASS, Enum.Material.Neon)
-	glass.Transparency = 0.15
+	glass.Transparency = 0.1
 
 	-- Frame bars, so it reads as a lantern rather than a glowing cube
 	for _, d in ipairs({ { 1, 1 }, { 1, -1 }, { -1, 1 }, { -1, -1 } }) do
@@ -2038,9 +2045,11 @@ local function lampPost(x, z, ground)
 	odecor("PostArm", Vector3.new(1.8, 0.6, 0.6), CFrame.new(x, ground + 15.4, z),
 		IRON, Enum.Material.Metal)
 
-	local glass = odecor("PostGlass", Vector3.new(2.2, 2.6, 2.2),
-		CFrame.new(x, ground + 14, z), GLASS, Enum.Material.Neon)
-	glass.Transparency = 0.18
+	-- Same cut as the lodge lanterns: the post is a 15-stud pole with a cap,
+	-- and a 2.2-stud block of Neon under it is a floodlight, not a lamp.
+	local glass = odecor("PostGlass", Vector3.new(1.1, 1.4, 1.1),
+		CFrame.new(x, ground + 14.3, z), GLASS, Enum.Material.Neon)
+	glass.Transparency = 0.12
 	odecor("PostCap", Vector3.new(3, 0.7, 3), CFrame.new(x, ground + 15.6, z),
 		IRON, Enum.Material.Metal)
 

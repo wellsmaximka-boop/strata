@@ -304,14 +304,36 @@ StrataConfig.Hud = {
 	WidthMin   = 150,
 	WidthMax   = 330,
 
-	Card     = { H = 96 },
-	Strength = { H = 50 },
-	Pack     = { H = 78 },
+	Card     = { H = 92 },
+	Strength = { H = 48 },
+	Pack     = { H = 74 },
 
-	-- Two across and three down, like the reference, and sized off the column
-	-- rather than against it. Ratio is height over width: the reference's are
-	-- a little wider than they are tall.
-	Button = { Gap = 10, Columns = 2, Rows = 3, Ratio = 0.66 },
+	-- ── The nav ──────────────────────────────────────────────────────────────
+	-- A list, not a grid. Six rows: an icon in a small plate, the name, and a
+	-- chevron, with the open one filled and its text gone dark.
+	--
+	-- The grid was two across, and two across in a column this narrow is the
+	-- reason the buttons never looked right at any size — a wide shallow cell
+	-- holding a centred icon above a caption wants far more width than an
+	-- eighteenth of the screen. A row wants exactly this shape. The concept
+	-- art arrived at the same answer, which is reassuring rather than
+	-- surprising; it is what the proportion asks for.
+	--
+	-- The height is not fixed. It is whatever is left after the card, the two
+	-- readouts and the corner the manifest sits in, because the thing that
+	-- keeps going wrong here is a number that was right on one window.
+	Nav = {
+		Rows    = 6,
+		Gap     = 7,
+		RowMin  = 34,
+		-- Held back from the budget so the list never ends one pixel above the
+		-- manifest. Filling the space exactly is arithmetically correct and
+		-- looks like a mistake.
+		Slack   = 26,
+		RowMax  = 58,
+		Icon    = 28,     -- the plate on the left of a row
+		Chevron = 12,
+	},
 
 	-- The run manifest inherits the corner the card left, and it suits it
 	-- better than sharing: top left is you, bottom left is this run.
@@ -381,26 +403,37 @@ end
 -- The viewport is passed in rather than read from the camera, because this
 -- module is also required by the server and by the offline harnesses, and
 -- neither of those has one.
-function StrataConfig.HudMetrics(viewportWidth)
+function StrataConfig.HudMetrics(viewportWidth, viewportHeight)
 	local H     = StrataConfig.Hud
-	local B     = H.Button
-	local width = math.clamp(
-		math.floor((viewportWidth or 1600) * H.WidthShare),
-		H.WidthMin, H.WidthMax)
+	local N     = H.Nav
+	local vw    = viewportWidth  or 1600
+	local vh    = viewportHeight or 900
 
-	local btnW  = math.floor((width - B.Gap * (B.Columns - 1)) / B.Columns)
-	local btnH  = math.floor(btnW * B.Ratio)
-	local gridH = btnH * B.Rows + B.Gap * (B.Rows - 1)
+	local width = math.clamp(math.floor(vw * H.WidthShare), H.WidthMin, H.WidthMax)
+
+	-- What the nav has left once everything with a fixed height has taken its
+	-- share, including the corner the run manifest needs below it. Solving for
+	-- the row height rather than asserting one means a short window gets a
+	-- tighter list instead of a column running off the bottom of the screen.
+	local fixed  = H.Top + H.Card.H + H.Strength.H + H.Pack.H + H.Gap * 3
+	local corner = H.Manifest.Bottom + H.Manifest.H + H.Gap
+	local budget = vh - fixed - corner - N.Slack
+
+	local rowH = math.clamp(
+		math.floor((budget - N.Gap * (N.Rows - 1)) / N.Rows),
+		N.RowMin, N.RowMax)
+
+	local navH = rowH * N.Rows + N.Gap * (N.Rows - 1)
 
 	local m = {
-		Width  = width,
-		Button = {
-			W = btnW, H = btnH, Gap = B.Gap,
-			Columns = B.Columns, Rows = B.Rows,
-			-- What the grid actually occupies after the division rounds down,
-			-- which is up to a pixel short of the column.
-			W_total = btnW * B.Columns + B.Gap * (B.Columns - 1),
-			H_total = gridH,
+		Width = width,
+		Nav   = {
+			RowH = rowH, Gap = N.Gap, Rows = N.Rows,
+			Icon = N.Icon, Chevron = N.Chevron,
+			H_total = navH,
+			-- True when even the shortest rows do not fit, which is the one
+			-- case the caller cannot style its way out of.
+			Cramped = navH > budget,
 		},
 	}
 
@@ -409,9 +442,9 @@ function StrataConfig.HudMetrics(viewportWidth)
 		{ "Card",     H.Card.H },
 		{ "Strength", H.Strength.H },
 		{ "Pack",     H.Pack.H },
-		{ "Grid",     gridH },
+		{ "Nav",      navH },
 	}) do
-		m[row[1]] = y
+		m[row[1] == "Nav" and "NavY" or row[1]] = y
 		y += row[2] + H.Gap
 	end
 

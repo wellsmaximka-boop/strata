@@ -719,28 +719,30 @@ local HUD = StrataConfig.Hud
 
 -- Measured off the window, the same way MineClient does it, so the buttons
 -- come out the width of the panels stacked above them.
-local STACK = StrataConfig.HudMetrics(
-	(workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize.X or 0) > 320
-		and workspace.CurrentCamera.ViewportSize.X or 1600)
+local function viewport()
+	local cam = workspace.CurrentCamera
+	local v   = cam and cam.ViewportSize or Vector2.new(0, 0)
+	if v.X < 320 or v.Y < 240 then return 1600, 900 end
+	return v.X, v.Y
+end
 
-local BTNC = STACK.Button
-local BTN_W, BTN_H, GAP = BTNC.W, BTNC.H, BTNC.Gap
+local STACK = StrataConfig.HudMetrics(viewport())
 
--- What goes inside a button is a share of its height rather than a pixel
--- count, so the config is the only place a size is decided. These were
--- absolute, tuned for a 58-pixel square, which is how you end up with a
--- 27-pixel icon and a 10-pixel caption marooned in the middle of a big button.
-local ICON      = math.floor(BTN_H * 0.40)
-local ICON_Y    = math.floor(BTN_H * 0.17)
-local NAME_H    = 18
-local NAME_Y    = math.floor(BTN_H * 0.30)
-local NAME_SIZE = 13
-local BEVEL_H   = math.floor(BTN_H * 0.27)
+local NAV   = STACK.Nav
+local ROW_H = NAV.RowH
+local ICON  = NAV.Icon
+
+-- The row, left to right: an icon plate, the name, a chevron. Derived, because
+-- every absolute number in this file has eventually been one tuned for a size
+-- it no longer was.
+local PAD       = math.max(8, math.floor(ROW_H * 0.18))
+local TEXT_X    = PAD + ICON + 10
+local NAME_SIZE = 14
 
 local bar = Instance.new("Frame")
 bar.Name                   = "ActionBar"
-bar.Size                   = UDim2.new(0, BTNC.W_total, 0, BTNC.H_total)
-bar.Position               = UDim2.new(0, HUD.Left, 0, STACK.Grid)
+bar.Size                   = UDim2.new(0, STACK.Width, 0, NAV.H_total)
+bar.Position               = UDim2.new(0, HUD.Left, 0, STACK.NavY)
 bar.BackgroundTransparency = 1
 -- Above the screens. They are fitted to clear the bar, but on a viewport too
 -- narrow to have room for both the fit gives up and takes the full width — and
@@ -748,11 +750,10 @@ bar.BackgroundTransparency = 1
 bar.ZIndex                 = 8
 bar.Parent                 = gui
 
-local barLayout = Instance.new("UIGridLayout", bar)
-barLayout.CellSize    = UDim2.new(0, BTN_W, 0, BTN_H)
-barLayout.CellPadding = UDim2.new(0, GAP, 0, GAP)
-barLayout.SortOrder   = Enum.SortOrder.LayoutOrder
-barLayout.FillDirectionMaxCells = BTNC.Columns
+local barLayout = Instance.new("UIListLayout", bar)
+barLayout.FillDirection = Enum.FillDirection.Vertical
+barLayout.Padding       = UDim.new(0, NAV.Gap)
+barLayout.SortOrder     = Enum.SortOrder.LayoutOrder
 
 -- Paste Creator Store icon asset ids here and they replace the emoji glyphs
 -- automatically — nothing else has to change. Free UI packs work fine; the ids
@@ -769,6 +770,11 @@ local ICONS = {
 -- gives you and which does not sit with five flat white icons.
 local DRAWN = {}
 
+-- [label] = setActive. Collected as the rows are built, so the code that knows
+-- which screen is open can light the right one without holding a reference to
+-- six buttons.
+local NAV_ROWS = {}
+
 -- A pickaxe built from two rotated frames. Not as crisp as real icon art, but
 -- it costs no asset and sits in the same visual language as everything else.
 local function drawPickaxe(parent)
@@ -777,13 +783,13 @@ local function drawPickaxe(parent)
 	-- stops looking like a pick. UIScale takes the whole drawing with it.
 	local holder = Instance.new("Frame")
 	holder.Size                   = UDim2.new(0, 28, 0, 28)
-	holder.AnchorPoint            = Vector2.new(0.5, 0)
-	holder.Position               = UDim2.new(0.5, 0, 0, ICON_Y)
+	holder.AnchorPoint            = Vector2.new(0.5, 0.5)
+	holder.Position               = UDim2.new(0.5, 0, 0.5, 0)
 	holder.BackgroundTransparency = 1
 	holder.ZIndex                 = 4
 	holder.Parent                 = parent
 
-	Instance.new("UIScale", holder).Scale = ICON / 28
+	Instance.new("UIScale", holder).Scale = (ICON - 7) / 28
 
 	local function piece(w, h, x, y, rot, colour, z)
 		local p = Instance.new("Frame")
@@ -818,13 +824,13 @@ end
 local function drawClipboard(parent)
 	local holder = Instance.new("Frame")
 	holder.Size                   = UDim2.new(0, 28, 0, 28)
-	holder.AnchorPoint            = Vector2.new(0.5, 0)
-	holder.Position               = UDim2.new(0.5, 0, 0, ICON_Y)
+	holder.AnchorPoint            = Vector2.new(0.5, 0.5)
+	holder.Position               = UDim2.new(0.5, 0, 0.5, 0)
 	holder.BackgroundTransparency = 1
 	holder.ZIndex                 = 4
 	holder.Parent                 = parent
 
-	Instance.new("UIScale", holder).Scale = ICON / 28
+	Instance.new("UIScale", holder).Scale = (ICON - 7) / 28
 
 	local function piece(w, h, x, y, colour, z, radius)
 		local p = Instance.new("Frame")
@@ -858,9 +864,10 @@ DRAWN.RUNS  = drawClipboard
 -- body, a highlight bevel across the top, a coloured rim, and a press that
 -- actually moves. No image required, though one drops straight in.
 local function barButton(order, icon, label, accent, onClick)
-	-- The grid layout owns position and size, so the holder must not set either
+	-- The list layout owns the position; the row owns its own height.
 	local holder = Instance.new("Frame")
 	holder.Name                   = label
+	holder.Size                   = UDim2.new(1, 0, 0, ROW_H)
 	holder.BackgroundTransparency = 1
 	holder.LayoutOrder            = order
 	holder.Parent                 = bar
@@ -910,7 +917,7 @@ local function barButton(order, icon, label, accent, onClick)
 
 	-- Glossy bevel across the top half
 	local bevel = Instance.new("Frame")
-	bevel.Size                   = UDim2.new(1, -10, 0, BEVEL_H)
+	bevel.Size                   = UDim2.new(1, -10, 0, math.floor(ROW_H * 0.42))
 	bevel.Position               = UDim2.new(0, 5, 0, 4)
 	bevel.BackgroundColor3       = Color3.fromRGB(255, 255, 255)
 	bevel.BorderSizePixel        = 0
@@ -924,50 +931,112 @@ local function barButton(order, icon, label, accent, onClick)
 		NumberSequenceKeypoint.new(1, 1),
 	})
 
-	-- Icon: an uploaded image when one is configured, the glyph otherwise
+	-- The icon sits in its own recessed plate on the left, which is what stops
+	-- six different icons at six different weights from looking like six
+	-- different sizes.
+	local plate = Instance.new("Frame")
+	plate.AnchorPoint      = Vector2.new(0, 0.5)
+	plate.Position         = UDim2.new(0, PAD, 0.5, 0)
+	plate.Size             = UDim2.new(0, ICON, 0, ICON)
+	plate.BackgroundColor3 = UIP.StoneDark
+	plate.BackgroundTransparency = 0.25
+	plate.BorderSizePixel  = 0
+	plate.ZIndex           = 3
+	plate.Parent           = b
+	corner(plate, 7)
+
 	local iconId = ICONS[label]
 	local art
 	if DRAWN[label] then
-		art = DRAWN[label](b)
+		art = DRAWN[label](plate)
 	elseif iconId and iconId ~= "" then
 		art = Instance.new("ImageLabel")
 		art.Image                  = iconId
 		art.ScaleType              = Enum.ScaleType.Fit
 		art.BackgroundTransparency = 1
-		art.AnchorPoint            = Vector2.new(0.5, 0)
-		art.Size                   = UDim2.new(0, ICON, 0, ICON)
-		art.Position               = UDim2.new(0.5, 0, 0, ICON_Y)
+		art.Size                   = UDim2.new(1, -7, 1, -7)
+		art.Position               = UDim2.new(0, 3.5, 0, 3.5)
 		art.ZIndex                 = 4
-		art.Parent                 = b
+		art.Parent                 = plate
 	else
-		art = text(b, icon, UDim2.new(1, 0, 0, ICON), INK, math.floor(ICON * 0.78),
-			StrataConfig.UI.Head, Enum.TextXAlignment.Center)
-		art.Position = UDim2.new(0, 0, 0, ICON_Y)
-		art.ZIndex   = 4
+		art = text(plate, icon, UDim2.new(1, 0, 1, 0), INK,
+			math.floor(ICON * 0.6), StrataConfig.UI.Head, Enum.TextXAlignment.Center)
+		art.ZIndex = 4
 	end
 
-	local name = text(b, label, UDim2.new(1, 0, 0, NAME_H), DIM, NAME_SIZE,
-		StrataConfig.UI.Head, Enum.TextXAlignment.Center)
-	name.Position = UDim2.new(0, 0, 1, -NAME_Y)
-	name.ZIndex   = 4
+	local name = text(b, label, UDim2.new(1, -(TEXT_X + PAD + NAV.Chevron + 6), 1, 0),
+		INK, NAME_SIZE, StrataConfig.UI.Head)
+	name.Position       = UDim2.new(0, TEXT_X, 0, 0)
+	name.TextYAlignment = Enum.TextYAlignment.Center
+	name.ZIndex         = 4
+
+	-- The chevron, drawn from two bars. A ">" in a text label is at the mercy
+	-- of whichever face it lands in, and this one has to be a thin stroke in
+	-- all six rows or it reads as punctuation.
+	local chev = Instance.new("Frame")
+	chev.AnchorPoint            = Vector2.new(1, 0.5)
+	chev.Position               = UDim2.new(1, -PAD, 0.5, 0)
+	chev.Size                   = UDim2.new(0, NAV.Chevron, 0, NAV.Chevron)
+	chev.BackgroundTransparency = 1
+	chev.ZIndex                 = 4
+	chev.Parent                 = b
+
+	local chevBars = {}
+	for i, spec in ipairs({ { -45, 0 }, { 45, NAV.Chevron / 2 } }) do
+		local arm = Instance.new("Frame")
+		arm.AnchorPoint      = Vector2.new(0.5, 0.5)
+		arm.Size             = UDim2.new(0, 2, 0, NAV.Chevron * 0.72)
+		arm.Position         = UDim2.new(0.5, 0, 0, spec[2] + NAV.Chevron / 4)
+		arm.Rotation         = spec[1]
+		arm.BackgroundColor3 = UIP.Dim
+		arm.BorderSizePixel  = 0
+		arm.ZIndex           = 4
+		arm.Parent           = chev
+		corner(arm, 1)
+		chevBars[i] = arm
+	end
 
 	local QUICK = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-	-- Hover brightens rather than grows: resizing a cell inside a grid layout
-	-- would shove its neighbours around.
-	-- Hover lifts the gradient rather than the background, since the background
-	-- has to stay white for the gradient to read true.
-	local WHITE = Color3.new(1, 1, 1)
-	b.MouseEnter:Connect(function()
-		TweenService:Create(rim, QUICK, { Transparency = 0, Thickness = 2.5 }):Play()
-		setFill(FILL_TOP:Lerp(WHITE, 0.16), FILL_BOTTOM:Lerp(WHITE, 0.16))
-		name.TextColor3 = accent
-	end)
-	b.MouseLeave:Connect(function()
-		TweenService:Create(rim, QUICK, { Transparency = 0.3, Thickness = 2 }):Play()
-		setFill(FILL_TOP, FILL_BOTTOM)
-		name.TextColor3 = DIM
-	end)
+	-- ── Open, hovered, resting ───────────────────────────────────────────────
+	-- The open row fills with its own accent and its text goes dark, which is
+	-- the one piece of this that tells you where you are without being read.
+	local WHITE  = Color3.new(1, 1, 1)
+	local active = false
+
+	local function paint(hovered)
+		if active then
+			setFill(accent:Lerp(WHITE, 0.2), accent)
+			name.TextColor3 = UIP.StoneDeep
+			for _, arm in ipairs(chevBars) do arm.BackgroundColor3 = UIP.StoneDeep end
+			plate.BackgroundTransparency = 0.6
+			TweenService:Create(rim, QUICK, { Transparency = 0, Thickness = 2.5 }):Play()
+			return
+		end
+
+		local lift = hovered and 0.16 or 0
+		setFill(FILL_TOP:Lerp(WHITE, lift), FILL_BOTTOM:Lerp(WHITE, lift))
+		name.TextColor3 = hovered and accent or INK
+		for _, arm in ipairs(chevBars) do
+			arm.BackgroundColor3 = hovered and accent or UIP.Dim
+		end
+		plate.BackgroundTransparency = 0.25
+		TweenService:Create(rim, QUICK, {
+			Transparency = hovered and 0 or 0.3,
+			Thickness    = hovered and 2.5 or 2,
+		}):Play()
+	end
+
+	paint(false)
+
+	local function setActive(on)
+		if active == on then return end
+		active = on
+		paint(false)
+	end
+
+	b.MouseEnter:Connect(function() paint(true) end)
+	b.MouseLeave:Connect(function() paint(false) end)
 
 	-- Press: sink into the shadow, then spring back
 	b.MouseButton1Down:Connect(function()
@@ -983,6 +1052,8 @@ local function barButton(order, icon, label, accent, onClick)
 	b.MouseLeave:Connect(release)
 
 	b.Activated:Connect(onClick)
+
+	NAV_ROWS[label] = setActive
 	return b, rim
 end
 
@@ -2312,6 +2383,47 @@ end)
 barButton(4, "🛗", "LIFT",  GREEN,  function() openTabNamed("lift") end)
 barButton(5, "📋", "RUNS",  ORE,    function() openTabNamed("runs") end)
 barButton(6, "⬆",  "CAMP",  INK,    function() surfaceCall:FireServer() end)
+
+-- ── Which row is lit ─────────────────────────────────────────────────────────
+-- Driven off what is actually on screen rather than off what was last clicked,
+-- so closing with Escape, or a panel closing itself, puts the light out too.
+-- CAMP is in the list and never lights, which is correct: it is not a screen,
+-- it is a button that sends you somewhere.
+do
+	local SCREEN_ROW = {
+		shop    = "SHOP",
+		pickaxe = "PICKS",
+		lift    = "LIFT",
+		runs    = "RUNS",
+	}
+
+	local function syncNav()
+		local lit = nil
+		if kit.Visible then
+			lit = "KIT"
+		elseif panel.Visible and openTab then
+			lit = SCREEN_ROW[openTab]
+		end
+		for label, setActive in pairs(NAV_ROWS) do
+			setActive(label == lit)
+		end
+	end
+
+	panel:GetPropertyChangedSignal("Visible"):Connect(syncNav)
+	kit:GetPropertyChangedSignal("Visible"):Connect(syncNav)
+
+	-- openTab changes without Visible changing when one screen swaps straight
+	-- to another, and there is no signal for a plain local.
+	task.spawn(function()
+		local was = nil
+		while task.wait(0.15) do
+			if openTab ~= was then
+				was = openTab
+				syncNav()
+			end
+		end
+	end)
+end
 
 -- Escape closes whatever is open
 UserInputService.InputBegan:Connect(function(input, processed)

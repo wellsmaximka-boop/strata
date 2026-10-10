@@ -184,25 +184,26 @@ depthAhead.ZIndex      = 2
 -- startup: resizing the window mid-session leaves it at the old proportion,
 -- which is worth knowing and is still better than the flat pixel count it
 -- replaced, which was at the wrong proportion on every window.
-local function viewportWidth()
+-- Height matters as well as width now: the nav rows are sized from whatever is
+-- left over, so a short window gets a tighter list rather than a column that
+-- runs off the bottom.
+local function viewport()
 	local cam = workspace.CurrentCamera
-	local w   = cam and cam.ViewportSize.X or 0
-	return w > 320 and w or 1600   -- 0 for a frame or two on some clients
+	local v   = cam and cam.ViewportSize or Vector2.new(0, 0)
+	if v.X < 320 or v.Y < 240 then return 1600, 900 end   -- zero for a frame or two
+	return v.X, v.Y
 end
 
-local STACK = StrataConfig.HudMetrics(viewportWidth())
+local VW, VH = viewport()
+local STACK  = StrataConfig.HudMetrics(VW, VH)
 
 -- Printed because the proportions have now been tuned twice against a window
 -- size guessed from a screenshot, and been wrong twice. One line in the output
--- ends the guessing: if the share and the width disagree, a clamp is winning.
-do
-	local cam = workspace.CurrentCamera
-	local v   = cam and cam.ViewportSize or Vector2.new(0, 0)
-	print(("[HUD] viewport %dx%d · column %d (%.1f%% of width) · button %dx%d")
-		:format(v.X, v.Y, STACK.Width,
-			v.X > 0 and STACK.Width / v.X * 100 or 0,
-			STACK.Button.W, STACK.Button.H))
-end
+-- ends the guessing: if the share and the percentage disagree, a clamp is
+-- winning, and if Cramped is true the column does not fit at all.
+print(("[HUD] viewport %dx%d · column %d (%.1f%%) · nav row %d%s")
+	:format(VW, VH, STACK.Width, STACK.Width / VW * 100, STACK.Nav.RowH,
+		STACK.Nav.Cramped and " · CRAMPED" or ""))
 
 local packPanel = panel(UDim2.new(0, STACK.Width, 0, StrataConfig.Hud.Pack.H),
 	UDim2.new(0, StrataConfig.Hud.Left, 0, STACK.Pack))

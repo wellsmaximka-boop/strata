@@ -70,16 +70,15 @@ local VIEWPORTS = {
 
 print("")
 print("-- column width against the window --")
-print(("  %-12s %7s %7s %8s"):format("window", "column", "share", "button"))
+print(("  %-12s %7s %7s %8s"):format("window", "column", "share", "nav row"))
 for _, v in ipairs(VIEWPORTS) do
-	local m = StrataConfig.HudMetrics(v[1])
-	print(("  %4dx%-7d %7d %6d%% %4dx%d"):format(
+	local m = StrataConfig.HudMetrics(v[1], v[2])
+	print(("  %4dx%-7d %7d %6d%% %4d (list %d)"):format(
 		v[1], v[2], m.Width,
 		math.floor(m.Width / v[1] * 100 + 0.5),
-		m.Button.W, m.Button.H))
+		m.Nav.RowH, m.Nav.H_total))
 end
-
-local stack = StrataConfig.HudMetrics(1216)
+local stack = StrataConfig.HudMetrics(1216, 970)
 -- A floor that is reached on a window people actually use is not a floor, it
 -- is the answer — and it hands every one of those windows a column at the
 -- wrong proportion while the share sits in the config looking correct. That is
@@ -90,7 +89,7 @@ print("")
 print("-- is the share actually in charge --")
 local pinned = 0
 for _, v in ipairs(VIEWPORTS) do
-	local m = StrataConfig.HudMetrics(v[1])
+	local m = StrataConfig.HudMetrics(v[1], v[2])
 	if m.Width <= H.WidthMin and v[1] * H.WidthShare < H.WidthMin then
 		print(("  %dp: the minimum is winning, column is %d%% not %d%%")
 			:format(v[1],
@@ -105,11 +104,14 @@ bad += pinned
 print("")
 print("-- the rest, solved for 1216 wide --")
 
+-- Name, the key its top is stored under, height. The nav's two differ: Nav
+-- holds the row metrics and NavY holds where the list starts, and reading the
+-- table where the number was meant is how this check first fell over.
 local rows = {
-	{ "Card",     H.Card.H },
-	{ "Strength", H.Strength.H },
-	{ "Pack",     H.Pack.H },
-	{ "Grid",     stack.Button.H_total },
+	{ "Card",     "Card",     H.Card.H },
+	{ "Strength", "Strength", H.Strength.H },
+	{ "Pack",     "Pack",     H.Pack.H },
+	{ "Nav",      "NavY",     stack.Nav.H_total },
 }
 
 
@@ -117,10 +119,10 @@ print("")
 print("-- left column --")
 print(("  %-10s %6s %6s %6s"):format("row", "top", "height", "bottom"))
 for _, row in ipairs(rows) do
-	local name, height = row[1], row[2]
-	local top = stack[name]
-	if not top then
-		print(("  %-10s MISSING FROM HudMetrics"):format(name))
+	local name, key, height = row[1], row[2], row[3]
+	local top = stack[key]
+	if type(top) ~= "number" then
+		print(("  %-10s MISSING FROM HudMetrics (key %s)"):format(name, key))
 		bad += 1
 	else
 		print(("  %-10s %6d %6d %6d"):format(name, top, height, top + height))
@@ -133,10 +135,10 @@ print("")
 print("-- overlap --")
 local clashes = 0
 for i = 2, #rows do
-	local aboveName, aboveH = rows[i - 1][1], rows[i - 1][2]
-	local hereName          = rows[i][1]
-	local aboveEnd = (stack[aboveName] or 0) + aboveH
-	local hereTop  = stack[hereName] or 0
+	local aboveName, aboveKey, aboveH = rows[i - 1][1], rows[i - 1][2], rows[i - 1][3]
+	local hereName, hereKey           = rows[i][1], rows[i][2]
+	local aboveEnd = (stack[aboveKey] or 0) + aboveH
+	local hereTop  = stack[hereKey] or 0
 	if hereTop < aboveEnd then
 		print(("  %s starts %d past the bottom of %s")
 			:format(hereName, aboveEnd - hereTop, aboveName))
@@ -146,39 +148,47 @@ end
 print(("  %d overlapping rows"):format(clashes))
 bad += clashes
 
--- Fit. The bottom-left corner belongs to the run manifest now, so the column
--- has to stop above it as well as above the bottom of the window.
+-- Fit, per window, because the nav rows are solved against the height now and
+-- a stack measured at one size says nothing about another. The bottom-left
+-- corner belongs to the run manifest, so the column has to stop above that and
+-- not merely above the bottom of the screen.
 print("")
-print("-- fit, against the manifest in the corner below --")
+print("-- fit, at each window, against the manifest in the corner below --")
 local floor = H.Manifest.Bottom + H.Manifest.H + H.Gap
 local tight = 0
-for _, height in ipairs({ 1080, 900, 864, 768, 720 }) do
-	local room  = height - floor
-	local spare = room - stack.Bottom
+for _, v in ipairs(VIEWPORTS) do
+	local m     = StrataConfig.HudMetrics(v[1], v[2])
+	local spare = v[2] - floor - m.Bottom
 	local verdict = "ok"
-	if spare < 0 then
+	if m.Nav.Cramped or spare < 0 then
 		verdict = "OVERFLOWS"
 		tight += 1
-	elseif spare < 40 then
+	elseif spare < 24 then
 		verdict = "tight"
 	end
-	print(("  %4dp high   %4d spare   %s"):format(height, spare, verdict))
+	print(("  %4dx%-5d  column ends %4d, %4d spare   %s")
+		:format(v[1], v[2], m.Bottom, spare, verdict))
 end
 bad += tight
 
 -- The column is one width. An element that sets its own is the thing that
 -- made it look like three unrelated panels rather than a column.
 print("")
-print("-- width, at every size above --")
+print("-- nav rows stay usable --")
+local squashed = 0
 for _, v in ipairs(VIEWPORTS) do
-	local m = StrataConfig.HudMetrics(v[1])
-	if m.Button.W_total > m.Width then
-		print(("  %dp: button grid is %d wider than the column")
-			:format(v[1], m.Button.W_total - m.Width))
-		bad += 1
+	local m = StrataConfig.HudMetrics(v[1], v[2])
+	-- A row has to hold an icon plate with air around it. Below that the list
+	-- stops being a list of buttons and becomes a stack of lines.
+	if m.Nav.RowH < m.Nav.Icon + 6 then
+		print(("  %dx%d: rows are %d tall for a %d icon")
+			:format(v[1], v[2], m.Nav.RowH, m.Nav.Icon))
+		squashed += 1
 	end
 end
-print(("  grid fits the column at all %d sizes"):format(#VIEWPORTS))
+print(("  rows clear the icon at %d of %d sizes")
+	:format(#VIEWPORTS - squashed, #VIEWPORTS))
+bad += squashed
 
 -- The bottom edge, built by three different scripts. Same failure, other axis.
 print("")
