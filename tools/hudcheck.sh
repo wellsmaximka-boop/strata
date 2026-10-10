@@ -38,9 +38,36 @@ FIELDS=$(
 		| tr '\n' ' '
 )
 
+# The same question one level down, about what HudMetrics hands back rather
+# than about the config it reads.
+#
+# This caught nothing the first time and then shipped twice. Renaming
+# Nav.RowH to Nav.Tile left a print reading the old name, and string.format
+# with %d and a nil is an error, not a blank — so the line threw and took the
+# player card, the readouts, the scanner, the hotbar and the manifest with it.
+# A second time, with the same shape as the UIP one, and freevars cannot see
+# either: STACK is bound and it does not know what is inside it.
+STACK_FIELDS=$(
+	sed -E 's/--.*$//' $(find src -name '*.lua') \
+		| grep -ohE '\bSTACK\.[A-Za-z_][A-Za-z0-9_]*' \
+		| sed -E 's/.*\.//' \
+		| sort -u \
+		| tr '\n' ' '
+)
+
+NAV_FIELDS=$(
+	sed -E 's/--.*$//' $(find src -name '*.lua') \
+		| grep -ohE '\bSTACK\.Nav\.[A-Za-z_][A-Za-z0-9_]*|\bNAV\.[A-Za-z_][A-Za-z0-9_]*' \
+		| sed -E 's/.*\.//' \
+		| sort -u \
+		| tr '\n' ' '
+)
+
 {
 	cat tools/sitecheck/prelude.lua
 	echo "local USED_HUD_FIELDS = \"$FIELDS\""
+	echo "local USED_STACK_FIELDS = \"$STACK_FIELDS\""
+	echo "local USED_NAV_FIELDS = \"$NAV_FIELDS\""
 	echo
 	echo "local StrataConfig = (function()"
 	grep -v "GetService\|WaitForChild" src/shared/StrataConfig.lua
@@ -229,21 +256,34 @@ bad += botClashes
 -- game is behind it.
 -- Fields the source reads that the config does not have.
 print("")
-print("-- config fields the game reads --")
-local missing = {}
-for field in USED_HUD_FIELDS:gmatch("%S+") do
-	if H[field] == nil then
-		table.insert(missing, field)
+print("-- fields the game reads --")
+
+-- Known-good names that are not fields of the thing they look like they are
+-- read off. NavY is a real key; Nav is the table beside it.
+local NOT_A_FIELD = { Nav = true }
+
+local function fieldsResolve(what, used, holder, skip)
+	local missing = 0
+	local seen    = 0
+	for field in used:gmatch("%S+") do
+		seen += 1
+		if holder[field] == nil and not (skip and skip[field]) then
+			print(("  %s.%s is read in src/ and does not exist"):format(what, field))
+			missing += 1
+		end
 	end
-end
-if #missing > 0 then
-	for _, field in ipairs(missing) do
-		print(("  Hud.%s is read in src/ and does not exist"):format(field))
+	if missing == 0 then
+		print(("  %-18s all %d resolve"):format(what, seen))
 	end
-	bad += #missing
-else
-	print(("  all %d resolve"):format(#(USED_HUD_FIELDS:split(" ")) - 1))
+	return missing
 end
+
+bad += fieldsResolve("Hud", USED_HUD_FIELDS, H)
+
+-- Solved at one size; the keys do not depend on which.
+local probe = StrataConfig.HudMetrics(1216, 970)
+bad += fieldsResolve("HudMetrics()", USED_STACK_FIELDS, probe)
+bad += fieldsResolve("HudMetrics().Nav", USED_NAV_FIELDS, probe.Nav, NOT_A_FIELD)
 
 print("")
 print("-- how much of the view the bottom edge takes --")

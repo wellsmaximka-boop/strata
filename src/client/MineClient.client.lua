@@ -222,8 +222,8 @@ local STACK  = StrataConfig.HudMetrics(VW, VH)
 -- size guessed from a screenshot, and been wrong twice. One line in the output
 -- ends the guessing: if the share and the percentage disagree, a clamp is
 -- winning, and if Cramped is true the column does not fit at all.
-print(("[HUD] viewport %dx%d · column %d (%.1f%%) · nav row %d%s")
-	:format(VW, VH, STACK.Width, STACK.Width / VW * 100, STACK.Nav.RowH,
+print(("[HUD] viewport %dx%d · column %d (%.1f%%) · nav tile %d%s")
+	:format(VW, VH, STACK.Width, STACK.Width / VW * 100, STACK.Nav.Tile,
 		STACK.Nav.Cramped and " · CRAMPED" or ""))
 
 local packPanel = panel(UDim2.new(0, STACK.Width, 0, StrataConfig.Hud.Pack.H),
