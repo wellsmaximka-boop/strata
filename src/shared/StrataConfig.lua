@@ -343,6 +343,12 @@ StrataConfig.Hud = {
 	-- window, clamped. Its segments were 56 tall with a 40-pixel sky over
 	-- them, which came to better than two fifths of the screen height for a
 	-- panel you consult before a run and never during one.
+	-- Notices, bottom left, sitting above the corner the run manifest uses.
+	-- Not a warning: floatingWarning already owns the middle of the screen for
+	-- things you must act on, and putting "welcome" through that channel is
+	-- how a channel stops meaning anything.
+	Notice = { W = 320, H = 52, Hold = 7 },
+
 	-- The scanner, bottom right on its own. A share like everything else: a
 	-- flat 300 was a fifth of a wide monitor and better than a third of a
 	-- small window, which is a lot of the view for something you glance at.
@@ -388,7 +394,7 @@ StrataConfig.Hud = {
 		Order = {
 			{ id = "Hotbar",      h = 68 },
 			{ id = "Stamina",     h = 9  },
-			{ id = "Hint",        h = 18 },
+			{ id = "Hint",        h = 22 },
 			{ id = "FlareSlot",   h = 52 },
 			{ id = "FlarePower",  h = 8  },
 			{ id = "GrappleSlot", h = 44 },

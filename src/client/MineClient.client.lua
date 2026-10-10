@@ -511,10 +511,79 @@ Instance.new("UICorner", barFill).CornerRadius = UDim.new(1, 0)
 -- solid panel and only its ends were visible.
 local BOT = StrataConfig.HudBottom()
 
-local hint = label(gui, "HOLD [LMB] DIG   ·   [E] SWEEP   ·   [SHIFT] RUN",
-	UDim2.new(0, 420, 0, BOT.Hint.h),
-	UDim2.new(0.5, 0, 1, -BOT.Hint.y), DIM, 12, nil, Enum.TextXAlignment.Center)
-hint.AnchorPoint = Vector2.new(0.5, 1)
+-- Built from parts rather than printed as one string. "HOLD [LMB] DIG · [E]
+-- SWEEP · [SHIFT] RUN" at 12px in the dim grey was a smear the same weight all
+-- the way along: the keys, which are the only part you are looking for, read
+-- exactly as loudly as the word HOLD. A key on a plate and its verb beside it
+-- separates the two without making either of them shout.
+local hint = Instance.new("Frame")
+hint.Name                   = "Controls"
+hint.AnchorPoint            = Vector2.new(0.5, 1)
+hint.Position               = UDim2.new(0.5, 0, 1, -BOT.Hint.y)
+hint.Size                   = UDim2.new(0, 0, 0, BOT.Hint.h)
+hint.AutomaticSize          = Enum.AutomaticSize.X
+hint.BackgroundTransparency = 1
+hint.Parent                 = gui
+
+local hintLayout = Instance.new("UIListLayout", hint)
+hintLayout.FillDirection       = Enum.FillDirection.Horizontal
+hintLayout.Padding             = UDim.new(0, 16)
+hintLayout.VerticalAlignment   = Enum.VerticalAlignment.Center
+hintLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+hintLayout.SortOrder           = Enum.SortOrder.LayoutOrder
+
+local function binding(order, key, verb)
+	local pair = Instance.new("Frame")
+	pair.AutomaticSize          = Enum.AutomaticSize.X
+	pair.Size                   = UDim2.new(0, 0, 1, 0)
+	pair.BackgroundTransparency = 1
+	pair.LayoutOrder            = order
+	pair.Parent                 = hint
+
+	local row = Instance.new("UIListLayout", pair)
+	row.FillDirection     = Enum.FillDirection.Horizontal
+	row.Padding           = UDim.new(0, 6)
+	row.VerticalAlignment = Enum.VerticalAlignment.Center
+	row.SortOrder         = Enum.SortOrder.LayoutOrder
+
+	local plate = Instance.new("TextLabel")
+	plate.AutomaticSize          = Enum.AutomaticSize.X
+	plate.Size                   = UDim2.new(0, 0, 0, BOT.Hint.h - 4)
+	plate.BackgroundColor3       = UIP.StoneDeep
+	plate.BackgroundTransparency = 0.25
+	plate.BorderSizePixel        = 0
+	plate.Text                   = key
+	plate.TextColor3             = UIP.Ink
+	plate.TextSize               = 11
+	plate.Font                   = StrataConfig.FaceFor(StrataConfig.UI.Number, 11)
+	plate.LayoutOrder            = 1
+	plate.Parent                 = pair
+	Instance.new("UICorner", plate).CornerRadius = UDim.new(0, math.min(4, UIP.Corner))
+
+	local pad = Instance.new("UIPadding", plate)
+	pad.PaddingLeft  = UDim.new(0, 6)
+	pad.PaddingRight = UDim.new(0, 6)
+
+	local edge = Instance.new("UIStroke", plate)
+	edge.Color        = UIP.Brass
+	edge.Thickness    = 1
+	edge.Transparency = 0.5
+
+	local what = Instance.new("TextLabel")
+	what.AutomaticSize          = Enum.AutomaticSize.X
+	what.Size                   = UDim2.new(0, 0, 1, 0)
+	what.BackgroundTransparency = 1
+	what.Text                   = verb
+	what.TextColor3             = DIM
+	what.TextSize               = 12
+	what.Font                   = StrataConfig.FaceFor(StrataConfig.UI.Head, 12)
+	what.LayoutOrder            = 2
+	what.Parent                 = pair
+end
+
+binding(1, "LMB",   "DIG")
+binding(2, "E",     "SWEEP")
+binding(3, "SHIFT", "RUN")
 
 -- ── Audio hooks ──────────────────────────────────────────────────────────────
 -- Drop Creator Store sound ids in here. The scanner ping is the single most
@@ -1836,6 +1905,23 @@ local function slotFor(order, spec)
 		StrataConfig.UI.Head, Enum.TextXAlignment.Center)
 	name.ZIndex = 2
 
+	-- The slot's number, top right, the way every hotbar in every game puts
+	-- it. It is not a keybind yet — nothing binds 1 through 3 — but it is how
+	-- you refer to a slot out loud, and it is the thing that makes a row of
+	-- squares read as a row rather than as three unrelated boxes.
+	local number = Instance.new("TextLabel")
+	number.AnchorPoint            = Vector2.new(1, 0)
+	number.Position               = UDim2.new(1, -5, 0, 4)
+	number.Size                   = UDim2.new(0, 13, 0, 13)
+	number.BackgroundTransparency = 1
+	number.Text                   = tostring(order)
+	number.TextColor3             = spec.active and UIP.Ore or UIP.Dim
+	number.TextSize               = 11
+	number.Font                   = StrataConfig.FaceFor(StrataConfig.UI.Number, 11)
+	number.TextXAlignment         = Enum.TextXAlignment.Right
+	number.ZIndex                 = 3
+	number.Parent                 = slot
+
 	if spec.key then
 		local keyPlate = Instance.new("Frame")
 		keyPlate.Size             = UDim2.new(0, 15, 0, 15)
@@ -1850,6 +1936,64 @@ local function slotFor(order, spec)
 			UIP.Crystal, 10, StrataConfig.UI.Number, Enum.TextXAlignment.Center)
 		k.ZIndex = 4
 	end
+end
+
+-- ── Notices ──────────────────────────────────────────────────────────────────
+-- The quiet channel. floatingWarning already owns the middle of the screen for
+-- things you have to act on — a full pack, rock you cannot break — and it is
+-- loud on purpose. Putting "welcome to the mine" through that same channel is
+-- how a channel stops meaning anything, so this is the other one: bottom left,
+-- above the run manifest, gone on its own.
+
+local NOTICE = StrataConfig.Hud.Notice
+local noticeAt = StrataConfig.Hud.Manifest.Bottom + StrataConfig.Hud.Manifest.H
+	+ StrataConfig.Hud.Gap
+
+local function notice(title, body, iconId)
+	local card = Instance.new("Frame")
+	card.Name             = "Notice"
+	card.AnchorPoint      = Vector2.new(0, 1)
+	card.Position         = UDim2.new(0, -NOTICE.W, 1, -noticeAt)   -- off, then in
+	card.Size             = UDim2.new(0, NOTICE.W, 0, NOTICE.H)
+	card.BackgroundColor3 = UIP.StoneDeep
+	card.BackgroundTransparency = 0.08
+	card.BorderSizePixel  = 0
+	card.Parent           = gui
+	Instance.new("UICorner", card).CornerRadius = UDim.new(0, math.min(10, UIP.Corner))
+
+	local edge = Instance.new("UIStroke", card)
+	edge.Color        = UIP.Brass
+	edge.Thickness    = 1.5
+	edge.Transparency = 0.45
+
+	local art = Instance.new("Frame")
+	art.AnchorPoint            = Vector2.new(0, 0.5)
+	art.Position               = UDim2.new(0, 10, 0.5, 0)
+	art.Size                   = UDim2.new(0, 30, 0, 30)
+	art.BackgroundTransparency = 1
+	art.Parent                 = card
+
+	if iconId then ItemModels.Icon(iconId, art, 30, UDim2.new()) end
+
+	label(card, title, UDim2.new(1, -58, 0, 15), UDim2.new(0, 48, 0, 10),
+		UIP.Ink, 13, StrataConfig.UI.Head)
+	local sub = label(card, body, UDim2.new(1, -58, 0, 14), UDim2.new(0, 48, 0, 27),
+		DIM, 11)
+	sub.TextTruncate = Enum.TextTruncate.AtEnd
+
+	-- In from the left, wait, out again. The slide is what stops it reading as
+	-- a thing that was always there and you simply had not noticed.
+	card:TweenPosition(UDim2.new(0, StrataConfig.Hud.Left, 1, -noticeAt),
+		Enum.EasingDirection.Out, Enum.EasingStyle.Quint, 0.45, true)
+
+	task.delay(NOTICE.Hold, function()
+		if not card.Parent then return end
+		card:TweenPosition(UDim2.new(0, -NOTICE.W, 1, -noticeAt),
+			Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.35, true)
+		task.delay(0.4, function()
+			if card.Parent then card:Destroy() end
+		end)
+	end)
 end
 
 local function refreshHotbar(state)
@@ -2537,5 +2681,12 @@ if player.Character then
 	task.spawn(onCharacter, player.Character)
 end
 player.CharacterAdded:Connect(onCharacter)
+
+-- Once a session, not once a respawn: a greeting that arrives again every time
+-- you die is not a greeting, it is a nag.
+task.delay(2.5, function()
+	notice("Welcome to the mine.", "Keep digging. There is always more.",
+		"StarterPick")
+end)
 
 print("[MineClient] ready")
