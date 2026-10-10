@@ -294,8 +294,14 @@ StrataConfig.Hud = {
 	--
 	-- Clamped at both ends: below the minimum the labels stop fitting, and
 	-- above the maximum a wide monitor just gets a wider slab for no reason.
+	-- The minimum is the thing to watch. At 208 it was not a floor, it was the
+	-- answer: on the window these screenshots come from, 0.185 of the width
+	-- lands under it, so the clamp won and the column came out at a quarter of
+	-- the screen exactly as before. A share that never gets used is not a
+	-- share. Both bounds are far enough out now that the ratio governs across
+	-- every window anyone is going to play this on.
 	WidthShare = 0.185,
-	WidthMin   = 208,
+	WidthMin   = 150,
 	WidthMax   = 330,
 
 	Card     = { H = 96 },
@@ -317,7 +323,7 @@ StrataConfig.Hud = {
 	-- panel you consult before a run and never during one.
 	Chart = {
 		WidthShare = 0.125,
-		WidthMin   = 138,
+		WidthMin   = 100,   -- same story as the column's: 138 was winning
 		WidthMax   = 198,
 		SegH       = 44,
 		SegGap     = 4,
@@ -516,7 +522,19 @@ StrataConfig.Look = {
 
 		Hazard = Color3.fromRGB(214, 174,  72),
 		Ember  = Color3.fromRGB(226, 118,  48),
-		Lamp   = Color3.fromRGB(232, 196, 128),
+
+		-- What a lantern casts, and what a lantern is. One colour was doing
+		-- both jobs and it could only be right for one of them.
+		--
+		-- At (232, 196, 128) on a Neon part — which renders at full brightness
+		-- by definition — every lamp in the camp was a flat white rectangle
+		-- with a halo, which is what they have looked like in every screenshot
+		-- and what raising the bloom threshold did not fix, because bloom was
+		-- never what made them white. A pale colour at full brightness is
+		-- white. The glass has to be saturated enough that it still reads
+		-- amber once it is lit as hard as it can be.
+		Lamp      = Color3.fromRGB(255, 206, 150),   -- the light it throws
+		LampGlass = Color3.fromRGB(255, 158,  54),   -- the pane you look at
 
 		-- The cool one, and the reason the rest can be warm. Already in use on
 		-- a crystal seam; it belongs in the palette so the next cold thing in

@@ -192,6 +192,18 @@ end
 
 local STACK = StrataConfig.HudMetrics(viewportWidth())
 
+-- Printed because the proportions have now been tuned twice against a window
+-- size guessed from a screenshot, and been wrong twice. One line in the output
+-- ends the guessing: if the share and the width disagree, a clamp is winning.
+do
+	local cam = workspace.CurrentCamera
+	local v   = cam and cam.ViewportSize or Vector2.new(0, 0)
+	print(("[HUD] viewport %dx%d · column %d (%.1f%% of width) · button %dx%d")
+		:format(v.X, v.Y, STACK.Width,
+			v.X > 0 and STACK.Width / v.X * 100 or 0,
+			STACK.Button.W, STACK.Button.H))
+end
+
 local packPanel = panel(UDim2.new(0, STACK.Width, 0, StrataConfig.Hud.Pack.H),
 	UDim2.new(0, StrataConfig.Hud.Left, 0, STACK.Pack))
 

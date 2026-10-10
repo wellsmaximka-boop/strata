@@ -38,6 +38,7 @@ local CANVAS  = PAL.Canvas
 local HAZARD  = PAL.Hazard
 local EMBER   = PAL.Ember
 local LAMP    = PAL.Lamp
+local GLASS   = PAL.LampGlass
 local SIGNAL  = PAL.Signal
 local OUTLINE = PAL.Outline
 
@@ -217,7 +218,7 @@ local function lantern(cf, parent, onPost)
 			TIMBER_D, Enum.Material.Wood, parent)
 	end
 	local body = decor("Lantern", Vector3.new(0.7, 0.9, 0.7),
-		cf * CFrame.new(onPost and 1.0 or 0, -0.4, 0), LAMP, Enum.Material.Neon, parent)
+		cf * CFrame.new(onPost and 1.0 or 0, -0.4, 0), GLASS, Enum.Material.Neon, parent)
 	decor("LanternCap", Vector3.new(0.9, 0.18, 0.9),
 		cf * CFrame.new(onPost and 1.0 or 0, 0.14, 0), IRON, Enum.Material.Metal, parent)
 	-- Brighter and much shorter than it was, which is the whole principle:
@@ -1283,7 +1284,7 @@ local function lanternBox(at, drop, range, lit)
 		IRON, Enum.Material.Metal)
 
 	local glass = ldecor("Glass", Vector3.new(2.6, 2.8, 2.6),
-		CFrame.new(at.X, at.Y - drop - 1.6, at.Z), LAMP, Enum.Material.Neon)
+		CFrame.new(at.X, at.Y - drop - 1.6, at.Z), GLASS, Enum.Material.Neon)
 	glass.Transparency = 0.15
 
 	-- Frame bars, so it reads as a lantern rather than a glowing cube
@@ -1335,7 +1336,7 @@ local function chandelier(x, z, y)
 			CFrame.new(x + math.cos(a) * ring, y + 1.2, z + math.sin(a) * ring),
 			Color3.fromRGB(238, 228, 200), Enum.Material.SmoothPlastic)
 		ldecor("Flame", Vector3.new(0.42, 0.7, 0.42),
-			CFrame.new(candle.Position + Vector3.new(0, 1.1, 0)), LAMP, Enum.Material.Neon)
+			CFrame.new(candle.Position + Vector3.new(0, 1.1, 0)), GLASS, Enum.Material.Neon)
 	end
 
 	local light = Instance.new("PointLight")
@@ -1528,7 +1529,7 @@ local function longTable(cf)
 	-- Neon only, no light of its own: there is a lantern overhead already, and
 	-- every extra light is one the renderer has to find room for.
 	ldecor("TableLamp", Vector3.new(1.1, 1.5, 1.1), cf * CFrame.new(0, 4.1, 0),
-		LAMP, Enum.Material.Neon)
+		GLASS, Enum.Material.Neon)
 end
 
 local function crateStack(x, z, n)
@@ -2038,7 +2039,7 @@ local function lampPost(x, z, ground)
 		IRON, Enum.Material.Metal)
 
 	local glass = odecor("PostGlass", Vector3.new(2.2, 2.6, 2.2),
-		CFrame.new(x, ground + 14, z), LAMP, Enum.Material.Neon)
+		CFrame.new(x, ground + 14, z), GLASS, Enum.Material.Neon)
 	glass.Transparency = 0.18
 	odecor("PostCap", Vector3.new(3, 0.7, 3), CFrame.new(x, ground + 15.6, z),
 		IRON, Enum.Material.Metal)

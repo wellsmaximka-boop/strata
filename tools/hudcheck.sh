@@ -49,6 +49,10 @@ FIELDS=$(
 
 local H = StrataConfig.Hud
 
+-- Declared up here because the first check now runs before the layout tables
+-- are built, and incrementing a nil is its own small outage.
+local bad = 0
+
 -- Checked at several window sizes, because the column is a share of the width
 -- now and the thing that went wrong last time only went wrong on a small one:
 -- a flat 326 is a fifth of a big screen and better than a quarter of a 1216,
@@ -58,7 +62,9 @@ local VIEWPORTS = {
 	{ 1920, 1080 },
 	{ 1600,  900 },
 	{ 1366,  768 },
-	{ 1216,  970 },   -- what the screenshots are actually coming from
+	{ 1216,  970 },
+	{  960,  760 },
+	{  848,  676 },   -- small windows: where the clamp used to take over
 	{ 1280,  720 },
 }
 
@@ -74,6 +80,28 @@ for _, v in ipairs(VIEWPORTS) do
 end
 
 local stack = StrataConfig.HudMetrics(1216)
+-- A floor that is reached on a window people actually use is not a floor, it
+-- is the answer — and it hands every one of those windows a column at the
+-- wrong proportion while the share sits in the config looking correct. That is
+-- what shipped twice. Only the bottom end is checked: a wide monitor hitting
+-- the ceiling is deliberate, since past a point more width should not buy a
+-- wider slab.
+print("")
+print("-- is the share actually in charge --")
+local pinned = 0
+for _, v in ipairs(VIEWPORTS) do
+	local m = StrataConfig.HudMetrics(v[1])
+	if m.Width <= H.WidthMin and v[1] * H.WidthShare < H.WidthMin then
+		print(("  %dp: the minimum is winning, column is %d%% not %d%%")
+			:format(v[1],
+				math.floor(m.Width / v[1] * 100 + 0.5),
+				math.floor(H.WidthShare * 100 + 0.5)))
+		pinned += 1
+	end
+end
+print(("  %d window(s) pinned to the minimum"):format(pinned))
+bad += pinned
+
 print("")
 print("-- the rest, solved for 1216 wide --")
 
@@ -84,7 +112,6 @@ local rows = {
 	{ "Grid",     stack.Button.H_total },
 }
 
-local bad = 0
 
 print("")
 print("-- left column --")
