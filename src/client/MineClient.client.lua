@@ -29,6 +29,7 @@ local INK    = StrataConfig.UI.Ink
 local DIM    = StrataConfig.UI.Dim
 local ORE    = StrataConfig.UI.Ore
 local SIGNAL = StrataConfig.UI.Crystal
+local CRIT   = StrataConfig.UI.Warning
 local PANEL  = StrataConfig.UI.StoneDeep
 
 -- ── Mirrored server values ───────────────────────────────────────────────────
@@ -344,32 +345,165 @@ powerTag.AnchorPoint = Vector2.new(1, 0)
 local strengthSub = label(strengthPanel, "STRENGTH 5", UDim2.new(1, -60, 0, 16),
 	UDim2.new(0, 50, 0, 31), DIM, 12)
 
--- Scanner readout, bottom centre
--- Bottom right, out of the way of the pickaxe hotbar in the middle. The sweep
--- is a thing you glance at, not a thing you read, so a corner suits it.
-local scanPanel = panel(UDim2.new(0, 300, 0, 96), UDim2.new(1, -16, 1, -18), Vector2.new(1, 1))
+-- ── Scanner ──────────────────────────────────────────────────────────────────
+-- Bottom right, out of the way of the hotbar in the middle. The sweep is a
+-- thing you glance at, not a thing you read, so a corner suits it.
+--
+-- It was a 44-pixel caret that rotated. That told you the bearing and nothing
+-- else, and the strength it had already been given went into a hairline bar at
+-- the bottom edge where it could not be read next to the direction it belonged
+-- to. A dial holds both at once: the blip sits at the bearing, and it sits
+-- closer to the middle the stronger the return is.
+
+local SCN = StrataConfig.Hud.Scanner
+local SCAN_W = math.clamp(math.floor(VW * SCN.WidthShare), SCN.WidthMin, SCN.WidthMax)
+
+local scanPanel = panel(UDim2.new(0, SCAN_W, 0, SCN.H),
+	UDim2.new(1, -16, 1, -18), Vector2.new(1, 1))
 scanPanel.BackgroundTransparency = 0.15
 
-local scanArrow = label(scanPanel, "^", UDim2.new(0, 60, 0, 60), UDim2.new(0, 14, 0, 18), SIGNAL, 44, StrataConfig.UI.Head, Enum.TextXAlignment.Center)
-scanArrow.TextYAlignment = Enum.TextYAlignment.Center
+-- Header. Three rising bars for a signal mark, then the name.
+local scanMark = Instance.new("Frame")
+scanMark.AnchorPoint            = Vector2.new(0, 0.5)
+scanMark.Position               = UDim2.new(0, 13, 0, SCN.HeadH / 2 + 2)
+scanMark.Size                   = UDim2.new(0, 14, 0, 12)
+scanMark.BackgroundTransparency = 1
+scanMark.Parent                 = scanPanel
 
-local scanClass = label(scanPanel, "NO SIGNAL", UDim2.new(1, -90, 0, 24), UDim2.new(0, 84, 0, 18), INK, 18)
-local scanBand  = label(scanPanel, "—", UDim2.new(1, -90, 0, 20), UDim2.new(0, 84, 0, 42), DIM, 14)
-local scanHint  = label(scanPanel, "[E] SWEEP", UDim2.new(1, -90, 0, 18), UDim2.new(0, 84, 0, 64), SIGNAL, 12)
+for i = 1, 3 do
+	local b = Instance.new("Frame")
+	b.AnchorPoint      = Vector2.new(0, 1)
+	b.Size             = UDim2.new(0, 3, 0, 4 + i * 2.6)
+	b.Position         = UDim2.new(0, (i - 1) * 5, 1, 0)
+	b.BackgroundColor3 = SIGNAL
+	b.BorderSizePixel  = 0
+	b.Parent           = scanMark
+end
 
--- Strength bar under the readout
+local scanTitle = label(scanPanel, "SCANNER", UDim2.new(1, -40, 0, SCN.HeadH),
+	UDim2.new(0, 33, 0, 3), StrataConfig.UI.Ink, 12, StrataConfig.UI.Head)
+scanTitle.TextYAlignment = Enum.TextYAlignment.Center
+
+local scanRule = Instance.new("Frame")
+scanRule.Size                   = UDim2.new(1, -20, 0, 1)
+scanRule.Position               = UDim2.new(0, 10, 0, SCN.HeadH + 2)
+scanRule.BackgroundColor3       = StrataConfig.UI.Brass
+scanRule.BackgroundTransparency = 0.6
+scanRule.BorderSizePixel        = 0
+scanRule.Parent                 = scanPanel
+
+-- ── The dial ─────────────────────────────────────────────────────────────────
+
+local BODY_Y = SCN.HeadH + 8
+local SCOPE  = SCN.Scope
+
+local scope = Instance.new("Frame")
+scope.Name                   = "Scope"
+scope.Position               = UDim2.new(0, 12, 0, BODY_Y)
+scope.Size                   = UDim2.new(0, SCOPE, 0, SCOPE)
+scope.BackgroundColor3       = Color3.fromRGB(12, 18, 22)
+scope.BackgroundTransparency = 0.25
+scope.BorderSizePixel        = 0
+scope.ClipsDescendants       = true
+scope.Parent                 = scanPanel
+Instance.new("UICorner", scope).CornerRadius = UDim.new(1, 0)
+
+local scopeEdge = Instance.new("UIStroke", scope)
+scopeEdge.Color        = SIGNAL
+scopeEdge.Thickness    = 1.5
+scopeEdge.Transparency = 0.45
+
+-- Two range rings inside the rim, so distance on the dial means something.
+for _, share in ipairs({ 0.64, 0.33 }) do
+	local ring = Instance.new("Frame")
+	ring.AnchorPoint            = Vector2.new(0.5, 0.5)
+	ring.Position               = UDim2.new(0.5, 0, 0.5, 0)
+	ring.Size                   = UDim2.new(share, 0, share, 0)
+	ring.BackgroundTransparency = 1
+	ring.Parent                 = scope
+	Instance.new("UICorner", ring).CornerRadius = UDim.new(1, 0)
+
+	local edge = Instance.new("UIStroke", ring)
+	edge.Color        = SIGNAL
+	edge.Thickness    = 1
+	edge.Transparency = 0.78
+end
+
+-- Crosshair
+for _, axis in ipairs({ { 1, 0 }, { 0, 1 } }) do
+	local line = Instance.new("Frame")
+	line.AnchorPoint            = Vector2.new(0.5, 0.5)
+	line.Position               = UDim2.new(0.5, 0, 0.5, 0)
+	line.Size                   = UDim2.new(axis[1], axis[1] == 0 and 1 or 0,
+		axis[2], axis[2] == 0 and 1 or 0)
+	line.BackgroundColor3       = SIGNAL
+	line.BackgroundTransparency = 0.84
+	line.BorderSizePixel        = 0
+	line.Parent                 = scope
+end
+
+-- The sweep arm, turning whether or not there is anything to find. A dead dial
+-- reads as a broken one.
+local sweep = Instance.new("Frame")
+sweep.AnchorPoint            = Vector2.new(0.5, 1)
+sweep.Position               = UDim2.new(0.5, 0, 0.5, 0)
+sweep.Size                   = UDim2.new(0, 1, 0, SCOPE / 2 - 2)
+sweep.BackgroundColor3       = SIGNAL
+sweep.BackgroundTransparency = 0.5
+sweep.BorderSizePixel        = 0
+sweep.Parent                 = scope
+
+local blip = Instance.new("Frame")
+blip.AnchorPoint      = Vector2.new(0.5, 0.5)
+blip.Position         = UDim2.new(0.5, 0, 0.5, 0)
+blip.Size             = UDim2.new(0, 7, 0, 7)
+blip.BackgroundColor3 = SIGNAL
+blip.BorderSizePixel  = 0
+blip.Visible          = false
+blip.ZIndex           = 3
+blip.Parent           = scope
+Instance.new("UICorner", blip).CornerRadius = UDim.new(1, 0)
+
+-- ── Readout ──────────────────────────────────────────────────────────────────
+
+local TEXT_X = 12 + SCOPE + 12
+
+-- The status dot, red when there is nothing. Straight out of the concept and
+-- it earns its place: it is the one part of this you can read without looking.
+local scanDot = Instance.new("Frame")
+scanDot.AnchorPoint      = Vector2.new(0, 0.5)
+scanDot.Position         = UDim2.new(0, TEXT_X, 0, BODY_Y + 11)
+scanDot.Size             = UDim2.new(0, 8, 0, 8)
+scanDot.BackgroundColor3 = CRIT
+scanDot.BorderSizePixel  = 0
+scanDot.Parent           = scanPanel
+Instance.new("UICorner", scanDot).CornerRadius = UDim.new(1, 0)
+
+local scanClass = label(scanPanel, "NO SIGNAL", UDim2.new(1, -(TEXT_X + 26), 0, 20),
+	UDim2.new(0, TEXT_X + 14, 0, BODY_Y + 1), INK, 15, StrataConfig.UI.Head)
+
+local scanBand = label(scanPanel, "nothing in range",
+	UDim2.new(1, -(TEXT_X + 14), 0, 16), UDim2.new(0, TEXT_X, 0, BODY_Y + 25), DIM, 11)
+scanBand.TextTruncate = Enum.TextTruncate.AtEnd
+
+local scanHint = label(scanPanel, "[E] SWEEP", UDim2.new(1, -(TEXT_X + 14), 0, 16),
+	UDim2.new(0, TEXT_X, 0, BODY_Y + 43), SIGNAL, 11)
+
+-- Strength, along the bottom edge under both halves
 local barBg = Instance.new("Frame")
-barBg.Size              = UDim2.new(1, -28, 0, 3)
-barBg.Position          = UDim2.new(0, 14, 1, -10)
+barBg.Size              = UDim2.new(1, -24, 0, 3)
+barBg.Position          = UDim2.new(0, 12, 1, -9)
 barBg.BackgroundColor3  = Color3.fromRGB(50, 58, 68)
 barBg.BorderSizePixel   = 0
 barBg.Parent            = scanPanel
+Instance.new("UICorner", barBg).CornerRadius = UDim.new(1, 0)
 
 local barFill = Instance.new("Frame")
 barFill.Size             = UDim2.new(0, 0, 1, 0)
 barFill.BackgroundColor3 = SIGNAL
 barFill.BorderSizePixel  = 0
 barFill.Parent           = barBg
+Instance.new("UICorner", barFill).CornerRadius = UDim.new(1, 0)
 
 -- Return to surface now lives in the action bar (SurfaceUI), not here.
 -- Controls hint, centred above the hotbar. It was at -94, which is exactly
@@ -1100,7 +1234,8 @@ scanResult.OnClientEvent:Connect(function(result)
 		scanClass.Text  = "NO SIGNAL"
 		scanClass.TextColor3 = DIM
 		scanBand.Text   = "nothing in range"
-		scanArrow.TextTransparency = 0.75
+		scanDot.BackgroundColor3 = CRIT
+		blip.Visible    = false
 		barFill:TweenSize(UDim2.new(0, 0, 1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25, true)
 		play("scanPing", 0.7)
 		return
@@ -1112,12 +1247,17 @@ scanResult.OnClientEvent:Connect(function(result)
 		expires   = os.clock() + StrataConfig.Scanner.Cooldown + 1.5,
 	}
 
-	scanClass.Text = result.class
-	scanClass.TextColor3 = result.class == "ANOMALOUS" and ORE
+	local tone = result.class == "ANOMALOUS" and ORE
 		or result.class == "STRONG" and SIGNAL
 		or INK
+
+	scanClass.Text = result.class
+	scanClass.TextColor3 = tone
 	scanBand.Text  = result.band
-	scanArrow.TextTransparency = 0
+
+	scanDot.BackgroundColor3 = tone
+	blip.BackgroundColor3    = tone
+	blip.Visible             = true
 
 	barFill:TweenSize(UDim2.new(result.strength, 0, 1, 0),
 		Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
@@ -1126,12 +1266,16 @@ scanResult.OnClientEvent:Connect(function(result)
 	play("scanPing", 0.85 + result.strength * 0.7)
 end)
 
--- Arrow points toward the signal, relative to where the camera is facing.
-RunService.RenderStepped:Connect(function()
+-- The dial turns whether or not it has anything, and the blip sits at the
+-- bearing relative to where the camera is facing.
+RunService.RenderStepped:Connect(function(dt)
+	sweep.Rotation = (sweep.Rotation + dt * 80) % 360
+
 	if not currentSignal then return end
 	if os.clock() > currentSignal.expires then
 		currentSignal = nil
-		scanArrow.TextTransparency = 0.75
+		blip.Visible   = false
+		scanDot.BackgroundColor3 = CRIT
 		scanClass.Text = "NO SIGNAL"
 		scanClass.TextColor3 = DIM
 		scanBand.Text = "sweep again"
@@ -1147,9 +1291,17 @@ RunService.RenderStepped:Connect(function()
 	flatDir  = flatDir.Unit
 	flatLook = flatLook.Unit
 
-	local right   = Vector3.new(flatLook.Z, 0, -flatLook.X)
-	local angle   = math.deg(math.atan2(flatDir:Dot(right), flatDir:Dot(flatLook)))
-	scanArrow.Rotation = angle
+	local right = Vector3.new(flatLook.Z, 0, -flatLook.X)
+	local angle = math.deg(math.atan2(flatDir:Dot(right), flatDir:Dot(flatLook)))
+
+	-- Bearing around the dial, distance in from the rim. A strong return sits
+	-- near the middle, which is the one thing a rotating caret could never
+	-- say: it is the difference between "that way" and "that way, close".
+	local reach = 0.07 + (1 - math.clamp(currentSignal.strength or 0, 0, 1)) * 0.36
+	local a     = math.rad(angle - 90)
+	blip.Position = UDim2.new(
+		0.5 + math.cos(a) * reach, 0,
+		0.5 + math.sin(a) * reach, 0)
 
 	local vertical = dir.Y > 0.4 and "ABOVE"
 		or dir.Y < -0.4 and "BELOW"

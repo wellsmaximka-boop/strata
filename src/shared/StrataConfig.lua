@@ -343,6 +343,18 @@ StrataConfig.Hud = {
 	-- window, clamped. Its segments were 56 tall with a 40-pixel sky over
 	-- them, which came to better than two fifths of the screen height for a
 	-- panel you consult before a run and never during one.
+	-- The scanner, bottom right on its own. A share like everything else: a
+	-- flat 300 was a fifth of a wide monitor and better than a third of a
+	-- small window, which is a lot of the view for something you glance at.
+	Scanner = {
+		WidthShare = 0.2,
+		WidthMin   = 196,
+		WidthMax   = 318,
+		H          = 108,
+		HeadH      = 26,
+		Scope      = 60,   -- the radar dial
+	},
+
 	-- A little wider and a little taller per rung than it was, because each one
 	-- now carries a rock swatch as well as a name and a depth band. Still a
 	-- share of the window, still clamped well clear of where the ratio lands.
